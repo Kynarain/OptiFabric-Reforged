@@ -1317,4 +1317,68 @@ NullPointerException: Cannot read field "norm" because "multiTex" is null
 
 **最终成绩:十个版本里八个可用**(1.21、1.21.1、1.21.3、1.21.4、1.21.8、1.21.9、1.21.10、1.21.11),
 两个(1.21.6、1.21.7)因 OptiFine 预览构建自身缺陷按用户决定放弃。全部十版由 **`v1.21.x` 项目的同一份源码**构建,
-每版一个 jar(缓存格式 24),`.\gradlew -p v1.21.x build "-Pmc=<版本>"` 即可复现。
+每版一个 jar,`.\gradlew -p v1.21.x build "-Pmc=<版本>"` 即可复现。
+
+---
+
+## 与上游 OptiFabric 的差异
+
+> 这一节与下一节原本在 README 里,README 改成简短的展示型之后挪到这里保存。
+
+| 方面 | 上游 (≤1.20.4, Loader 0.15) | 本移植 (1.21.11, Loader 0.19.5) |
+|---|---|---|
+| 类替换挂钩 | Fabric-ASM / Manningham Mills(`mm:early_risers` 入口 + `ClassTinkerers` + 运行时生成 stub mixin) | **自实现**:注入 Loader 的 `GameTransformer.patchedClasses`(`GameTransformerHook`),全程不碰 Mixin API |
+| OptiFine jar 上 classpath | Fabric-ASM 反射式 `addURL` | Fabric Loader 自带 API `FabricLauncherBase.getLauncher().addToClassPath(...)` |
+| 重映射器 | 自己依赖 `net.fabricmc:tiny-remapper:0.8.11` | 直接用 **Loader 内嵌的 tiny-remapper**(`net.fabricmc.loader.impl.lib.tinyremapper`,0.14 API),不额外打包依赖;并显式把游戏 jar 放进 classpath 与输入 |
+| 映射表 | 构建期把 mappings 打进 jar | 同样:构建期把 `net.fabricmc:intermediary:1.21.11:v2` 的 `mappings/mappings.tiny` 打进去 |
+| 每 mod 兼容 mixin | 数十个(`compat/**`,针对 fabric-api / architectury / apoli …) | **未包含**(它们依赖 MM 的 early riser 机制) |
+| contextual mapping | 有:人工维护的硬编码表,按版本手写(`this$0`/`this$1`/`field_3835` 等) | **改为规则推导**:`OptifineMappings` 按字段名形状 + 描述符匹配(含沿继承层次找覆写),自动对齐名字、类型与构造器里存入的值 |
+| 版本特定补丁修正 | 面向 1.20.4 等 | **`patcher/fixes` 里一批 fixer**(多数为本移植新增),全部用离线验证器(JVM + ASM 双向)与真机逐项验证 |
+
+新增或重写的文件(其余文件为逐行移植,仅改包名与必要的 API 适配)。文件头的来源说明与这里一致,而且和上游逐个核对过:
+
+- 上游**没有**对应文件的,注明 `New in the 1.20.6 port …` 或 `New in the 1.21.11 port …`(写明是哪一版写的);
+- 上游**有**对应文件的,注明 `Ported from OptiFabric …, Adapted for Minecraft 1.20.6 and 1.21.11`。
+
+```
+kynarain/cn/optifabric/Optifabric.java                入口(preLaunch;上游的 OptifabricLoadGuard 是个空类,这个是干活的)
+kynarain/cn/optifabric/mod/OptifabricRuntime.java     总调度:找 jar → 打补丁 → 挂 classpath → 注册替换
+kynarain/cn/optifabric/mod/GameTransformerHook.java   把补丁类注入 Loader 的游戏 transformer(按字段类型反射定位)
+kynarain/cn/optifabric/mod/OptifineMappings.java      取代上游硬编码 contextual mapping 的规则推导
+kynarain/cn/optifabric/mod/OptifineRuntime.java       准备结果(remapped jar + ClassCache)
+kynarain/cn/optifabric/mod/OptifineJarFixer.java      修 OptiFine 自己那份 jar:后处理 json 的格式、1.21.6/1.21.7 被写死的 shaderpack 加载、
+                                                      以及(1.1.2 起)1.21.9 / 1.21.10 那份还在读 Position 顶点属性的 FXAA 顶点着色器
+kynarain/cn/optifabric/mod/OptifabricSetup.java       仅保留 optifineRuntimeJar(供崩溃报告用)
+kynarain/cn/optifabric/mod/RendererApiFallback.java   给 Fabric 的渲染器 API 注册一个惰性占位渲染器
+kynarain/cn/optifabric/mod/RendererApiStubGenerator.java  在运行时用 ASM 生成上面那个类(不解析任何游戏类型)
+kynarain/cn/optifabric/patcher/fixes/RestoreVanillaMethodsFix.java    把 OptiFine 重编译时丢掉的原版方法体补回来
+kynarain/cn/optifabric/patcher/fixes/DelegatingConstructorFix.java    重写 OptiFine 的委托构造器
+kynarain/cn/optifabric/patcher/fixes/SyntheticFieldFix.java           this$0/this$1 → 真实字段名(同类型时按声明顺序配对)
+kynarain/cn/optifabric/patcher/fixes/ObjectCreationPointFix.java      补回被换掉的 NEW 注入点
+kynarain/cn/optifabric/patcher/fixes/InjectionCallPointFix.java       保留 OptiFine 方法体,只补一个惰性调用点
+kynarain/cn/optifabric/patcher/fixes/RegionSectionPosFix.java         给 OptiFine 的区域构造器补 section 位置
+kynarain/cn/optifabric/patcher/fixes/StubInjectionTargetFix.java      改名 + 留同名副本,让语义不兼容的钩子注入进死代码
+kynarain/cn/optifabric/patcher/fixes/CallSiteRedirectFix.java         把**跨类**的调用点也改到改名后的方法上
+kynarain/cn/optifabric/patcher/fixes/LambdaMethodRefFix.java          OptiFine 把方法引用改成 lambda 时,把 lambda 改回方法名(自定义注入点按句柄匹配)
+kynarain/cn/optifabric/patcher/fixes/MissingOverrideFix.java          全局:补回被 OptiFine 重编译掉的原版方法桥接
+```
+
+## 国内镜像(实测)
+
+| 用途 | 地址 | 实测 |
+|---|---|---|
+| OptiFine 版本列表 | `https://bmclapi2.bangbang93.com/optifine/1.21.11` | ✅ 200,列出 1.21.11 的全部构建:`HD_U J8`、**`HD_U J9`**(最新发布版)以及 J8/J9 的各 preview |
+| OptiFine 下载 | `https://bmclapi2.bangbang93.com/optifine/<MC版本>/<type>/<patch>` | ✅ 302 跳到 `/maven/com/optifine/<MC>/OptiFine_<MC>_<type>_<patch>.jar`。注意路径是**三段**(`/1.21.11/HD_U/J9`),`/1.21.11/HD_U_J9` 是 404 |
+| Fabric 安装信息(meta) | `https://bmclapi2.bangbang93.com/fabric-meta/v2/versions/loader` | ✅ 200,BMCLAPI 代理了 fabric-meta |
+| Fabric Maven 本体 | `https://maven.fabricmc.net/` | ✅ 200,国内可直连(慢,但可用);**Aliyun 公共仓库没有 Fabric 构件(404),SJTU/NJU 的 fabric-maven 路径也是 404,不要照抄网上的老地址** |
+| Gradle 依赖 | 本项目已全部缓存在本机 `~/.gradle`,直接 `gradlew -p v1.21.x build --offline`(或 `-p v26.x`)即可 | ✅ 构建成功 |
+
+```powershell
+# 1.21.11 的 OptiFine(正式发布版,国内直链,实测 302 → 官方 maven 分发)
+curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/optifine/1.21.11/HD_U/J9"
+
+# 26.1.2 的 OptiFine(preview;路径是四段,补丁号带 K1 前缀)
+curl.exe -L -o preview_OptiFine_26.1.2_HD_U_K1_pre2.jar "https://bmclapi2.bangbang93.com/optifine/26.1.2/HD_U_K1/pre2"
+```
+
+> 哪个版本有 OptiFine 构建,看列表接口的**正文**是不是空数组(`[]` 就是没有);查不存在的版本它照样回 200。
