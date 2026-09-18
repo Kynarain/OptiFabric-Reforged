@@ -66,6 +66,7 @@ $lines = @{
 
 $documentFiles = @(
 	"README.md",
+	"README_CN.md",
 	"CHANGELOG.md",
 	"docs/DESCRIPTION.md",
 	"docs/PUBLISHING.md",
