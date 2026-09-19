@@ -84,8 +84,6 @@ mods/<OptiFine>.jar
 `fabric-renderer-indigo`(Fabric API 自带的地形渲染器)与 OptiFine 只能有一个在场,本模组用 Fabric 自己的机制让 indigo 让位:`fabric.mod.json` 里声明 `"custom": {"fabric-renderer-api-v1:contains_renderer": true}`。这个键本来就是给"另一个渲染器"用的(Sodium 用同一个键),而 OptiFine 本身就是地形渲染器。indigo 会打印 `[Indigo] Different rendering plugin detected; not applying Indigo.`,F3 调试界面显示 `[Fabric] Active renderer: none (vanilla)`。
 
 - **代价**:依赖 FRAPI/indigo 的模组不再有 indigo 提供的自定义渲染(地形由 OptiFine 渲染)。
-- **想换回 indigo**:删掉 `fabric.mod.json` 里那个 `custom` 键并重新构建 —— 但那样 `ChunkBuilder$BuiltChunk$RebuildTask` 一加载就会因为缺失注入点而崩。
-
 ## 常见日志信息
 
 下列输出不影响运行:
@@ -119,3 +117,5 @@ mods/<OptiFine>.jar
 - 本项目遵循 **MPL-2.0**(`LICENSE.txt`),核心逻辑移植自 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)(作者 Modmuss50、Chocohead),移植文件保留来源说明。
 - **不包含、也不分发 OptiFine 本体**,OptiFine 版权归 sp614x 所有,请自行获取。
 - 逐轮排查过程与离线校验工具见 `docs/DEVELOPMENT.md`,`reference/upstream/` 保存了移植所依据的上游源码快照。
+
+- 希望它能工作
