@@ -52,7 +52,7 @@
 26.x 只对应 26.1.2 一个版本,从**仓库根目录**构建:
 
 ```powershell
-cd C:\Users\kynar\IdeaProjects\OptiFabric-Reforged
+cd I:\mods\OptiFabric
 git checkout 26.x          # 从发布分支构建(见文首的分支表)
 .\gradlew build --offline
 Copy-Item "build\libs\OptiFabric-Reforged-2.0.0+mc26.1.2.jar" dist -Force
@@ -77,7 +77,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
 ## 三、发到 GitHub
 
 ```powershell
-cd C:\Users\kynar\IdeaProjects\OptiFabric-Reforged
+cd I:\mods\OptiFabric
 git add -A
 git commit -m "OptiFabric Reforged 2.0.0+mc26.1.2: OptiFine on Fabric for 26.1.2"
 git remote add origin https://github.com/<你的用户名>/<仓库名>.git
