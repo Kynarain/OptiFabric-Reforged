@@ -18,7 +18,7 @@
 ## 二、构建发布包
 
 ```powershell
-cd C:\Users\kynar\IdeaProjects\OptiFabric
+cd I:\mods\OptiFabric
 .\gradlew build --offline
 ```
 
@@ -32,7 +32,7 @@ cd C:\Users\kynar\IdeaProjects\OptiFabric
 ## 三、发到 GitHub
 
 ```powershell
-cd C:\Users\kynar\IdeaProjects\OptiFabric
+cd I:\mods\OptiFabric
 git add -A
 git commit -m "OptiFabric 1.0.0+mc1.20.6: OptiFine on Fabric for 1.20.6"
 git branch -M main
