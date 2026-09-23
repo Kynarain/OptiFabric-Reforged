@@ -42,7 +42,7 @@
 1.21.x 全系列都从**仓库根目录同一个项目**构建,每个版本一个 jar:
 
 ```powershell
-cd C:\Users\kynar\IdeaProjects\OptiFabric-Reforged
+cd I:\mods\OptiFabric
 git checkout 1.21.x          # 从发布分支构建(见文首的分支表)
 foreach ($v in @("1.21","1.21.1","1.21.3","1.21.4","1.21.6","1.21.7","1.21.8","1.21.9","1.21.10","1.21.11")) {
 	.\gradlew build "-Pmc=$v" --offline
@@ -72,7 +72,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-versio
 ## 三、发到 GitHub
 
 ```powershell
-cd C:\Users\kynar\IdeaProjects\OptiFabric-Reforged
+cd I:\mods\OptiFabric
 git add -A
 git commit -m "OptiFabric 1.1.0+mc1.21.x: OptiFine on Fabric for 1.21 through 1.21.11"
 git remote add origin https://github.com/<你的用户名>/<仓库名>.git
