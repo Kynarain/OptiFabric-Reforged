@@ -6,7 +6,7 @@
 
 🇨🇳 中文版 | [🇬🇧 English](./README.md)
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.1.2-green.svg)](https://www.minecraft.net/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.2-green.svg)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric%20Loader-%E2%89%A5%200.19.5-blue.svg)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/License-MPL--2.0-lightgrey.svg)](LICENSE.txt)
@@ -15,7 +15,7 @@
 
 在 **Fabric Loader** 下加载 **OptiFine**。把 OptiFine 的 jar 和本模组一起放进 `mods/`,启动时会用 OptiFine 自带的补丁器给原版客户端打补丁、重建被搬走的 lambda,并把打过补丁的 Minecraft 类交给 Fabric Loader 的类转换器接管,从而让两者共存。**不包含、也不分发 OptiFine 本体。**
 
-本分支是 **26.x 线**,对应 **Minecraft 26.1.2**。1.21.x 线(Minecraft 1.21 – 1.21.11)在 [`1.21.x` 分支](../../tree/1.21.x)上独立开发,两条线的 jar **不能互相替代**。
+本分支是 **26.x 线**,对应 **Minecraft 26.2**(当前)与 **Minecraft 26.1.2**。1.21.x 线(Minecraft 1.21 – 1.21.11)在 [`1.21.x` 分支](../../tree/1.21.x)上独立开发,两条线的 jar **不能互相替代**。
 
 ## 📖 概览
 
@@ -24,7 +24,7 @@ OptiFine 不是 Fabric 模组:它的 jar 里是针对原版客户端类的字节
 Minecraft **26.1 起未混淆** —— 官方名就是运行期名字,既没有 yarn,也没有真正可用的 intermediary(26.1.2 只发布占位 `0.0.0`)。所以本线不取任何映射、需要 Loom 的非重映射 flavour,运行期命名空间是 `official`。本线还有**自己的 mod id**:有些模组声明 `"breaks": {"optifabric": "*"}`,而 Fabric Loader 按 **id** 匹配 —— 只改显示名没有用。
 
 **作者:** kynarain · 上游:Modmuss50、Chocohead
-**版本:** `2.0.0`(`OptiFabric-Reforged-2.0.0+mc26.1.2.jar`)
+**版本:** `2.1.0`(`OptiFabric-Reforged-2.1.0+mc26.2.jar`)
 **许可:** MPL-2.0
 
 ## ✨ 主要特性
@@ -84,7 +84,11 @@ mods/<OptiFine jar>
 PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版本名>/` 下,`.optifine/` 缓存也建在那里。
 
 ```powershell
-# 26.1.2 的 OptiFine(preview;路径是四段,补丁号带 K1 前缀)
+# 26.2 的 OptiFine(preview;路径是四段,补丁号带 K2 前缀)
+curl.exe -L -o preview_OptiFine_26.2_HD_U_K2_pre1.jar `
+  "https://bmclapi2.bangbang93.com/optifine/26.2/HD_U_K2/pre1"
+
+# 26.1.2 的 OptiFine(同样的形状,前缀是 K1)
 curl.exe -L -o preview_OptiFine_26.1.2_HD_U_K1_pre2.jar `
   "https://bmclapi2.bangbang93.com/optifine/26.1.2/HD_U_K1/pre2"
 ```
@@ -94,7 +98,7 @@ curl.exe -L -o preview_OptiFine_26.1.2_HD_U_K1_pre2.jar `
 需要 **JDK 25**,仓库根目录就是 Gradle 项目:
 
 ```powershell
-.\gradlew build          # -> build/libs/OptiFabric-Reforged-2.0.0+mc26.1.2.jar
+.\gradlew build          # -> build/libs/OptiFabric-Reforged-2.1.0+mc26.2.jar
 ```
 
 版本号必须与 Minecraft 版本成对出现,而且只通过一个脚本改:
@@ -110,29 +114,35 @@ curl.exe -L -o preview_OptiFine_26.1.2_HD_U_K1_pre2.jar `
 
 | | |
 |---|---|
-| Minecraft | **26.1.2**(本线只支持这一个版本) |
+| Minecraft | **26.2**(当前目标)—— 以及 **26.1.2**,同一份源码都支持 |
 | Fabric Loader | ≥ 0.19.5 |
 | Java | **25**(游戏自身的硬性要求;用 Java 21 会在窗口出现之前就失败) |
 | 侧 | 客户端 |
-| OptiFine | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`(目前只有 preview) |
-| Fabric API | 可选 —— 实测 `0.155.3+26.1.2` |
+| OptiFine | 26.2 用 `preview_OptiFine_26.2_HD_U_K2_pre1.jar`,26.1.2 用 `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`(两个都还是 preview) |
+| Fabric API | 可选 —— 26.2 实测 `0.161.0+26.2`,26.1.2 实测 `0.155.3+26.1.2` |
 
 ## 🤝 兼容性
 
 | Minecraft | 产物 | OptiFine 构建 | Java | 状态 |
 |---|---|---|---|---|
+| 26.2 | `OptiFabric-Reforged-2.1.0+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证 |
 | 26.1.2 | `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
 
-26.1.2 之后的版本都没有覆盖:26.1 的其他小版本与 26.2+ 需要各自重走一遍。而且 OptiFine 对 26.1、26.1.1、26.1.3、26.2、26.2.1、26.3 **一个构建都没发布过** —— 可以自己核一遍(判断依据是返回的**正文**是不是空数组):
+这一版是**把线拓宽**,不是把线搬走:同一份源码仍能为 26.1.2 构建,并跑完整条离线管线、数字与 2.0.0 当时记下的完全一致(见下面「验证状态」),所以 26.1.2 没有被丢开 —— 它那份 jar 只是没有变,26.1.2 上继续用 `2.0.0+mc26.1.2`。
+
+OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26.1.1、26.1.3、26.2.1、26.3 的**构建列表是空的** —— 可以自己核一遍(判断依据是返回的**正文**是不是空数组):
 
 ```powershell
 curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.1.2"   # 列出 pre1 / pre2
-curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.2"     # -> []
+curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.2"     # 列出 HD_U_K2(pre1)
+curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.3"     # -> []
 ```
+
+26.2.1 与 26.3 是 26.2 之后的版本,每个都要各自重新移植一遍 —— 而且得先有 OptiFine 的构建才能移,这就是这条线停在 26.2 的原因。
 
 | | |
 |---|---|
-| ✅ 可用 | OptiFine 的视频设置、缩放、连接纹理、动态光源、**光影**、**抗锯齿**,以及依赖 FRAPI 的模组自己生成的几何(用 LambdaBetterGrass 实测:更好的草与连接纹理正常,光影开启) |
+| ✅ 可用 | OptiFine 的视频设置、缩放、连接纹理、动态光源、**光影**、**抗锯齿**,以及依赖 FRAPI 的模组自己生成的几何(在 26.1.2 上用 LambdaBetterGrass 实测:更好的草与连接纹理正常,光影开启) |
 | ⚠️ 有意停用 | 两条 Fabric 渲染钩子:**移动方块提交**与**方块模型提交**(方块破坏裂纹仍然真的走 Fabric 的渲染器);这两条路径改由原版/OptiFine 绘制 |
 | ❌ 不兼容 | **Sodium**(已声明 `conflicts`),以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(已声明 `breaks`) |
 | 📄 OptiFine 侧限制 | OptiFine 看不到 Fabric 模组内部的资源(`[OptiFine] Unknown resource pack type: …ModNioResourcePack`);光影包与你的 OptiFine 版本不匹配时会打印自己的 `[Shaders]` 报错 |
@@ -140,16 +150,18 @@ curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.2"     # -> []
 ## 📊 验证状态
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1 -Version 26.2
 ```
 
-| 检查项 | 结果 |
-|---|---|
-| 补丁过的游戏类(JVM 验证器) | **567 / 567**,0 失败 |
-| OptiFine 自身的类(JVM 验证器) | **879 / 879**,0 失败(2 个 NeoForge-only 类不适用) |
-| ASM 数据流验证器 | **0 问题** |
-| `@At` 注入点 / mixin 成员引用 / 抽象契约 / 丢失的虚方法覆写 / 无法解析的引用 / invokedynamic 句柄 | **全部 0**(比 1.21.x 线还干净;那一线还剩几条属于已停用 indigo 的) |
-| 真机 | 启动、主界面、单人世界、区块重建、方块/物品/生物渲染、**抗锯齿**、**光影**、多人;无崩溃报告 |
+| 检查项 | **26.2** | 26.1.2(同一份源码,`-Version 26.1.2`) |
+|---|---|---|
+| 补丁过的游戏类(JVM 验证器) | **562 / 562**,0 失败 | **567 / 567**,0 失败 |
+| OptiFine 自身的类(JVM 验证器) | **879 / 879**,0 失败(2 个 NeoForge-only 类不适用) | **879 / 879**,0 失败(2.0.0 当时记下的数字) |
+| ASM 数据流验证器 | **0 问题** | **0 问题** |
+| `@At` 注入点 / mixin 成员引用 / 抽象契约 / 丢失的虚方法覆写 / 无法解析的引用 / invokedynamic 句柄 | **全部 0**(比 1.21.x 线还干净;那一线还剩几条属于已停用 indigo 的) | **全部 0** —— 与 2.0.0 记下的逐个相同 |
+| 真机 | 流水线跑通(`[OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)`)、世界打开、`[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` 且**编译 27 个 program**、无崩溃、无 mixin 变换失败 | 启动、主界面、单人世界、区块重建、方块/物品/生物渲染、**抗锯齿**、**光影**、多人(2.0.0 的记录) |
+
+26.2 那次真机只跑了 `ComplementaryReimagined_r5.9.1.zip` 这一个光影包,也没有重跑多人与抗锯齿 —— 那两项仍是 26.1.2 / 2.0.0 的记录。
 
 那两个"不适用"的类是 `optifine.OptiFineClassProcessor` 与 `optifine.VirtualJarContents`:它们实现的是 **NeoForge** 的 SPI(`net.neoforged.*`),Fabric 启动里永远不会加载。
 
@@ -159,7 +171,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
 
 1. **不支持开发环境** —— dev 命名空间是 `named`,需要两段式重映射
 2. **那两条被停用的钩子只是占位**,不是能用的实现
-3. **26.x 的其他版本没有移植** —— 每个都要针对新的官方名逐个重新定位冲突点(而且 OptiFine 对它们根本没有构建)
+3. **26.2 之后的版本没有移植** —— 26.2.1 与 26.3 都要针对新的官方名逐个重新定位冲突点,而且 OptiFine 对它们至今没有构建
 
 ## 📝 项目结构
 

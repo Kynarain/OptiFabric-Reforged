@@ -23,6 +23,9 @@
  * used instead; the Fabric screen API integration (compat.fabricscreenapi.Events) and the Text/DrawContext
  * compatibility shims upstream needed are gone; the dead "render(MatrixStack...)" target was dropped.
  *
+ * 26.2 renamed Minecraft#setScreen to #setScreenAndShow (26.1.2 has both, 26.2 only the new name), so this
+ * file calls #setScreenAndShow - which is the one name that compiles on both releases of the 26.x line.
+ *
  * NOT yet verified in game: 26.1 replaced "render into a draw context" with "extract a render state" plus a
  * separate renderer, so the version label is now added from extractRenderState instead of render. That is
  * the faithful reading of the new API, but it only holds up once it has been seen on screen.
@@ -114,7 +117,7 @@ public abstract class MixinTitleScreen extends Screen {
 		}
 		}
 
-		minecraft.setScreen(new ConfirmScreen(action, Component.literal("There was an error loading OptiFabric!").withStyle(ChatFormatting.RED),
+		minecraft.setScreenAndShow(new ConfirmScreen(action, Component.literal("There was an error loading OptiFabric!").withStyle(ChatFormatting.RED),
 				Component.literal(OptifabricError.getError()), Component.literal(helpButtonText).withStyle(ChatFormatting.GREEN), Component.literal(actionButtonText)));
 	}
 

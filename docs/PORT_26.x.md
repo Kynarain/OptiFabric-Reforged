@@ -791,7 +791,188 @@ mixin 变换失败 0 | crash 0 | 未捕获异常 0 | post chain 失败 0 | 干�
 所以针对这一线的命令与路径判断要按根目录来认,而不是按那批 `-p` 路径。
 
 **注意(这是当前状态,与上面那段历史相反)**:根目录**有** `build.gradle` / `settings.gradle` /
-`gradle.properties` —— 它就是这条分支上唯一的 Gradle 项目,所以裸敲 `.\gradlew build` 直接就能构建 26.1.2 的 jar;
+`gradle.properties` —— 它就是这条分支上唯一的 Gradle 项目,所以裸敲 `.\gradlew build` 直接就能构建 26.2 的 jar;
 这里既没有 `-p` 也没有 `-Pmc`。`-p` 是"两个项目"时期的用法(两条线各自的根目录现在就是自己的项目,都不再需要它),
 `-Pmc=` 只有 1.21.x 那条线有(它靠这个属性在十个版本里选一个)。IntelliJ 里把仓库根目录作为**一个**
 Gradle 项目导入即可。
+
+## 26.2 移植(Minecraft 26.2 + OptiFine `preview_OptiFine_26.2_HD_U_K2_pre1`)
+
+26.2 于 **2026-09-15** 发布,和 26.1.2 一样**未混淆**(官方名即运行名,没有 yarn,也没有真正可用的
+intermediary),所以这一轮**构建侧一个字都没改**:还是 Loom 的非重映射 flavour,目标版本只由根目录
+`gradle.properties` 的 `minecraft_version=26.2` 决定(Loader 0.19.5 / Java 25 / Fabric API `0.161.0+26.2`)。
+
+要改的只有**四处**,而且和上一轮一样,每一处都能追到一条扫描器输出、一条编译器报错或一条真机日志。四处的修法
+遵守同一条纪律:**旧判据不删,新判据并排加上** —— 目标缺失时 fixer 是空操作(`registerOfficialNameFixes` 里那几条
+注释写的就是这个),这才是"一份源码同时服务这条线的两个 MC 版本"的前提。
+
+OptiFine 26.2 的 preview 构建(BMCLAPI 镜像实测):
+
+```
+文件      preview_OptiFine_26.2_HD_U_K2_pre1.jar   (OptiFine 对 26.2 只发布了 K2 pre1 一个构建)
+大小      7783636 字节
+SHA-256   DB05B25F8AA5AC688A77354680EF939D4F3135350E64E7CCFE5996CFAF925927
+镜像      https://bmclapi2.bangbang93.com/optifine/26.2/HD_U_K2/pre1
+发布日期  2026-09-22(preview)
+```
+
+**26.2.1 与 26.3 支持不了**:这两版 Minecraft 确实存在,但 OptiFine 对它们**一个构建都没发布**,没有可移植的
+对象 —— 这就是这条线停在 26.2 的原因。
+
+### 1. `Minecraft.setScreen` 在 26.2 没了(编译期直接失败)
+
+26.2 把 `Minecraft.setScreen(Screen)` 换成了 **`setScreenAndShow(Screen)`**。`MixinTitleScreen` 里报告错误用的
+那行 `minecraft.setScreen(new ConfirmScreen(...))` 因此编译不过:
+
+```
+找不到符号: 方法 setScreen(ConfirmScreen)
+```
+
+26.1.2 上**两个名字都在**,所以改成 `setScreenAndShow` 是**两边都能编过**的那一个名字 ——
+这是本版唯一一处改写的 mixin 目标,也是四处里唯一一处不需要任何运行期判断的。
+
+### 2. `extractBlockOutline` 从 `LevelRenderer` 搬进了新类 `LevelExtractor`
+
+26.2 把整趟"关卡渲染状态"的处理抽进了新类 `net/minecraft/client/renderer/extract/LevelExtractor`,Fabric API
+跟着搬(它的处理器现在是 `LevelExtractorMixin.hasMaterialFlagProxy`,不再是 `LevelRendererMixin`)。于是 26.1.2 那条
+按 `LevelRenderer` 注册的判据在 26.2 上不再命中:
+
+```
+[NO INSTRUCTION] net/minecraft/client/renderer/extract/LevelExtractor.extractBlockOutline(
+    Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/state/level/LevelRenderState;)V
+  has no INVOKE of net/minecraft/client/renderer/block/dispatch/BlockStateModel.hasMaterialFlag(I)Z
+```
+
+也就是上一轮那个"注入目标消失"的老问题又发生了一次,只是换了个类名:OptiFine 又一次把原版方法体削成**转发给自己
+三参重载的薄壳**,Fabric 要重定向的那次 `hasMaterialFlag` 调用不在里面了。`OptifineFixer` 现在为 `LevelExtractor`
+补上同样的两件套:
+
+```java
+registerFix("net/minecraft/client/renderer/extract/LevelExtractor",
+        new RestoreVanillaMethodsFix(true, "extractBlockOutline"));
+registerFix("net/minecraft/client/renderer/extract/LevelExtractor",
+        new DropVanillaAbsentOverloadsFix("extractBlockOutline"));
+```
+
+**两条判据并存,不是替换**:26.1.2 上根本没有 `LevelExtractor` 这个类,这条新判据在那一边是空操作;反过来
+`LevelRenderer` 那条在 26.2 上是空操作。所以 26.1.2 的产物与 2.0.0 的产物在这件事上完全一致(见下面的基线)。
+
+### 3. 区块重建任务类改名:`RebuildTask` → `CompileTask`
+
+26.2 把 `SectionRenderDispatcher$RenderSection$RebuildTask` 改名为 **`...$CompileTask`**。OptiFine 那条
+`SectionCompiler.compile(...ChunkCacheOF..., III)` → `optifabric$compile` 的改名,靠 `CallSiteRedirectFix` 把
+**调用者一起改过去**,而这条 fixer 是按类名注册的:类名不跟着改,被改名的重载就只剩一个还在喊旧名字的调用者。
+`RuntimeContractScan` 报的正是它:
+
+```
+[patched caller] net/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection$CompileTask.doTask(...)
+    -> net/minecraft/client/renderer/chunk/SectionCompiler.compile(
+         Lnet/minecraft/core/SectionPos;Lnet/optifine/override/ChunkCacheOF;Lcom/mojang/blaze3d/vertex/VertexSorting;
+         Lnet/minecraft/client/renderer/SectionBufferBuilderPack;III)Lnet/minecraft/client/renderer/chunk/SectionCompiler$Results;
+   unpatched callers 0, optifine callers 0
+```
+
+`unpatched callers 0` 的意思是:**没有任何一条调用点被改过来** —— 真机上的后果是第一次区块重建(也就是开存档后的
+第一帧)直接 `NoSuchMethodError`。修法同上:同一条 `CallSiteRedirectFix` 也注册在 `CompileTask` 上,与
+`RebuildTask` 那条并存;26.1.2 上不存在 `CompileTask`,那条新判据在那里不做事,`RebuildTask` 那条照旧生效。
+
+### 4. OptiFine 26.2 preview 自己把光影开关拧死了(任何光影包都加载不了)
+
+这一条不在游戏侧,在 **OptiFine 26.2 自己那份构建**里:它的 `Shaders.loadShaderPack` 把 `true` 存进"cancelled"
+标志位之后,就跳过了 `getShaderPack()`,于是**任何光影包都加载不了**,连 OptiFine 自带的那份也不行
+(`shaderPack=(internal)` 同样)。
+
+这与 1.21.6 / 1.21.7 那次同源,差别在**指令形状**:26.2 会在赋值与判断**之间**读一次 `shaderPack` 设置项,于是
+老判据要求的 `ICONST_1, ISTORE, ILOAD, IFNE` 四步紧邻不再成立:
+
+```
+26.2:   iconst_1; istore_2;                                 <- cancelled = true
+        getstatic shadersConfig; getProperty("shaderPack", "(debug)"); astore_3;
+        iload_2; ifne -> 跳过 getShaderPack()                <- 判断
+```
+
+`OptifineJarFixer.enableShaderPackLoad` 现在**另外锚定那次被守护的 `getShaderPack(String)` 调用**:从它往前找
+守护它的 `IFNE`、再往前找被判断的那个局部变量,然后回溯到最近一次对它的 `ISTORE`,把前面那对
+`ICONST_1`/`ISTORE` 删掉;回溯时遇到别的写入就停手(那不是这个形状,不动)。两种形状都覆盖。
+
+实测(同一个实例布局、同一份 `optionsshaders.txt`、同一个光影包):
+
+| 运行 | 结果 |
+|---|---|
+| 26.2,**未修** | `[Shaders] No shaderpack loaded.`(`shaderPack=ComplementaryReimagined_r5.9.1.zip` 与 `shaderPack=(internal)` 都一样) |
+| 26.1.2,同一份配置 | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` |
+| 26.2,**修好之后** | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`,并编译 27 个 program |
+
+26.1.2 那份构建**没有这个缺陷**(不加任何修复就打出 `Loaded shaderpack`),所以这条修复在那一版上不生效、也不需要
+生效;它没有改变 26.1.2 的产物 —— 那一版重跑的离线数字与 2.0.0 的基线**逐个相同**(见下)。
+
+### 离线校验(两个口径)
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1 -Version 26.2
+powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1 -Version 26.1.2
+```
+
+| 检查 | 26.1.2(2.0.0 的基线) | **26.2** |
+|---|---|---|
+| Prepare | 567 (0 skipped, 0 failed) | **562 (0 skipped, 0 failed)** |
+| JVM verify | 567 / 567,0 失败 | **562 / 562,`FAILED: 0`** |
+| ASM verifier problems | 0 | **0** |
+| OptiFine 自身的类 | 879 / 879,0 失败 | **879 / 879,0 失败(2 个 NeoForge-only 类不适用)** |
+| AtTargetScan PROBLEMS | 0 | **0** |
+| RefmapScan MISSING members | 0 | **0** |
+| RuntimeContractScan | 0 / 0 / 0 | **0 / 0 / 0** |
+| LambdaScan DANGLING handles | 0 | **0** |
+
+26.1.2 那一列是**同一份源码**在改完之后重跑的:567 / 0 失败、四个扫描器全 0,与 2.0.0 当时记下的基线逐个数字相同
+—— 也就是说这四处改动对 26.1.2 的产物没有任何可测量的影响(前两处的"并存判据"与第四处的形状放宽都落在空操作上)。
+
+562 与 567 的差是**两个版本各自的类集合**不同(26.2 被补丁的游戏类本来就不是同一批),不是跳过了什么:
+两个口径的最后一行都是 `0 skipped, 0 failed`。
+
+### 真机(26.2)
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\launch-26.ps1 -Version 26.2 -World OptiTest
+```
+
+日志顺序:
+
+```
+[OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)
+Starting integrated minecraft server
+[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip
+Program loaded        ← 27 个
+```
+
+窗口标题 `Minecraft* 26.2 - 单人游戏`,无崩溃、无 mixin 变换失败。**光影只在这一个光影包上验证过**
+(`ComplementaryReimagined_r5.9.1.zip`);多人与抗锯齿这两项没有在 26.2 上重跑,那两项仍是 26.1.2 / 2.0.0 的记录。
+
+### harness 的改动(`test-downloads/`,该目录已被 `.gitignore` 排除,所以只在这里记录)
+
+这一轮的 harness 从"只认 26.1.2"改成了"按版本参数工作":
+
+1. `verify-26.ps1` 与 `launch-26.ps1` 都新增 **`-Version`** 参数(默认 `26.1.2`),不再把 26.1.2 写死在脚本里 ——
+   两个口径因此可以用同一条命令跑;
+2. **项目路径改为仓库根目录**(`v26.x\` 那个旧布局早就不在了);
+3. **Fabric API 版本从 maven metadata 推导**(后缀就是 `+<MC 版本>`),不再手写;
+4. **资源索引从版本 json 里读**(26.2 是 **32**,26.1.2 是 **30**)。
+
+一条**不是模组问题**的差异:**26.2 上快速进入世界必须给 `--quickPlayPath`**,26.1.2 少了它也照样进。对照实验:
+在 26.2 上把 OptiFabric 与 OptiFine 挪开(**只装 Fabric API,48 个模组**),快速进入世界同样停在标题界面 ——
+所以这是启动器/harness 的差异,与本次移植无关。
+
+### 26.2 基线(与上一节的 26.1.2 基线并列)
+
+| 检查 | 1.21.11 | 26.1.2(2.0.0) | **26.2** |
+|---|---|---|---|
+| Prepare | 570 (0 skipped, 0 failed) | 567 (0 skipped, 0 failed) | **562 (0 skipped, 0 failed)** |
+| JVM verify / ASM | 0 / 0 | 0 / 0 | **0 / 0** |
+| AtTargetScan PROBLEMS | 4(已知) | 0 | **0** |
+| RefmapScan MISSING | 0 | 0 | **0** |
+| RuntimeContractScan | 0 / 0 / 0 | 0 / 0 / 0 | **0 / 0 / 0** |
+| LambdaScan DANGLING | 0 | 0 | **0** |
+
+发布材料:`release/notes/mc26.2.md`(版本文案),`release/MANUAL_RELEASE.md` 里 26.2 那一行,
+以及 `release/publish.ps1` 的版本映射(`$defaultModVersion = "2.1.0"`,26.1.2 用 `$modVersions` 里的例外值
+`2.0.0`)。

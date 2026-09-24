@@ -5,14 +5,15 @@
 # "<版本>+mc" 的写法。手改漏一处就会出现文档与产物对不上,所以只走这个脚本。
 #
 #   .\release\version.ps1                                  # 看:当前版本,以及三类递增各会变成什么
-#   .\release\version.ps1 -Line 26.x -Kind minor           # 2.0.0 -> 2.1.0(真正写入)
-#   .\release\version.ps1 -Line 26.x -Kind patch -DryRun   # 2.0.0 -> 2.0.1,只看结果,不写文件
-#   .\release\version.ps1 -Line 26.x -Set 2.1.0-beta.1     # 直接指定(校验格式与优先级)
+#   .\release\version.ps1 -Line 26.x -Kind minor           # 2.1.0 -> 2.2.0(真正写入)
+#   .\release\version.ps1 -Line 26.x -Kind patch -DryRun   # 2.1.0 -> 2.1.1,只看结果,不写文件
+#   .\release\version.ps1 -Line 26.x -Set 2.2.0-beta.1     # 直接指定(校验格式与优先级)
 #   .\release\version.ps1 -Line 26.x -Part                 # 只打印当前版本号(给别的脚本用)
 #   .\release\version.ps1 -Line 26.x -RecordDigest         # 构建之后:把产物的字节数与 SHA-256 写回文档
 #
-# 本仓库只有 26.x 一条线,而它只对应 26.1.2 一个 MC 版本,所以整条线一起升版就行:逐 MC 版本的 -Mc 是给
-# "一份源码、每个 MC 版本一个 jar"那条线(1.21.x,在自己的分支上)用的,单版本线上给 -Mc 会被直接拒绝。
+# 本仓库只有 26.x 一条线,它现在覆盖 **26.2**(当前,基数就是这个产物的版本号)与 **26.1.2**(在 2.0.0 上发布、
+# 之后内容没变)。整条线一起升版用 -Kind / -Set;只给某一个 MC 版本升版用 -Mc —— 它改的是
+# release\publish.ps1 里那张逐 MC 版本的例外值表,而且只改写 "<版本>+mc<那个 MC 版本>" 的写法。
 #
 # 逐 MC 版本的例外值记在 release\publish.ps1 的 $modVersions 里(发布脚本本来就要靠它取文件名),
 # 没有例外的版本仍用项目的 gradle.properties 基数。文档里只有 "<版本>+mc<MC>" 这一串被改写,
@@ -33,9 +34,9 @@ param(
 	# Set an explicit version instead of incrementing one (validated like any other).
 	[string]$Set,
 	# Version one Minecraft version's jar instead of the whole line: the override map in release\publish.ps1
-	# gets the new value and only "<version>+mc<Mc>" references are rewritten. That is what a line with one
-	# jar per Minecraft version needs (1.21.x, on its own branch) - rebuilding the other releases at a new
-	# version would freeze nothing and prove nothing. This line has a single jar, so it is refused here.
+	# gets the new value and only "<version>+mc<Mc>" references are rewritten. This line now has two jars
+	# (26.2 on the base version, 26.1.2 frozen at the version it was released under), so this is how one of
+	# them is bumped without rebuilding the other - the other release's figures stay frozen (§3).
 	[string]$Mc,
 	# Print the line's current version and nothing else.
 	[switch]$Part,
@@ -59,7 +60,9 @@ $lines = @{
 	"26.x" = @{
 		project  = "."
 		artifact = "OptiFabric-Reforged"
-		mc       = "26.1.2"
+		# The release this line is currently built for: it names the jar in the messages below and it is the
+		# Minecraft version -RecordDigest uses when it is not given -Mc.
+		mc       = "26.2"
 	}
 }
 
@@ -122,8 +125,8 @@ function Get-LineVersions([string]$line) {
 }
 
 # The per-Minecraft-version exceptions in release\publish.ps1: @{ "26.1.2" = "2.0.0" } means that jar is 2.0.0
-# while the rest of the line stays on the gradle.properties base. This line has one Minecraft version, so the
-# table ships empty: it is what -Mc would write, and -Mc is refused while there is only one version to pick from.
+# while the rest of the line stays on the gradle.properties base. 26.1.2 was released at 2.0.0 and its content
+# has not changed since (§3), so it has an entry; 26.2 has none and uses the base. This table is what -Mc writes.
 function Get-McVersionMap {
 	$text = Read-ReleaseFile "release/publish.ps1"
 	$match = [regex]::Match($text, '(?s)\$modVersions\s*=\s*@\{(.*?)\}')
@@ -347,7 +350,7 @@ if ($RecordDigest) {
 	# Only the paragraphs that mention *this* artifact+version are rewritten. A blanket search for
 	# "<n> 字节" would also hit the 1.1.x-era figures in dist\README.txt and in the changelog, which belong
 	# to the other release line - one jar per Minecraft version means those numbers are all different. The
-	# pattern carries the Minecraft version as well ("2.0.0+mc26.1.2"), so no other jar's figures can be caught.
+	# pattern carries the Minecraft version as well ("2.1.0+mc26.2"), so no other jar's figures can be caught.
 	$versionPattern = [regex]::Escape("$current+mc$mc")
 	# The unit is kept as written: the Chinese documents say "字节", docs\RELEASE_NOTES.md says "bytes".
 	$sizePattern = '([\d,]{4,})(\s*(?:字节|bytes))'

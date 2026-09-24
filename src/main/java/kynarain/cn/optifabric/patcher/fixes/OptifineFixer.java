@@ -74,6 +74,23 @@ public class OptifineFixer {
 		registerFix("net/minecraft/client/renderer/LevelRenderer",
 				new DropVanillaAbsentOverloadsFix("extractBlockOutline"));
 
+		//net/minecraft/client/renderer/extract/LevelExtractor (fabric-renderer-api-v1 LevelExtractorMixin)
+		//The same conflict one release later, on the class 26.2 moved it to. The entry above stopped matching
+		//because 26.2 extracted the whole level-render-state pass into this new class, and Fabric API followed
+		//the move (its handler is LevelExtractorMixin.hasMaterialFlagProxy now, not LevelRendererMixin):
+		//
+		//  AtTargetScan: [NO INSTRUCTION] LevelExtractor.extractBlockOutline(Camera, LevelRenderState)V has no
+		//  INVOKE of BlockStateModel.hasMaterialFlag(I)Z
+		//
+		//OptiFine again reduced the vanilla body to a wrapper that forwards to its own three-argument overload,
+		//so the call the handler redirects is not there. Both entries are kept rather than swapped: this one is
+		//inert on 26.1.2 (the class does not exist there, and a fixer whose target is absent does nothing) and
+		//the one above is inert here, which is what lets one source serve both releases of the line.
+		registerFix("net/minecraft/client/renderer/extract/LevelExtractor",
+				new RestoreVanillaMethodsFix(true, "extractBlockOutline"));
+		registerFix("net/minecraft/client/renderer/extract/LevelExtractor",
+				new DropVanillaAbsentOverloadsFix("extractBlockOutline"));
+
 		//net/minecraft/client/renderer/ScreenEffectRenderer (fabric-renderer-api-v1 ScreenEffectRendererMixin)
 		//The 1.21.x class_4603 / method_24225 entry by its official names. Its onReturnGetInWallBlockState takes a
 		//@Local BlockPos$MutableBlockPos, and vanilla's getViewBlockingState keeps one in scope while OptiFine's
@@ -119,6 +136,24 @@ public class OptifineFixer {
 								+ "Lnet/minecraft/client/renderer/SectionBufferBuilderPack;III)Lnet/minecraft/client/renderer/chunk/SectionCompiler$Results;",
 						"optifabric$compile",
 						"OptiFine's compile overload was renamed so the mixin's descriptor-less name is unambiguous again"));
+
+		//...and 26.2's caller of the same method. The class is the same code under a new name: Mojang renamed
+		//SectionRenderDispatcher$RenderSection$RebuildTask to ...$CompileTask in 26.2, so the redirect above
+		//stopped finding any call site and the renamed overload was left with its only caller still invoking
+		//the old name - a NoSuchMethodError on the first chunk rebuild, which is the first frame after a world
+		//is opened. RuntimeContractScan reported exactly that:
+		//
+		//  [patched caller] ...$CompileTask.doTask(...) -> SectionCompiler.compile(SectionPos, ChunkCacheOF,
+		//  VertexSorting, SectionBufferBuilderPack, III)Results      (unpatched callers 0, optifine callers 0)
+		//
+		//Kept alongside the RebuildTask entry for the same reason as the LevelExtractor pair above: one source,
+		//two releases of the line, and an absent target is a no-op.
+		registerFix("net/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection$CompileTask",
+				new CallSiteRedirectFix("net/minecraft/client/renderer/chunk/SectionCompiler", "compile",
+						"(Lnet/minecraft/core/SectionPos;Lnet/optifine/override/ChunkCacheOF;Lcom/mojang/blaze3d/vertex/VertexSorting;"
+								+ "Lnet/minecraft/client/renderer/SectionBufferBuilderPack;III)Lnet/minecraft/client/renderer/chunk/SectionCompiler$Results;",
+						"optifabric$compile",
+						"26.2 renamed the chunk rebuild task class, so its call to OptiFine's renamed compile has to follow too"));
 
 		//Fabric's FRAPI hook for terrain models injects into the vanilla loop (at BlockPos.betweenClosed) and
 		//redirects the block tesselation call in it. OptiFine's own overload has no such loop, so that hook now

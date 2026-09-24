@@ -46,6 +46,18 @@
  *    loaded on those releases whatever the user picks - the settings UI still offers them and silently does
  *    nothing. The 1.21.8 preview and everything later read the flag the two checks above set instead, which is
  *    the shape this fixer restores by dropping those two instructions.
+ *
+ *    The 26.2 preview (K2_pre1) does it again, in a shape the "nothing in between" rule above cannot see: the
+ *    assignment is there, but the read of the shaderPack setting sits between it and the check -
+ *
+ *      iconst_1; istore_2;                                  <- cancelled = true
+ *      shadersConfig.getProperty("shaderPack", "(debug)");  <- the config read, in between
+ *      astore_3; iload_2; ifne -> skip getShaderPack()      <- the check
+ *
+ *    - so the pair is not adjacent and the flag is true by the time it is tested. Measured on the same
+ *    instance, same optionsshaders.txt, same shaderpack: 26.1.2 loads it ("[Shaders] Loaded shaderpack: ...",
+ *    54 programs compiled) while 26.2 loads nothing, not even with shaderPack=(internal). The matcher therefore
+ *    also anchors on the guarded getShaderPack call and walks back to the assignment, which covers both shapes.
  */
 package kynarain.cn.optifabric.mod;
 
@@ -309,6 +321,66 @@ public class OptifineJarFixer {
 						+ " (Shaders.loadShaderPack sets cancelled = true right before checking it); the load works again");
 
 				break;
+			}
+
+			// The 26.2 preview (K2_pre1) does the same thing in a shape the adjacency check above cannot see: the
+			// config read sits between the assignment and the check.
+			//
+			//   26.2:     iconst_1; istore_2;  getstatic shadersConfig; ... getProperty("shaderPack", ...);
+			//             astore_3; iload_2; ifne -> skip getShaderPack
+			//
+			// so the pair is present but not adjacent, the check above never matches, and the flag is true by the
+			// time it is tested - 26.2 loaded no shaderpack at all, not even OptiFine's own built-in one
+			// ("[Shaders] No shaderpack loaded." with shaderPack=(internal), against a 26.1.2 build of the same
+			// mod that loaded the same pack from the same configuration file). The search is therefore anchored on
+			// the guarded call instead of on adjacency: find getShaderPack(String), walk back to the IFNE that
+			// guards it and the ILOAD of the flag it tests, then remove the last ICONST_1/ISTORE of that flag
+			// before the check, stopping at anything else that writes it.
+			if (!changed) {
+				int callIndex = -1;
+
+				for (int i = 0; i < instructions.size(); i++) {
+					if (!(instructions.get(i) instanceof MethodInsnNode call)) continue;
+					if (call.getOpcode() != Opcodes.INVOKESTATIC) continue;
+					if (!"getShaderPack".equals(call.name)) continue;
+					if (!"(Ljava/lang/String;)Lnet/optifine/shaders/IShaderPack;".equals(call.desc)) continue;
+					callIndex = i;
+					break;
+				}
+
+				//The call's own argument push sits between the guard and the call, so the look-back is short but not 1.
+				int guardIndex = -1;
+				for (int i = callIndex - 1; i >= Math.max(0, callIndex - 4); i--) {
+					if (instructions.get(i) instanceof JumpInsnNode jump && jump.getOpcode() == Opcodes.IFNE) { guardIndex = i; break; }
+				}
+
+				int flag = -1;
+				if (guardIndex > 0 && instructions.get(guardIndex - 1) instanceof VarInsnNode test && test.getOpcode() == Opcodes.ILOAD) flag = test.var;
+
+				//Walk back to the NEAREST write of the guarded local. It is either the assignment the guard is
+				//testing - in which case the constant before it says whether the load is disabled - or a different
+				//value, in which case the guard tests that one and this method is not the shape being repaired.
+				//
+				//Iterating downward hits the ISTORE before the constant that feeds it, which is why the test looks
+				//at i - 1: an earlier attempt tested "instructions.get(i) is ICONST_1 and i + 1 is the store" while
+				//walking down, so it saw the store first, treated it as somebody else's write and stopped one
+				//instruction short of the pair it was looking for (matched nothing, printed nothing).
+				for (int i = guardIndex - 1; flag >= 0 && i > 0; i--) {
+					if (!(instructions.get(i) instanceof VarInsnNode store)) continue;
+					if (store.getOpcode() != Opcodes.ISTORE || store.var != flag) continue;
+
+					if (instructions.get(i - 1) instanceof InsnNode push && push.getOpcode() == Opcodes.ICONST_1) {
+						method.instructions.remove(instructions.get(i));
+						method.instructions.remove(instructions.get(i - 1));
+						changed = true;
+
+						System.out.println("[OptiFabric] OptiFine's build for this release cancels the shaderpack load"
+								+ " unconditionally, with the configuration read in between the assignment and the check"
+								+ " (Shaders.loadShaderPack, 26.2 K2_pre1); the load works again");
+					}
+
+					break;
+				}
 			}
 		}
 

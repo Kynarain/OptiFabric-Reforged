@@ -6,7 +6,7 @@
 
 [🇨🇳 中文版](./README_CN.md) | 🇬🇧 English
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.1.2-green.svg)](https://www.minecraft.net/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.2-green.svg)](https://www.minecraft.net/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric%20Loader-%E2%89%A5%200.19.5-blue.svg)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/License-MPL--2.0-lightgrey.svg)](LICENSE.txt)
@@ -15,7 +15,7 @@
 
 Load **OptiFine** under **Fabric Loader**. Put OptiFine's jar next to this mod and it patches the vanilla client with OptiFine's own patcher, rebuilds the lambdas whose targets moved, and hands the patched Minecraft classes to Fabric Loader's class transformer — so both can live in one client. **OptiFine itself is not bundled or redistributed.**
 
-This branch is the **26.x line** and covers **Minecraft 26.1.2**. The 1.21.x line (Minecraft 1.21 – 1.21.11) lives on the [`1.21.x` branch](../../tree/1.21.x) and is developed separately; jars from the two lines are **not interchangeable**.
+This branch is the **26.x line** and covers **Minecraft 26.2** (current) and **Minecraft 26.1.2**. The 1.21.x line (Minecraft 1.21 – 1.21.11) lives on the [`1.21.x` branch](../../tree/1.21.x) and is developed separately; jars from the two lines are **not interchangeable**.
 
 ## 📖 Overview
 
@@ -24,7 +24,7 @@ OptiFine is not a Fabric mod: its jar holds bytecode patches against vanilla cli
 Minecraft **26.1 and newer is unobfuscated** — the official names *are* the runtime names, and there is neither yarn nor a real intermediary to remap through (26.1.2 publishes only the `0.0.0` placeholder). So this line takes no mappings, needs Loom's non-remapping flavour, and runs in the `official` namespace. The line also carries **its own mod id**, because some mods declare `"breaks": {"optifabric": "*"}` and Fabric Loader matches that by **id** — a display-name change would not be enough.
 
 **Author:** kynarain · upstream: Modmuss50, Chocohead
-**Version:** `2.0.0` (`OptiFabric-Reforged-2.0.0+mc26.1.2.jar`)
+**Version:** `2.1.0` (`OptiFabric-Reforged-2.1.0+mc26.2.jar`)
 **License:** MPL-2.0
 
 ## ✨ Key Features
@@ -84,7 +84,11 @@ Intermediate files live in `<game dir>/.optifine/<OptiFine version>/`:
 With version isolation enabled (PCL2 / HMCL), the game directory and `mods/` both live under `versions/<name>/`, and the `.optifine/` cache is created there too.
 
 ```powershell
-# OptiFine 26.1.2 (preview; the path has four segments and the patch carries the K1 prefix)
+# OptiFine 26.2 (preview; the path has four segments and the patch carries the K2 prefix)
+curl.exe -L -o preview_OptiFine_26.2_HD_U_K2_pre1.jar `
+  "https://bmclapi2.bangbang93.com/optifine/26.2/HD_U_K2/pre1"
+
+# OptiFine 26.1.2 (the same shape, K1 prefix)
 curl.exe -L -o preview_OptiFine_26.1.2_HD_U_K1_pre2.jar `
   "https://bmclapi2.bangbang93.com/optifine/26.1.2/HD_U_K1/pre2"
 ```
@@ -94,7 +98,7 @@ curl.exe -L -o preview_OptiFine_26.1.2_HD_U_K1_pre2.jar `
 **JDK 25** is required, and the repository root *is* the Gradle project:
 
 ```bash
-./gradlew build          # -> build/libs/OptiFabric-Reforged-2.0.0+mc26.1.2.jar
+./gradlew build          # -> build/libs/OptiFabric-Reforged-2.1.0+mc26.2.jar
 ```
 
 The version number always travels with the Minecraft version, and it only ever changes through one script:
@@ -110,29 +114,35 @@ The development environment is not supported: `gradlew runClient` is refused out
 
 | | |
 |---|---|
-| Minecraft | **26.1.2** (this line supports exactly this release) |
+| Minecraft | **26.2** (the current target) — and **26.1.2**, from the same source |
 | Fabric Loader | ≥ 0.19.5 |
 | Java | **25** (the game's own hard requirement; Java 21 fails before the window appears) |
 | Side | client |
-| OptiFine | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` (preview only, for now) |
-| Fabric API | optional — tested with `0.155.3+26.1.2` |
+| OptiFine | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` for 26.2, `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` for 26.1.2 (preview only, both of them) |
+| Fabric API | optional — tested with `0.161.0+26.2` on 26.2 and `0.155.3+26.1.2` on 26.1.2 |
 
 ## 🤝 Compatibility
 
 | Minecraft | jar | OptiFine build | Java | State |
 |---|---|---|---|---|
+| 26.2 | `OptiFabric-Reforged-2.1.0+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ verified in game |
 | 26.1.2 | `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
 
-Nothing after 26.1.2 is covered: other 26.1.x releases and 26.2+ would each need their own pass. OptiFine has published **no build at all** for 26.1, 26.1.1, 26.1.3, 26.2, 26.2.1 or 26.3 — check for yourself (the answer is the *body* being an empty array):
+This release **widens** the line instead of moving it: the same source still builds for 26.1.2 and goes through the whole offline pipeline there with the numbers 2.0.0 recorded (see *Verified State* below), so 26.1.2 was not dropped — its jar is simply unchanged, and `2.0.0+mc26.1.2` stays the build to use on that release.
+
+OptiFine has a build for these two releases and for no other: 26.1, 26.1.1, 26.1.3, 26.2.1 and 26.3 have **empty build lists** — check for yourself (the answer is the *body* being an empty array):
 
 ```powershell
 curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.1.2"   # lists pre1 / pre2
-curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.2"     # -> []
+curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.2"     # lists HD_U_K2 (pre1)
+curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.3"     # -> []
 ```
+
+26.2.1 and 26.3 are the releases after 26.2, and each would need its own pass — and an OptiFine build to port against first, which is why this line stops at 26.2.
 
 | | |
 |---|---|
-| ✅ Works | OptiFine's video settings, zoom, connected textures, dynamic lights, **shaders**, **anti-aliasing** — and FRAPI mods' own geometry (verified with LambdaBetterGrass: better grass and connected textures, with shaders on) |
+| ✅ Works | OptiFine's video settings, zoom, connected textures, dynamic lights, **shaders**, **anti-aliasing** — and FRAPI mods' own geometry (verified on 26.1.2 with LambdaBetterGrass: better grass and connected textures, with shaders on) |
 | ⚠️ Neutralised | two Fabric render hooks are intentionally inert: the **moving-block** and **block-model** submits (block-breaking crack overlays still go through Fabric's renderer); those paths are drawn by vanilla/OptiFine instead |
 | ❌ Incompatible | **Sodium** (declared `conflicts`), plus `no_fog`, `thallium`, `xradiation`, `ryoamiclights` (declared `breaks`) |
 | 📄 OptiFine-side limits | OptiFine cannot see resources inside Fabric mods (`[OptiFine] Unknown resource pack type: …ModNioResourcePack`); shader packs print their own `[Shaders]` errors when they do not match your OptiFine build |
@@ -140,16 +150,18 @@ curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.2"     # -> []
 ## 📊 Verified State
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1 -Version 26.2
 ```
 
-| Check | Result |
-|---|---|
-| Patched game classes (JVM verifier) | **567 / 567**, 0 failures |
-| OptiFine's own classes (JVM verifier) | **879 / 879**, 0 failures (2 NeoForge-only classes are not applicable) |
-| ASM data-flow verifier | **0 problems** |
-| `@At` points / mixin member references / abstract contracts / lost virtual overrides / unresolvable references / invokedynamic handles | **all 0** (cleaner than the 1.21.x line, which still carries a few disabled-Indigo misses) |
-| Live | startup, title screen, single-player, chunk rebuild, block/item/entity rendering, **anti-aliasing**, **shaders**, multiplayer — no crash reports |
+| Check | **26.2** | 26.1.2 (same source, `-Version 26.1.2`) |
+|---|---|---|
+| Patched game classes (JVM verifier) | **562 / 562**, 0 failures | **567 / 567**, 0 failures |
+| OptiFine's own classes (JVM verifier) | **879 / 879**, 0 failures (2 NeoForge-only classes are not applicable) | **879 / 879**, 0 failures (as recorded for 2.0.0) |
+| ASM data-flow verifier | **0 problems** | **0 problems** |
+| `@At` points / mixin member references / abstract contracts / lost virtual overrides / unresolvable references / invokedynamic handles | **all 0** (cleaner than the 1.21.x line, which still carries a few disabled-Indigo misses) | **all 0** — the numbers 2.0.0 recorded |
+| Live | pipeline runs (`[OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)`), the world opens, `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` and **27 programs** compile, no crash, no mixin failure | startup, title screen, single-player, chunk rebuild, block/item/entity rendering, **anti-aliasing**, **shaders**, multiplayer (the 2.0.0 record) |
+
+The 26.2 in-game pass covered `ComplementaryReimagined_r5.9.1.zip` and no other shader pack, and it did not repeat the multiplayer or anti-aliasing passes, which are still the 26.1.2/2.0.0 record.
 
 The two "not applicable" classes are `optifine.OptiFineClassProcessor` and `optifine.VirtualJarContents`: they implement **NeoForge** SPIs (`net.neoforged.*`) and are never loaded under Fabric.
 
@@ -159,7 +171,7 @@ The full record — every crash, the bytecode behind it and the fix — is in [`
 
 1. **No development-environment support** — dev runs in the `named` namespace and would need a two-stage remapping
 2. **The two neutralised hooks are inert**, not reimplemented
-3. **Other 26.x releases are not ported** — each needs its own pass over the official-name conflicts (OptiFine ships no build for them anyway)
+3. **Nothing after 26.2 is ported** — 26.2.1 and 26.3 each need their own pass over the official-name conflicts, and OptiFine ships no build for either of them yet
 
 ## 📝 Project Structure
 
