@@ -80,7 +80,7 @@
 没有为它们发布任何构建,这也是这条线停在 26.2 的原因。
 
 产物:`OptiFabric-Reforged-2.1.0+mc26.2.jar` — 139528 字节
-`SHA-256: 构建后由 release\version.ps1 -Line 26.x -RecordDigest 写进这一节`
+`SHA-256: ED3DD297FBE7356C9A9C69DCAAD9FC3C2AC9000C12FEB7BCF3CE9D3277028D8D`
 
 ## 1.1.2+mc1.21.3 … 1.1.2+mc1.21.11 — 抗锯齿全线修复,并纠正 1.1.1 里的错误结论
 

@@ -19,7 +19,7 @@
 
 | 版本 | 版本号 / 标签 | jar | 字节 | SHA-256 | 正文 |
 |---|---|---|---|---|---|
-| 26.2 | 2.1.0+mc26.2 / v2.1.0 | dist\OptiFabric-Reforged-2.1.0+mc26.2.jar | 139528 | 构建后由 `-RecordDigest` 写入 | release/notes/mc26.2.md |
+| 26.2 | 2.1.0+mc26.2 / v2.1.0 | dist\OptiFabric-Reforged-2.1.0+mc26.2.jar | 139528 | ED3DD297FBE7356C9A9C69DCAAD9FC3C2AC9000C12FEB7BCF3CE9D3277028D8D | release/notes/mc26.2.md |
 | 26.1.2 | 2.0.0+mc26.1.2 / v2.0.0 | dist\OptiFabric-Reforged-2.0.0+mc26.1.2.jar | 177166 | FBB432C2D9C8B0E7E06F0FDA4A0C1B6A8F302D5D09ABD7CE67F13CBE04A5CF60 | release/notes/mc26.1.2.md |
 
 ## 三处平台各自要填什么
