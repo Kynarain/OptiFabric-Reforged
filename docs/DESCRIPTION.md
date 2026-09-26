@@ -4,7 +4,7 @@
 
 > ⚠️ CurseForge 审核规则:描述与简介**可以有其它语言,但英文必须排在其前面**。所以本文件把英文放在前两节、中文放后两节;往 CF 粘贴时,每个字段里都先贴英文、再贴中文即可(只想用英文就只贴英文那节)。
 > 另:简介(S) 建议不超过一句,用每个语言里的"一句版"最稳。
-> 本文件覆盖 **26.x** 这一条线,现在有 **26.2** 与 **26.1.2** 两个产物:`OptiFabric-Reforged-2.1.0+mc26.2.jar`(当前)
+> 本文件覆盖 **26.x** 这一条线,现在有 **26.2** 与 **26.1.2** 两个产物:`OptiFabric-Reforged-2.1.1+mc26.2.jar`(当前)
 > 与 `OptiFabric-Reforged-2.0.0+mc26.1.2.jar`(不变)。26.1 起 Minecraft **未混淆**(官方名即运行名),而且**要求
 > Java 25**;另一条线(1.21.x,混淆名 + yarn/intermediary,十个 MC 版本)在自己的分支上,两边的 jar 不能互相替代。
 
@@ -12,7 +12,7 @@
 
 ## 一、简要描述(English)
 
-> Run OptiFine on Fabric. Put OptiFabric and your own OptiFine jar into `mods/` — OptiFabric patches OptiFine into the game at startup so it works alongside Fabric API. Built for **Minecraft 26.2** (and 26.1.2), which ship unobfuscated and need Java 25. Verified in game on 26.2: the world opens and shaders load; on 26.1.2 (2.0.0): singleplayer, multiplayer, models, chunks, shaders and anti-aliasing.
+> Run OptiFine on Fabric. Put OptiFabric and your own OptiFine jar into `mods/` — OptiFabric patches OptiFine into the game at startup so it works alongside Fabric API. Built for **Minecraft 26.2** (and 26.1.2), which ship unobfuscated and need Java 25. Verified in game on 26.2: the world opens and renders normally — **shaders are not available with the 26.2 OptiFine build** (selecting a pack does nothing). On 26.1.2 (2.0.0): singleplayer, multiplayer, models, chunks, shaders and anti-aliasing.
 
 **One-liner:**
 
@@ -30,11 +30,11 @@ A Fabric mod that brings **OptiFine** to Fabric. Put OptiFabric and **your own O
 
 ### Supported versions
 
-**This line supports Minecraft 26.2 (current) and Minecraft 26.1.2.** Each has its own jar: `2.1.0+mc26.2` is the new one, and the 26.1.2 jar (`2.0.0+mc26.1.2`) is unchanged — 26.2 was added without dropping 26.1.2, and the same source still builds and passes the whole offline pipeline for it. Minecraft 26.1 and newer ships **unobfuscated** — the official names are the runtime names — so this line carries no `official → intermediary` mappings at all and does not remap OptiFine:
+**This line supports Minecraft 26.2 (current) and Minecraft 26.1.2.** Each has its own jar: `2.1.1+mc26.2` is the current one (it replaces `2.1.0+mc26.2`, which forced OptiFine's cancelled shaderpack load back on and made a world with a shaderpack selected draw only particles), and the 26.1.2 jar (`2.0.0+mc26.1.2`) is unchanged — 26.2 was added without dropping 26.1.2, and the same source still builds and passes the whole offline pipeline for it. Minecraft 26.1 and newer ships **unobfuscated** — the official names are the runtime names — so this line carries no `official → intermediary` mappings at all and does not remap OptiFine:
 
 | Minecraft | OptiFabric file | OptiFine build |
 |---|---|---|
-| **26.2** | `OptiFabric-Reforged-2.1.0+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` (**Java 25**) |
+| **26.2** | `OptiFabric-Reforged-2.1.1+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` (**Java 25**) |
 | **26.1.2** | `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` (**Java 25**) |
 
 Those two are the only releases OptiFine has a build for on this line (26.1, 26.1.1, 26.1.3, 26.2.1 and 26.3 have empty build lists), and each new release would need its own port — **no jar of this line runs on another release**, and 26.2.1 / 26.3 cannot be supported until OptiFine publishes a build for them. The other line, 1.21.x (obfuscated, ten releases), lives on its own branch and its jars are not interchangeable with this one.
@@ -57,7 +57,7 @@ At the earliest point of startup (the loader's `preLaunch`), OptiFabric will:
 ### Installation
 
 1. Install the **26.2** client (or **26.1.2**) with **Fabric Loader 0.19.5 or newer**, on **Java 25** (the game's own hard requirement).
-2. Put `OptiFabric-Reforged-2.1.0+mc26.2.jar` and **your own OptiFine 26.2 jar** into `.minecraft/mods/`.
+2. Put `OptiFabric-Reforged-2.1.1+mc26.2.jar` and **your own OptiFine 26.2 jar** into `.minecraft/mods/`.
    The OptiFine file is named like `preview_OptiFine_26.2_HD_U_K2_pre1.jar` — dropping it in is enough, you do **not** need to run its installer first. On 26.1.2, use `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` with `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` instead.
 3. Start the game. The OptiFine version appears on the title screen when it works.
 
@@ -76,7 +76,7 @@ Fabric API can be loaded alongside (this port is adapted for it specifically; ve
 
 ### Compatibility issues that are fixed
 
-All of these were found through real crashes and traced to the bytecode. Nearly every conflict sits in the renderer, because that is where OptiFine and Fabric API overlap most — and because the pipeline moved on again in 26.1, and once more in 26.2 (which moved the block-outline pass into a new `LevelExtractor` class and renamed the chunk rebuild task, and whose OptiFine preview cancels the shader-pack load outright — all of them handled the same way, and both releases verified):
+All of these were found through real crashes and traced to the bytecode. Nearly every conflict sits in the renderer, because that is where OptiFine and Fabric API overlap most — and because the pipeline moved on again in 26.1, and once more in 26.2 (which moved the block-outline pass into a new `LevelExtractor` class and renamed the chunk rebuild task — both handled the same way, on both releases). The 26.2 OptiFine preview also cancels the shader-pack load outright, and that one is deliberately **not** repaired (see the known issues):
 
 - OptiFine hollows `LevelRenderer.extractBlockOutline` into a thin wrapper and moves the body into an overload of its own, leaving **two methods of one name**. A Fabric mixin that names it without a descriptor then resolves neither and the whole class fails to transform. The vanilla body is restored, and the **overloads vanilla no longer has are dropped** (keeping them makes the injection fail with `LVTGeneratorError` while it looks for method metadata);
 - the same trick is harder on **chunk building**: `SectionCompiler.compile`'s public overload is still called from outside and must not be removed → it is **renamed and its call site redirected**, which keeps the contract and puts the injection point back on the real body;
@@ -92,14 +92,15 @@ The full list (symptom / cause / fix) is in the changelog and in `docs/PORT_26.x
 
 ### Verified state
 
-Offline, every class is loaded and linked in a single loader (the same way the game does it) and checked with the JVM verifier plus an ASM data-flow verifier — on **26.2: 562 patched game classes and 879 OptiFine classes**, 0 failures, 0 verifier problems, plus five scanners (mixin member references, `@At` points, abstract contracts/overrides/references and invokedynamic handles) with **every one of them clean**; the same source on 26.1.2 gives **567** patched classes with the same all-zero result. (Two OptiFine classes implement NeoForge's SPI and are never loaded on Fabric, so they are excluded.) In game on 26.2: the pipeline runs, the world opens, `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` and 27 programs compile — no crash, no mixin failure. On 26.1.2 (the 2.0.0 record): startup, title screen, singleplayer, chunk rebuilds, block/item/entity rendering, **anti-aliasing**, **shaders** and **multiplayer** all work, with no crash report — and Indigo registers its own renderer (`[Indigo] Registering Indigo renderer!`) with Fabric API's hooks drawing through it. With LambdaBetterGrass installed, its better grass renders and its connected textures are correct, shaders on.
+Offline, every class is loaded and linked in a single loader (the same way the game does it) and checked with the JVM verifier plus an ASM data-flow verifier — on **26.2: 562 patched game classes and 879 OptiFine classes**, 0 failures, 0 verifier problems, plus five scanners (mixin member references, `@At` points, abstract contracts/overrides/references and invokedynamic handles) with **every one of them clean**; the same source on 26.1.2 gives **567** patched classes with the same all-zero result. (Two OptiFine classes implement NeoForge's SPI and are never loaded on Fabric, so they are excluded.) In game on 26.2: the pipeline runs and the world opens and renders normally, with `[Shaders] No shaderpack loaded.` — **shaders are not available on 26.2 with this OptiFine build** (see the known issues) — no crash, no mixin failure. On 26.1.2 (the 2.0.0 record): startup, title screen, singleplayer, chunk rebuilds, block/item/entity rendering, **anti-aliasing**, **shaders** and **multiplayer** all work, with no crash report — and Indigo registers its own renderer (`[Indigo] Registering Indigo renderer!`) with Fabric API's hooks drawing through it. With LambdaBetterGrass installed, its better grass renders and its connected textures are correct, shaders on.
 
 ### Known issues
 
 - **Conflicts with Sodium** — both are renderers; do not install them together.
 - **Java 25 is required** — starting 26.2 (or 26.1.2) on Java 21 fails before the game window appears. That is the game's own requirement, not this mod's.
 - **Nothing after 26.2 is supported** — 26.2.1 and 26.3 have no OptiFine build at all, and every new release needs its own port.
-- **The 26.2 OptiFine is a preview build** (`HD_U_K2_pre1`), and shaders were verified on it with one pack (`ComplementaryReimagined_r5.9.1.zip`).
+- **The 26.2 OptiFine is a preview build** (`HD_U_K2_pre1`).
+- **Shaders are not available on 26.2 with this OptiFine build.** Its `Shaders.loadShaderPack` cancels the load outright (`[Shaders] No shaderpack loaded.`), and that is left exactly as OptiFine wrote it. OptiFine's shader settings still let you pick a pack and it then **silently does nothing**. Forcing the load back on — what `2.1.0` did — is worse: with `ComplementaryReimagined_r5.9.1.zip` selected the game logged `[Shaders] Loaded shaderpack: …`, compiled 27 shader programs, and drew **only particles, with the blocks see-through**, with no error in any log; the same instance with `shaderPack=OFF` drew normally. On 26.1.2 shaders work as before.
 - **Incompatible with RyoamicLights** — OptiFine replaces the whole video settings screen (including its superclass), which makes that mod's injection fail and crashes as soon as the screen is opened. OptiFine has **built-in dynamic lights** (Video Settings → Quality → Dynamic Lights), so it is not needed. (Confirmed on the 1.20.6 port; declared the same way here.)
 - **Mods that rely on FRAPI/indigo** get Indigo's real renderer here, Fabric API's hooks draw through it, and a model's own render-time geometry is rendered — verified with LambdaBetterGrass (better grass and connected textures both correct, shaders on).
 - **Two Fabric API hooks are intentionally inert**: the moving-block and block-model submit hooks are redirected to code nobody calls, so those two submits are drawn by the vanilla/OptiFine path; the block-breaking overlay path is untouched and does go through Fabric's renderer.
@@ -136,7 +137,7 @@ A port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) by Mod
 
 ## 三、简要描述(中文)
 
-> OptiFabric Reforged 让 OptiFine 与 Fabric 共存。把它和自备的、同版本的 OptiFine 一起放进 `mods/`,启动时自动完成解包与兼容性修补。为 **Minecraft 26.2**(以及 26.1.2)构建 —— 那两版游戏**未混淆**(官方名即运行名),并且**要 Java 25**。已专门适配 Fabric API;真机验证:26.2 上进世界、光影正常加载,26.1.2(2.0.0)上单人、多人、光影、抗锯齿、区块与物品渲染。
+> OptiFabric Reforged 让 OptiFine 与 Fabric 共存。把它和自备的、同版本的 OptiFine 一起放进 `mods/`,启动时自动完成解包与兼容性修补。为 **Minecraft 26.2**(以及 26.1.2)构建 —— 那两版游戏**未混淆**(官方名即运行名),并且**要 Java 25**。已专门适配 Fabric API;真机验证:26.2 上进世界、世界正常渲染,但**这个 OptiFine 构建下光影不可用**(在 OptiFine 里选光影包不会有任何效果);26.1.2(2.0.0)上单人、多人、光影、抗锯齿、区块与物品渲染。
 
 **更短的一句版**(GitHub About / 列表摘要):
 
@@ -154,11 +155,13 @@ A port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) by Mod
 
 ### 支持的版本
 
-**这一线支持 Minecraft 26.2(当前)与 Minecraft 26.1.2**,每个版本一个 jar:`2.1.0+mc26.2` 是新出的那个,26.1.2 的 `2.0.0+mc26.1.2` 原样不变 —— 加 26.2 没有丢开 26.1.2,同一份源码仍能为它构建并通过整条离线管线。26.1 起游戏**未混淆**(官方名就是运行名),所以这一线**没有 `official→intermediary` 映射表要打包**,也不做重映射:
+**这一线支持 Minecraft 26.2(当前)与 Minecraft 26.1.2**,每个版本一个 jar:`2.1.1+mc26.2` 是当前那个(它取代
+`2.1.0+mc26.2` —— 那一版把 OptiFine 取消掉的光影包加载强行打开,选了光影包的世界只画粒子),26.1.2 的
+`2.0.0+mc26.1.2` 原样不变 —— 加 26.2 没有丢开 26.1.2,同一份源码仍能为它构建并通过整条离线管线。26.1 起游戏**未混淆**(官方名就是运行名),所以这一线**没有 `official→intermediary` 映射表要打包**,也不做重映射:
 
 | Minecraft | OptiFabric 文件 | OptiFine 构建 |
 |---|---|---|
-| **26.2** | `OptiFabric-Reforged-2.1.0+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar`(**要 Java 25**) |
+| **26.2** | `OptiFabric-Reforged-2.1.1+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar`(**要 Java 25**) |
 | **26.1.2** | `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`(**要 Java 25**) |
 
 这两个是这一线上 OptiFine 出过构建的全部版本(26.1 / 26.1.1 / 26.1.3 / 26.2.1 / 26.3 的构建列表都是空的),而且每再来一个版本都要各自重新移植 —— **别拿这个 jar 去顶别的版本**,26.2.1 与 26.3 在 OptiFine 发布构建之前也支持不了。另一条线是 1.21.x(混淆名,十个 MC 版本),在自己的分支上,两边的 jar 不能互相替代。
@@ -181,7 +184,7 @@ OptiFine 是为原版(以及 Forge)编写的:它的补丁是照着**某一个具
 ### 安装
 
 1. 用 **Fabric Loader 0.19.5 或更高**安装 **26.2**(或 **26.1.2**)的客户端,并且**必须用 Java 25**(游戏本身的硬要求,不是本模组的要求)。
-2. 把 `OptiFabric-Reforged-2.1.0+mc26.2.jar` 和**你自备的 26.2 的 OptiFine jar** 一起放进 `.minecraft/mods/`。
+2. 把 `OptiFabric-Reforged-2.1.1+mc26.2.jar` 和**你自备的 26.2 的 OptiFine jar** 一起放进 `.minecraft/mods/`。
    OptiFine 的文件名形如 `preview_OptiFine_26.2_HD_U_K2_pre1.jar`,**直接放进去即可**,不需要先运行它的安装器。26.1.2 上则改用 `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` + `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`。
 3. 启动游戏。标题界面出现 OptiFine 版本号就说明生效了。
 
@@ -200,7 +203,7 @@ Fabric API 可以一起加载(本模组专门针对它做过适配;26.2 实测 0
 
 ### 已修复的兼容问题(均来自真机崩溃,逐个定位到字节码)
 
-冲突几乎全集中在渲染器上 —— 那正是 OptiFine 与 Fabric API 重叠最多的地方,而 26.1 的渲染管线迈了一步,26.2 又迈了一步(方块描边那一趟搬进了新类 `LevelExtractor`、区块重建任务改了名,而且这一版 OptiFine 的 preview 直接把光影包加载整段取消 —— 三处都按同样的办法处理,两个版本都验过):
+冲突几乎全集中在渲染器上 —— 那正是 OptiFine 与 Fabric API 重叠最多的地方,而 26.1 的渲染管线迈了一步,26.2 又迈了一步(方块描边那一趟搬进了新类 `LevelExtractor`、区块重建任务改了名 —— 两处都按同样的办法处理,两个版本都验过)。26.2 这一版 OptiFine 的 preview 还把光影包加载整段取消掉了,而那一处**故意不修**(见「已知问题」):
 
 - OptiFine 把 `LevelRenderer.extractBlockOutline` 掏成一层空壳、实现挪进自己的重载 → 补回原版方法体,同时**丢掉原版已经不存在的那几个重载**(留着它们,注入点会因找不到方法元数据而直接报 `LVTGeneratorError`);
 - 同一招用到**区块构建**上更棘手:`SectionCompiler.compile` 的公开重载仍被外部调用,**不能删** → 改成**改名 + 把调用点一起重定向**,契约保住了,注入点也回到了真实方法体上;
@@ -216,14 +219,15 @@ Fabric API 可以一起加载(本模组专门针对它做过适配;26.2 实测 0
 
 ### 验证状态
 
-离线:把**与游戏一致的单一加载器**里的所有类逐个加载+链接,并用 JVM 验证器与 ASM 数据流验证器双向检查 —— **26.2 上是 562 个被补丁的游戏类**与 **879 个 OptiFine 自身的类**全部通过,0 失败、0 验证器问题;再加 5 个扫描器(mixin 成员引用、`@At` 注入点、抽象契约/覆写/引用、invokedynamic 句柄),**全部为 0**;同一份源码的 26.1.2 口径是 **567** 个补丁类,结果同样全 0。(OptiFine 有 2 个类实现的是 **NeoForge** 的 SPI,在 Fabric 上永远不会加载,已排除。)真机:26.2 上流水线跑通、世界打开、`[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` 且编译 27 个 program,无崩溃、无 mixin 变换失败;26.1.2(2.0.0 的记录)上启动、主界面、单人世界、区块重建、方块/物品/生物渲染、**抗锯齿**、**光影**、**多人**全部正常,无崩溃报告;进世界时 Indigo 注册了真正的渲染器(`[Indigo] Registering Indigo renderer!`),Fabric API 的钩子从它上面绘制。装 LambdaBetterGrass 实测:**"更好的草"正常、连接纹理正确(光影开启)**。
+离线:把**与游戏一致的单一加载器**里的所有类逐个加载+链接,并用 JVM 验证器与 ASM 数据流验证器双向检查 —— **26.2 上是 562 个被补丁的游戏类**与 **879 个 OptiFine 自身的类**全部通过,0 失败、0 验证器问题;再加 5 个扫描器(mixin 成员引用、`@At` 注入点、抽象契约/覆写/引用、invokedynamic 句柄),**全部为 0**;同一份源码的 26.1.2 口径是 **567** 个补丁类,结果同样全 0。(OptiFine 有 2 个类实现的是 **NeoForge** 的 SPI,在 Fabric 上永远不会加载,已排除。)真机:26.2 上流水线跑通、世界打开并**正常渲染**、日志 `[Shaders] No shaderpack loaded.`(**26.2 上光影不可用**,见「已知问题」)、无崩溃、无 mixin 变换失败;26.1.2(2.0.0 的记录)上启动、主界面、单人世界、区块重建、方块/物品/生物渲染、**抗锯齿**、**光影**、**多人**全部正常,无崩溃报告;进世界时 Indigo 注册了真正的渲染器(`[Indigo] Registering Indigo renderer!`),Fabric API 的钩子从它上面绘制。装 LambdaBetterGrass 实测:**"更好的草"正常、连接纹理正确(光影开启)**。
 
 ### 已知问题
 
 - **与 Sodium 冲突**:两者都是渲染器,请勿同时安装。
 - **必须用 Java 25**:用 Java 21 启动 26.2(或 26.1.2)会在游戏窗口出现之前就失败。这是游戏本身的要求、不是本模组的限制。
 - **26.2 之后不支持**:26.2.1 与 26.3 根本没有 OptiFine 构建,而且每个新版本都需要各自重新移植。
-- **26.2 的 OptiFine 是 preview 构建**(`HD_U_K2_pre1`),光影也只在那一个光影包(`ComplementaryReimagined_r5.9.1.zip`)上验证过。
+- **26.2 的 OptiFine 是 preview 构建**(`HD_U_K2_pre1`)。
+- **26.2 上光影不可用(这个 OptiFine 构建的限制)**:它的 `Shaders.loadShaderPack` 直接把加载取消掉(日志 `[Shaders] No shaderpack loaded.`),现在这段字节码**原样留成 OptiFine 写的样子**。OptiFine 的光影设置里仍然可以选包,选了**什么都不会发生、也不会报错**。把加载强行打开(`2.1.0` 的做法)只会更糟:选 `ComplementaryReimagined_r5.9.1.zip` 时日志打出 `[Shaders] Loaded shaderpack: …`、编译 27 个 program,而画面**只画粒子、方块透明**,任何日志里都没有报错;同一个实例把 `shaderPack=OFF` 就正常。26.1.2 上光影照旧可用。
 - **与 RyoamicLights 不兼容**:OptiFine 把视频设置界面整个换成了自己的实现(连父类都换掉),该模组注入失败会导致开界面即崩。OptiFine **自带动态光源**(视频设置 → 品质 → 动态光源),不需要它。(该结论来自 1.20.6 移植的实测,这里沿用同样的声明。)
 - **依赖 FRAPI/indigo 的模组**在这一线上拿到的是**真正的渲染器**:Indigo 会注册自己的渲染器、Fabric API 的钩子真的从它上面画过去,而且**模组自己实时生成的几何会被渲染**(用 LambdaBetterGrass 实测:更好的草与连接纹理都正常,光影开启)。
 - **两个 Fabric API 钩子被有意中和**:"移动方块提交"与"方块模型提交"两处做了重定向,这两类提交由原版/OptiFine 路径绘制;方块破坏裂纹那条没有动,它确实走 Fabric 的渲染器。

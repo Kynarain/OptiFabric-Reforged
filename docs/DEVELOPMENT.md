@@ -1399,7 +1399,9 @@ NullPointerException: Cannot read field "norm" because "multiTex" is null
 (`Minecraft.setScreen` → `setScreenAndShow`),两处是"官方名搬家/改名",一处在 OptiFine 自己那份 jar 里 ——
 **没有一处是渲染管线重构**。下面三条是运行期/构建期发现。记在这里的理由与 1.21.x 那几节一样:这类冲突**不会**报成
 "mixin 变换失败",而是各自以编译错误、静默不生效或开存档第一帧崩溃的形式出现,认得出症状才能下次少走一遍。
-每一处都注明了它为什么对 26.1.2 是**空操作** —— 一份源码服务这条线的两个 MC 版本,靠的就是这个。
+前两处注明了它为什么对 26.1.2 是**空操作** —— 一份源码服务这条线的两个 MC 版本,靠的就是这个。第三处是例外:那条
+判据**命中过**,真机测出它反而把画面改坏了,于是 **2.1.1 又把它整段删掉、那处字节码原样留给 OptiFine** ——
+26.2 上"光影不可用"因此是一条明确的限制,而不是一项待办的修复。
 (完整叙事、harness 改动与发布材料见 [`PORT_26.x.md`](PORT_26.x.md) 的「26.2 移植」一节。)
 
 ### 1. `extractBlockOutline`:`LevelRenderer` → 新类 `LevelExtractor`(官方名搬家)
@@ -1444,16 +1446,16 @@ OptiFine 把 `SectionCompiler.compile(...ChunkCacheOF..., III)` 改名成 `optif
 **对 26.1.2 为什么是空操作**:那一版这个类叫 `RebuildTask`,`CompileTask` 那条判据没有目标;`RebuildTask` 那条照旧
 生效,所以 26.1.2 的区块重建路径一个字都没变(数字上也印证了:567 / 0 失败,四个扫描器全 0)。
 
-### 3. OptiFine 26.2 preview:光影包加载被无条件取消(缺陷在 OptiFine 自己那份 jar 里)
+### 3. OptiFine 26.2 preview:光影包加载被无条件取消 —— **测量之后决定不动它**(缺陷在 OptiFine 自己那份 jar 里)
 
 症状很干净:**光影包一个都加载不了**,连 OptiFine 自带的那份也不行。同一实例布局、同一份 `optionsshaders.txt`、
-同一个光影包,两边只差 OptiFine 版本:
+同一个光影包,三边的差别只在"对那句取消做了什么":
 
-| 运行 | 日志 |
-|---|---|
-| 26.2,未修 | `[Shaders] No shaderpack loaded.`(`shaderPack=ComplementaryReimagined_r5.9.1.zip` 与 `shaderPack=(internal)` 都一样) |
-| 26.1.2,同一份配置 | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` |
-| 26.2,修好之后 | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`,并编译 **27 个 program** |
+| 运行 | 日志 | 画面 |
+|---|---|---|
+| 26.2,取消留着不动(= **2.1.1** 的状态) | `[Shaders] No shaderpack loaded.`(`shaderPack=ComplementaryReimagined_r5.9.1.zip` 与 `shaderPack=(internal)` 都一样) | **世界正常渲染** |
+| 26.1.2,同一份配置 | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` | 正常 |
+| 26.2,把加载强行打开(= **2.1.0**) | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`,编译 **27 个 program** | **只有粒子,方块透明** |
 
 根因:26.2 的 `Shaders.loadShaderPack` 把 `true` 存进 "cancelled" 标志位之后跳过 `getShaderPack()` —— 与 1.21.6 /
 1.21.7 同源,但**指令形状不同**:26.2 在赋值与判断之间夹了一次 `shaderPack` 配置读取,
@@ -1465,13 +1467,23 @@ iload_2; ifne -> 跳过 getShaderPack()                   <- 判断
 ```
 
 所以老判据(要求 `ICONST_1, ISTORE, ILOAD, IFNE` 四步**紧邻**)在这份构建上一次都没命中 —— 而且它不打印任何东西
-(方法返回 null,管线认为"这个版本不需要修",于是缺陷静默通过)。`OptifineJarFixer.enableShaderPackLoad` 现在改为
-**锚定那次被守护的 `getShaderPack(String)` 调用**:往前找守护它的 `IFNE`、再往前找被判断的那个局部变量,然后回溯到
-最近一次对它的 `ISTORE`,若前一条是 `ICONST_1` 就删掉这一对;回溯中遇到别的写入就停手(那不是这个形状,不动)。
-两种形状都覆盖,所以 1.21.6 / 1.21.7 那条老路径不受影响。
+(方法返回 null,管线认为"这个版本不需要修",于是缺陷静默通过)。2.1.0 因此把 `OptifineJarFixer.enableShaderPackLoad`
+改为**锚定那次被守护的 `getShaderPack(String)` 调用**:往前找守护它的 `IFNE`、再往前找被判断的那个局部变量,然后回溯到
+最近一次对它的 `ISTORE`,若前一条是 `ICONST_1` 就删掉这一对;回溯中遇到别的写入就停手。两种形状都覆盖 ——
+判据**确实命中了 26.2**,那一版上于是打出了 `Loaded shaderpack`。
+
+**但真机测量证明这一步是错的,而且比它要修的缺陷更糟**:选了光影包的世界**只画粒子、方块是透视的**,27 个 program
+编译完成而**任何日志里都没有报错**;同一个实例把 `shaderPack=OFF`(或把取消留着不动)就画得正常。也就是说这一版
+OptiFine 的光影管线还没做完,那句无条件取消**正是让它不插手画面的开关** —— 删掉它换不来可用的光影,只会把"光影设置
+没反应"换成"世界看不见"。
+
+**2.1.1 的处理:把那条只为 26.2 写的扩展判据整段删除**,26.2 那种形状**原样保留 OptiFine 写的样子**;这次测量的
+结论写在 `OptifineJarFixer` 的类注释与那段行内注释里。1.21.6 / 1.21.7 那种形状(四步紧邻)的修复**不变**(那是另一种
+字节码形状,也是一种不同的缺陷)。26.2 上"光影不可用"因此写进 README / `release/notes/` 的**已知限制**,而不是留成
+一项待修的缺陷。
 
 **对 26.1.2 为什么是空操作**:那一版的 OptiFine **没有这个缺陷**(不加任何修复就直接打出 `Loaded shaderpack`),
-这条修复在那里没有东西可删。
+这条判据在那里没有东西可删 —— 2.1.1 把它删掉之后,那一版的行为与离线数字一个字都没变。
 
 ### 这一轮的离线基线(两个 MC 版本对照)
 
@@ -1483,9 +1495,10 @@ iload_2; ifne -> 跳过 getShaderPack()                   <- 判断
 
 真机(26.2,`test-downloads\launch-26.ps1 -Version 26.2 -World OptiTest`):流水线跑通
 (`[OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)`)、世界打开(`Starting integrated minecraft server`)、
-`[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`、`Program loaded` 27 个、无崩溃、无 mixin 变换失败;
-窗口标题 `Minecraft* 26.2 - 单人游戏`。**光影只在这一个光影包上验证过**,多人与抗锯齿没有在 26.2 上重跑
-(那两项仍是 26.1.2 / 2.0.0 的记录)。
+无崩溃、无 mixin 变换失败;窗口标题 `Minecraft* 26.2 - 单人游戏`。光影那一行按上面第 3 条的实测:
+**留着 OptiFine 的取消不动就是 `[Shaders] No shaderpack loaded.`,世界正常渲染** —— 这正是 2.1.1 在 26.2 上的预期状态
+(**26.2 上光影不可用**);把它强行打开(2.1.0 的做法)则是 `Loaded shaderpack` 加**只有粒子的画面**。多人与抗锯齿
+没有在 26.2 上重跑(那两项仍是 26.1.2 / 2.0.0 的记录)。
 
 ## 与上游 OptiFabric 的差异
 

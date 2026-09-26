@@ -1,7 +1,7 @@
 ﻿# NOTE: keep this file UTF-8 WITH BOM. Windows PowerShell reads .ps1 as ANSI when there is no BOM, and the
 # Chinese text below then mis-parses (a trailing quote gets eaten and the whole file fails to load).
 <#
-    把 dist/ 里那个 jar 发到三个平台。逐版一个发布条目,版本号就是 <版本>+mc<MC版本>(当前是 2.1.0+mc26.2)。
+    把 dist/ 里那个 jar 发到三个平台。逐版一个发布条目,版本号就是 <版本>+mc<MC版本>(当前是 2.1.1+mc26.2)。
 
     用法:
       # 先看要执行什么(不联网、不改远端)
@@ -32,7 +32,7 @@ $root = Split-Path -Parent $PSScriptRoot
 # 本仓库只有 26.x 一条发布线(见 release\MANUAL_RELEASE.md)。
 # 版本基数:$defaultModVersion 是这一线**当前在发**的那个产物的版本号 —— 26.2 那一份。
 $versions = @("26.1.2", "26.2")
-$defaultModVersion = "2.1.0"
+$defaultModVersion = "2.1.1"
 # 逐 MC 版本的例外值:某个版本单独升过版就写在这里。26.1.2 是在 2.0.0 上发布的,之后内容没变(§3),
 # 所以它有自己的例外值;表里没有的版本(26.2)用上面的基数。整条线一起升版用 -Kind / -Set,
 # 只给某一个 MC 版本升版用 -Mc(见 docs\VERSIONING.md 第五节)。

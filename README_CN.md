@@ -24,7 +24,7 @@ OptiFine 不是 Fabric 模组:它的 jar 里是针对原版客户端类的字节
 Minecraft **26.1 起未混淆** —— 官方名就是运行期名字,既没有 yarn,也没有真正可用的 intermediary(26.1.2 只发布占位 `0.0.0`)。所以本线不取任何映射、需要 Loom 的非重映射 flavour,运行期命名空间是 `official`。本线还有**自己的 mod id**:有些模组声明 `"breaks": {"optifabric": "*"}`,而 Fabric Loader 按 **id** 匹配 —— 只改显示名没有用。
 
 **作者:** kynarain · 上游:Modmuss50、Chocohead
-**版本:** `2.1.0`(`OptiFabric-Reforged-2.1.0+mc26.2.jar`)
+**版本:** `2.1.1`(`OptiFabric-Reforged-2.1.1+mc26.2.jar`)
 **许可:** MPL-2.0
 
 ## ✨ 主要特性
@@ -81,6 +81,8 @@ mods/<OptiFine jar>
 3. 用 **Fabric 版本**启动,不要用启动器自己注入 OptiFine 的那个版本。
 4. 首次启动会明显变慢(要跑完整条补丁流水线),之后走缓存。标题界面出现 OptiFine 版本号、视频设置里出现 OptiFine 选项即表示成功。
 
+**26.2 上不要期待光影**:这个 OptiFine 构建下,在 OptiFine 里选光影包不会有任何效果(原因见下面「兼容性」)。世界本身打开、渲染正常。光影在 26.1.2 上是可用的。
+
 PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版本名>/` 下,`.optifine/` 缓存也建在那里。
 
 ```powershell
@@ -98,7 +100,7 @@ curl.exe -L -o preview_OptiFine_26.1.2_HD_U_K1_pre2.jar `
 需要 **JDK 25**,仓库根目录就是 Gradle 项目:
 
 ```powershell
-.\gradlew build          # -> build/libs/OptiFabric-Reforged-2.1.0+mc26.2.jar
+.\gradlew build          # -> build/libs/OptiFabric-Reforged-2.1.1+mc26.2.jar
 ```
 
 版本号必须与 Minecraft 版本成对出现,而且只通过一个脚本改:
@@ -125,10 +127,14 @@ curl.exe -L -o preview_OptiFine_26.1.2_HD_U_K1_pre2.jar `
 
 | Minecraft | 产物 | OptiFine 构建 | Java | 状态 |
 |---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.1.0+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证 |
+| 26.2 | `OptiFabric-Reforged-2.1.1+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**没有光影**,见下) |
 | 26.1.2 | `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
 
-这一版是**把线拓宽**,不是把线搬走:同一份源码仍能为 26.1.2 构建,并跑完整条离线管线、数字与 2.0.0 当时记下的完全一致(见下面「验证状态」),所以 26.1.2 没有被丢开 —— 它那份 jar 只是没有变,26.1.2 上继续用 `2.0.0+mc26.1.2`。
+`2.1.1` 是修订版,它**取代 `2.1.0+mc26.2`**:那一版把 OptiFine 取消掉的光影包加载强行打开,而选了光影包之后世界
+**只画粒子、方块透明**(编译了 27 个 shader program,任何日志里都没有报错)。`2.1.1` 把那段字节码**原样留成
+OptiFine 写的样子**。这条线并没有因此变窄:同一份源码仍能为 26.1.2 构建,并跑完整条离线管线、数字与 2.0.0 当时
+记下的完全一致(见下面「验证状态」),所以 26.1.2 没有被丢开 —— 它那份 jar 只是没有变,26.1.2 上继续用
+`2.0.0+mc26.1.2`。
 
 OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26.1.1、26.1.3、26.2.1、26.3 的**构建列表是空的** —— 可以自己核一遍(判断依据是返回的**正文**是不是空数组):
 
@@ -142,7 +148,8 @@ curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.3"     # -> []
 
 | | |
 |---|---|
-| ✅ 可用 | OptiFine 的视频设置、缩放、连接纹理、动态光源、**光影**、**抗锯齿**,以及依赖 FRAPI 的模组自己生成的几何(在 26.1.2 上用 LambdaBetterGrass 实测:更好的草与连接纹理正常,光影开启) |
+| ✅ 可用 | OptiFine 的视频设置、缩放、连接纹理、动态光源、**抗锯齿**,以及依赖 FRAPI 的模组自己生成的几何(在 26.1.2 上用 LambdaBetterGrass 实测:更好的草与连接纹理正常,光影开启)。**光影只在 26.1.2 上可用**(2.0.0 的记录);26.2 上**不可用** —— 见下一行 |
+| ⚠️ 26.2 的光影 | **这个 OptiFine 构建上不可用。** 26.2 的 preview 在 `Shaders.loadShaderPack` 里取消了光影包加载(日志 `[Shaders] No shaderpack loaded.`),现在这段字节码**原样留成 OptiFine 写的样子**。OptiFine 的光影设置里仍然可以选包,但选了**什么都不会发生、也不会报错**。把加载强行打开(2.1.0 的做法)只会更糟:日志打出 `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`、编译 27 个 program,而世界**只画粒子、方块透明** |
 | ⚠️ 有意停用 | 两条 Fabric 渲染钩子:**移动方块提交**与**方块模型提交**(方块破坏裂纹仍然真的走 Fabric 的渲染器);这两条路径改由原版/OptiFine 绘制 |
 | ❌ 不兼容 | **Sodium**(已声明 `conflicts`),以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(已声明 `breaks`) |
 | 📄 OptiFine 侧限制 | OptiFine 看不到 Fabric 模组内部的资源(`[OptiFine] Unknown resource pack type: …ModNioResourcePack`);光影包与你的 OptiFine 版本不匹配时会打印自己的 `[Shaders]` 报错 |
@@ -159,9 +166,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
 | OptiFine 自身的类(JVM 验证器) | **879 / 879**,0 失败(2 个 NeoForge-only 类不适用) | **879 / 879**,0 失败(2.0.0 当时记下的数字) |
 | ASM 数据流验证器 | **0 问题** | **0 问题** |
 | `@At` 注入点 / mixin 成员引用 / 抽象契约 / 丢失的虚方法覆写 / 无法解析的引用 / invokedynamic 句柄 | **全部 0**(比 1.21.x 线还干净;那一线还剩几条属于已停用 indigo 的) | **全部 0** —— 与 2.0.0 记下的逐个相同 |
-| 真机 | 流水线跑通(`[OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)`)、世界打开、`[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` 且**编译 27 个 program**、无崩溃、无 mixin 变换失败 | 启动、主界面、单人世界、区块重建、方块/物品/生物渲染、**抗锯齿**、**光影**、多人(2.0.0 的记录) |
+| 真机 | 流水线跑通(`[OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)`)、世界打开并**正常渲染**、日志 `[Shaders] No shaderpack loaded.` —— **26.2 上光影不可用**(选包也不会有任何效果)、无崩溃、无 mixin 变换失败 | 启动、主界面、单人世界、区块重建、方块/物品/生物渲染、**抗锯齿**、**光影**、多人(2.0.0 的记录) |
 
-26.2 那次真机只跑了 `ComplementaryReimagined_r5.9.1.zip` 这一个光影包,也没有重跑多人与抗锯齿 —— 那两项仍是 26.1.2 / 2.0.0 的记录。
+26.2 那次真机测的就是光影这件事本身:把被取消的加载强行打开(`2.1.0` 的做法)会编译 27 个 program,然后
+**只画粒子、方块透明**,而且任何日志里都没有报错;把 OptiFine 的取消留着不动则世界正常渲染。多人与抗锯齿没有在
+26.2 上重跑 —— 那两项仍是 26.1.2 / 2.0.0 的记录。
 
 那两个"不适用"的类是 `optifine.OptiFineClassProcessor` 与 `optifine.VirtualJarContents`:它们实现的是 **NeoForge** 的 SPI(`net.neoforged.*`),Fabric 启动里永远不会加载。
 
@@ -172,6 +181,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
 1. **不支持开发环境** —— dev 命名空间是 `named`,需要两段式重映射
 2. **那两条被停用的钩子只是占位**,不是能用的实现
 3. **26.2 之后的版本没有移植** —— 26.2.1 与 26.3 都要针对新的官方名逐个重新定位冲突点,而且 OptiFine 对它们至今没有构建
+4. **26.2 上用不了光影** —— 这个 OptiFine 构建里那句取消加载原样留着,在 OptiFine 里选光影包不会有任何效果;强行打开则只画粒子。26.1.2 上光影照旧可用
 
 ## 📝 项目结构
 

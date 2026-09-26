@@ -802,9 +802,11 @@ Gradle 项目导入即可。
 intermediary),所以这一轮**构建侧一个字都没改**:还是 Loom 的非重映射 flavour,目标版本只由根目录
 `gradle.properties` 的 `minecraft_version=26.2` 决定(Loader 0.19.5 / Java 25 / Fabric API `0.161.0+26.2`)。
 
-要改的只有**四处**,而且和上一轮一样,每一处都能追到一条扫描器输出、一条编译器报错或一条真机日志。四处的修法
+要改的只有**四处**,而且和上一轮一样,每一处都能追到一条扫描器输出、一条编译器报错或一条真机日志。前三处的修法
 遵守同一条纪律:**旧判据不删,新判据并排加上** —— 目标缺失时 fixer 是空操作(`registerOfficialNameFixes` 里那几条
-注释写的就是这个),这才是"一份源码同时服务这条线的两个 MC 版本"的前提。
+注释写的就是这个),这才是"一份源码同时服务这条线的两个 MC 版本"的前提。第四处(OptiFine 自己那份 jar 里的光影
+取消)**最后是反过来的**:判据先加了上去,真机测出它把画面改坏了,于是 **2.1.1 又把它整段删掉,那处字节码原样留给
+OptiFine** —— 详见下面第 4 条。
 
 OptiFine 26.2 的 preview 构建(BMCLAPI 镜像实测):
 
@@ -876,7 +878,7 @@ registerFix("net/minecraft/client/renderer/extract/LevelExtractor",
 第一帧)直接 `NoSuchMethodError`。修法同上:同一条 `CallSiteRedirectFix` 也注册在 `CompileTask` 上,与
 `RebuildTask` 那条并存;26.1.2 上不存在 `CompileTask`,那条新判据在那里不做事,`RebuildTask` 那条照旧生效。
 
-### 4. OptiFine 26.2 preview 自己把光影开关拧死了(任何光影包都加载不了)
+### 4. OptiFine 26.2 preview 自己把光影开关拧死了 —— **故意不动它**(2.1.1)
 
 这一条不在游戏侧,在 **OptiFine 26.2 自己那份构建**里:它的 `Shaders.loadShaderPack` 把 `true` 存进"cancelled"
 标志位之后,就跳过了 `getShaderPack()`,于是**任何光影包都加载不了**,连 OptiFine 自带的那份也不行
@@ -891,20 +893,32 @@ registerFix("net/minecraft/client/renderer/extract/LevelExtractor",
         iload_2; ifne -> 跳过 getShaderPack()                <- 判断
 ```
 
-`OptifineJarFixer.enableShaderPackLoad` 现在**另外锚定那次被守护的 `getShaderPack(String)` 调用**:从它往前找
-守护它的 `IFNE`、再往前找被判断的那个局部变量,然后回溯到最近一次对它的 `ISTORE`,把前面那对
-`ICONST_1`/`ISTORE` 删掉;回溯时遇到别的写入就停手(那不是这个形状,不动)。两种形状都覆盖。
+**2.1.0 的做法(2.1.1 已删掉)**:`OptifineJarFixer.enableShaderPackLoad` 另外锚定那次被守护的
+`getShaderPack(String)` 调用 —— 从它往前找守护它的 `IFNE`、再往前找被判断的那个局部变量,然后回溯到最近一次对它的
+`ISTORE`,前面是 `ICONST_1` 就把这一对删掉;回溯时遇到别的写入就停手。两种形状都覆盖,判据**确实命中了**:26.2 上
+因此打出了 `Loaded shaderpack`。
 
-实测(同一个实例布局、同一份 `optionsshaders.txt`、同一个光影包):
+**但真机测量证明这一步是错的,而且比它要修的缺陷更糟**(同一实例布局、同一份 `optionsshaders.txt`、同一个光影包):
 
-| 运行 | 结果 |
-|---|---|
-| 26.2,**未修** | `[Shaders] No shaderpack loaded.`(`shaderPack=ComplementaryReimagined_r5.9.1.zip` 与 `shaderPack=(internal)` 都一样) |
-| 26.1.2,同一份配置 | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` |
-| 26.2,**修好之后** | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`,并编译 27 个 program |
+| 运行 | 日志 | 画面 |
+|---|---|---|
+| 留着 OptiFine 的取消(= 2.1.1) | `[Shaders] No shaderpack loaded.` | **世界正常渲染** |
+| 强行打开(= 2.1.0,判据命中) | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` | **只有粒子,方块透明** |
 
-26.1.2 那份构建**没有这个缺陷**(不加任何修复就打出 `Loaded shaderpack`),所以这条修复在那一版上不生效、也不需要
-生效;它没有改变 26.1.2 的产物 —— 那一版重跑的离线数字与 2.0.0 的基线**逐个相同**(见下)。
+选了光影包(`ComplementaryReimagined_r5.9.1.zip`)之后,世界**只画粒子、方块是透视的**,同时编译了
+**27 个 shader program**,而**任何日志里都没有报错** —— 不是崩溃,是安静的画错;同一个实例把 `shaderPack=OFF`
+(或把 OptiFine 的取消留着不动)就画得正常。
+
+**所以 2.1.1 把这条扩展判据整段删除**:26.2 那种形状**原样保留 OptiFine 写的样子**,这次测量的结论写在
+`OptifineJarFixer` 的类注释与那段行内注释里。**26.2 上光影用不了,这是这一版明确记下的限制** —— OptiFine 的光影
+设置里仍然可以选包,但选了不会有任何效果、也不会报错(这一版构建的光影管线还没做完,那句"取消加载"正是让它不插手
+画面的开关)。
+
+1.21.6 / 1.21.7 那种形状(四步紧邻)的修复**不变** —— 那是另一种字节码形状,照旧把加载补回来;它们的缺陷与 26.2
+无关。
+
+26.1.2 那份构建**没有这个缺陷**(不加任何修复就打出 `Loaded shaderpack`),所以这一条在那一版上是空操作,也没有
+改变 26.1.2 的产物 —— 那一版重跑的离线数字与 2.0.0 的基线**逐个相同**(见下)。
 
 ### 离线校验(两个口径)
 
@@ -925,7 +939,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
 | LambdaScan DANGLING handles | 0 | **0** |
 
 26.1.2 那一列是**同一份源码**在改完之后重跑的:567 / 0 失败、四个扫描器全 0,与 2.0.0 当时记下的基线逐个数字相同
-—— 也就是说这四处改动对 26.1.2 的产物没有任何可测量的影响(前两处的"并存判据"与第四处的形状放宽都落在空操作上)。
+—— 也就是说这些改动对 26.1.2 的产物没有任何可测量的影响(第 2、3 处那两条"并存判据"落在空操作上;第 4 处那个只
+服务 26.2 的形状判据在 2.1.1 里已经删除)。
 
 562 与 567 的差是**两个版本各自的类集合**不同(26.2 被补丁的游戏类本来就不是同一批),不是跳过了什么:
 两个口径的最后一行都是 `0 skipped, 0 failed`。
@@ -941,12 +956,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\launch-26.ps1
 ```
 [OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)
 Starting integrated minecraft server
-[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip
-Program loaded        ← 27 个
+[Shaders] No shaderpack loaded.                            ← 光影在 26.2 上不可用(见本节第 4 条)
 ```
 
-窗口标题 `Minecraft* 26.2 - 单人游戏`,无崩溃、无 mixin 变换失败。**光影只在这一个光影包上验证过**
-(`ComplementaryReimagined_r5.9.1.zip`);多人与抗锯齿这两项没有在 26.2 上重跑,那两项仍是 26.1.2 / 2.0.0 的记录。
+窗口标题 `Minecraft* 26.2 - 单人游戏`,无崩溃、无 mixin 变换失败,**世界正常渲染**。`shaderPack` 填
+`ComplementaryReimagined_r5.9.1.zip` 还是 `(internal)` 都是这一行 —— 留着 OptiFine 那句取消不动,画面就是正常的;
+把它强行打开(2.1.0 的做法)则打出上面第 4 条那张表里的 `Loaded shaderpack` 与**只有粒子的画面**。多人与抗锯齿这两项
+没有在 26.2 上重跑,那两项仍是 26.1.2 / 2.0.0 的记录。
 
 ### harness 的改动(`test-downloads/`,该目录已被 `.gitignore` 排除,所以只在这里记录)
 
@@ -974,5 +990,5 @@ Program loaded        ← 27 个
 | LambdaScan DANGLING | 0 | 0 | **0** |
 
 发布材料:`release/notes/mc26.2.md`(版本文案),`release/MANUAL_RELEASE.md` 里 26.2 那一行,
-以及 `release/publish.ps1` 的版本映射(`$defaultModVersion = "2.1.0"`,26.1.2 用 `$modVersions` 里的例外值
+以及 `release/publish.ps1` 的版本映射(`$defaultModVersion = "2.1.1"`,26.1.2 用 `$modVersions` 里的例外值
 `2.0.0`)。

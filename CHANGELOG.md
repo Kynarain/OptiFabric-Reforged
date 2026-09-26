@@ -1,11 +1,72 @@
 # 更新日志
 
-> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.1.0+mc26.2`、`2.0.0+mc26.1.2`、
-> `1.2.0+mc26.1.2`)与 **1.21.x**(`1.1.0` – `1.1.2`,十个 MC 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的
-> 样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.1.0`)与 **26.1.2**(冻结在 `2.0.0`),所以这一线也有了
-> "逐 MC 版本的版本号"。
+> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.1.1+mc26.2`、`2.1.0+mc26.2`、
+> `2.0.0+mc26.1.2`、`1.2.0+mc26.1.2`)与 **1.21.x**(`1.1.0` – `1.1.2`,十个 MC 版本)。1.21.x 那条线在自己的分支上,
+> 它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.1.1`;`2.1.0` 有缺陷、已被取代)与
+> **26.1.2**(冻结在 `2.0.0`),所以这一线也有了"逐 MC 版本的版本号"。
+
+## 2.1.1+mc26.2 — 26.x 线的第四版(撤回 2.1.0 那次"修光影"的改动:26.2 上光影用不了,强行打开还会让世界画不出来)
+
+> **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
+> 「修 fixer、修兼容性、修正元数据/文档 → 修订号」。这一版**不移除任何支持、也不新增支持范围**,只是把 2.1.0 里
+> 那次改坏了的修复撤回,所以是修订号。按 §3,已发布的 `2.1.0+mc26.2` 冻结(**它那份 jar 与它那一节记录都原样留着**),
+> 26.1.2 继续用 `2.0.0+mc26.1.2`。
+
+**结论先说:26.2 上光影不可用,这是这一版明确记下的限制。** OptiFine 的视频设置里仍然可以选光影包,但选了
+**不会有任何效果**,也不会报错提醒你 —— OptiFine 26.2 preview(`preview_OptiFine_26.2_HD_U_K2_pre1`)在自己的
+`Shaders.loadShaderPack` 里取消了这次加载,日志里是 `[Shaders] No shaderpack loaded.`。世界本身打开、渲染正常。
+
+### 2.1.0 的缺陷:把光影包加载强行打开,结果世界只画粒子
+
+2.1.0 认出了 OptiFine 26.2 那份构建里的形状:它把 `true` 存进 "cancelled" 标志位之后就跳过 `getShaderPack()`,
+于是**任何光影包都加载不了**,连 OptiFine 自带的那份也不行(`shaderPack=(internal)` 同样)。2.1.0 的做法是
+**把那一对赋值删掉、把加载强行打开**。真机测量证明这一步是错的,而且比它要修的缺陷更糟:
+
+| 运行(同一实例、同一份 `optionsshaders.txt`、同一个光影包) | 日志 | 画面 |
+|---|---|---|
+| 留着 OptiFine 的取消(= 2.1.1) | `[Shaders] No shaderpack loaded.` | **世界正常渲染** |
+| 强行打开(= 2.1.0) | `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip` | **只有粒子,方块透明** |
+
+选了光影包(`ComplementaryReimagined_r5.9.1.zip`)之后,世界**只画粒子、方块是透视的**,同时编译了
+**27 个 shader program**,而**任何日志里都没有报错** —— 不是崩溃,是安静的画错。同一个实例把 `shaderPack=OFF`
+(或者把 OptiFine 的取消留着不动)就画得正常。
+
+### 2.1.1 的改动
+
+`src/main/java/kynarain/cn/optifabric/mod/OptifineJarFixer.java` 的 `enableShaderPackLoad` **只保留 1.21.6 / 1.21.7
+那种形状原有的判据**(`ICONST_1, ISTORE, ILOAD, IFNE` 四步**紧邻**),**为 26.2 那种形状写的扩展判据整段删除**。
+26.2 那种形状(赋值与判断**之间**夹了一次 `shaderPack` 配置读取)因此**原样保留 OptiFine 写的样子**,不再被改动;
+这次测量的结论同时写在**类注释**与那段**行内注释**里。同一个方法里 1.21.6 / 1.21.7 那种形状的修复**不变**
+(那是另一种字节码形状,照旧把加载补回来)。
+
+### 验证(2.1.1)
+
+**离线**(`powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1 -Version 26.2`):
+`Prepared 562 patched classes (0 skipped, 0 failed)`、`verified OK: 562`、`FAILED: 0`、`ASM verifier problems: 0`;
+`AtTargetScan PROBLEMS: 0`、`RefmapScan MISSING members: 0`、`RuntimeContractScan` broken 0 / lost overrides 0 /
+unresolvable 0、`LambdaScan DANGLING handles: 0`。
+
+同一份源码的 26.1.2 口径(`-Version 26.1.2`):**567 / 567**、0 失败,四个扫描器同样全 0 —— 与 2.0.0 记下的基线
+逐个数字相同,2.1.1 没有碰那一版的产物。
+
+**真机**:留着 OptiFine 的取消不动时,日志是 `[Shaders] No shaderpack loaded.`,**世界正常渲染** —— 这就是这一版
+在 26.2 上预期的状态;流水线照旧跑通(`[OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)`)。
+
+**已知限制**:
+
+- **26.2 上光影不可用**:OptiFine 26.2 是 **preview** 构建,它的光影管线还没做完,而那句"取消加载"正是让它不插手
+  画面的开关;在 OptiFine 里选光影包不会有任何效果(也不会有报错提示你);
+- **26.2.1 与 26.3 支持不了** —— 这两版游戏确实存在,但 OptiFine 至今没有为它们发布任何构建,没有可移植的对象;
+- 26.1.2 不受影响:那一版的 `2.0.0+mc26.1.2` 原样不变,光影在那一版上是可用的。
+
+产物:`OptiFabric-Reforged-2.1.1+mc26.2.jar` — 138982 字节
+`SHA-256: D9286B81851F0473C4DAEA2DFE06D216CF2315681F6116145086E4C3F1B6043E`
 
 ## 2.1.0+mc26.2 — 26.x 线的第三版(新增 Minecraft 26.2 支持)
+
+> ⚠️ **这一版有一个已被取代的缺陷(见上一节)**:它把 OptiFine 26.2 preview 对光影包加载的取消删掉了、
+> 把加载强行打开;真机测量下来,选了光影包之后世界**只画粒子、方块透明**。请改用 **`2.1.1+mc26.2`** ——
+> 本节其余内容(26.2 的移植记录、离线数字、产物尺寸与摘要)按 §3 原样保留,属于历史记录。
 
 > **次版本号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
 > 「向下兼容地新增功能或支持范围 → 次版本号(支持新 OptiFine 构建)」。这一版把 26.x 这条线从 26.1.2 **扩到 26.2**,
@@ -46,11 +107,14 @@
 4. **光影包一个都加载不了(OptiFine 26.2 preview 自身的缺陷)**:这一版的 `Shaders.loadShaderPack` 把 `true` 存进
    "cancelled" 标志位之后就跳过了 `getShaderPack()`,于是**任何光影包都加载不了**,连 OptiFine 自带的那份也不行。
    与 1.21.6 / 1.21.7 那次同源,差别在 26.2 会在赋值与判断**之间**读一次 `shaderPack` 设置项,所以老判据要求的
-   `ICONST_1, ISTORE, ILOAD, IFNE` 四步紧邻不再成立;`OptifineJarFixer.enableShaderPackLoad` 现在另外锚定那次被守护的
-   `getShaderPack(String)` 调用,再往前回溯到赋值处删掉那一对指令。实测(同一实例布局、同一份 `optionsshaders.txt`、
-   同一个光影包):26.2 未修时日志是 `[Shaders] No shaderpack loaded.`(`shaderPack=ComplementaryReimagined_r5.9.1.zip`
-   与 `shaderPack=(internal)` 都一样),而 26.1.2 是 `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`;
-   修好之后 26.2 打出同一行 `Loaded shaderpack`,并编译 27 个 program。
+   `ICONST_1, ISTORE, ILOAD, IFNE` 四步紧邻不再成立;2.1.0 因此**另外锚定那次被守护的 `getShaderPack(String)` 调用**,
+   再往前回溯到赋值处删掉那一对指令,把加载强行打开。实测(同一实例布局、同一份 `optionsshaders.txt`、同一个光影包):
+   26.2 未修时日志是 `[Shaders] No shaderpack loaded.`(`shaderPack=ComplementaryReimagined_r5.9.1.zip` 与
+   `shaderPack=(internal)` 都一样),而 26.1.2 是 `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`;
+   强行打开之后 26.2 打出同一行 `Loaded shaderpack` 并编译 27 个 program。**但这一步是错的**,而且比它要修的缺陷更糟:
+   选了光影包的世界**只画粒子、方块透明**,27 个 program 编译完成、任何日志里都没有报错(同一个实例把 `shaderPack=OFF`
+   就画得正常)。**所以 2.1.1 把这条扩展判据整段删掉,26.2 那种形状原样留给 OptiFine,光影在 26.2 上明确记为不可用**
+   (见本文件顶部 2.1.1 那一节)。1.21.6 / 1.21.7 那种形状的修复不变。
 
 ### 要求与实测
 
@@ -72,12 +136,14 @@
 
 **真机**(`test-downloads\launch-26.ps1 -Version 26.2 -World OptiTest`):流水线跑通
 (`[OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)`)、世界打开(`Starting integrated minecraft server`)、
-`[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`、`Program loaded` 27 个、无崩溃、无 mixin 变换失败,
-窗口标题 `Minecraft* 26.2 - 单人游戏`。
+无崩溃、无 mixin 变换失败,窗口标题 `Minecraft* 26.2 - 单人游戏`。当时的日志里是
+`[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`、`Program loaded` 27 个 —— **这一行正是那个缺陷**:
+被强行打开的加载确实把光影程序编译起来了,但画面只画粒子、方块透明(见本节第 4 条)。把这句取消留着不动时是
+`[Shaders] No shaderpack loaded.`,世界正常渲染。
 
-**已知限制**:26.2 的 OptiFine 是 **preview** 构建(`HD_U_K2_pre1`,与 26.1.2 当时一样);光影只在
-`ComplementaryReimagined_r5.9.1.zip` 上验证过;**26.2.1 与 26.3 支持不了** —— 这两版游戏确实存在,但 OptiFine 至今
-没有为它们发布任何构建,这也是这条线停在 26.2 的原因。
+**已知限制**:26.2 的 OptiFine 是 **preview** 构建(`HD_U_K2_pre1`,与 26.1.2 当时一样);光影**在 26.2 上用不了**
+(选了包也不会有任何效果,详见本节第 4 条与顶部 2.1.1 那一节),只在 26.1.2 上可用;**26.2.1 与 26.3 支持不了** ——
+这两版游戏确实存在,但 OptiFine 至今没有为它们发布任何构建,这也是这条线停在 26.2 的原因。
 
 产物:`OptiFabric-Reforged-2.1.0+mc26.2.jar` — 139528 字节
 `SHA-256: ED3DD297FBE7356C9A9C69DCAAD9FC3C2AC9000C12FEB7BCF3CE9D3277028D8D`

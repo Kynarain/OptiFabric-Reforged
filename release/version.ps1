@@ -5,8 +5,8 @@
 # "<版本>+mc" 的写法。手改漏一处就会出现文档与产物对不上,所以只走这个脚本。
 #
 #   .\release\version.ps1                                  # 看:当前版本,以及三类递增各会变成什么
-#   .\release\version.ps1 -Line 26.x -Kind minor           # 2.1.0 -> 2.2.0(真正写入)
-#   .\release\version.ps1 -Line 26.x -Kind patch -DryRun   # 2.1.0 -> 2.1.1,只看结果,不写文件
+#   .\release\version.ps1 -Line 26.x -Kind minor           # 2.1.1 -> 2.2.0(真正写入)
+#   .\release\version.ps1 -Line 26.x -Kind patch -DryRun   # 2.1.1 -> 2.1.2,只看结果,不写文件
 #   .\release\version.ps1 -Line 26.x -Set 2.2.0-beta.1     # 直接指定(校验格式与优先级)
 #   .\release\version.ps1 -Line 26.x -Part                 # 只打印当前版本号(给别的脚本用)
 #   .\release\version.ps1 -Line 26.x -RecordDigest         # 构建之后:把产物的字节数与 SHA-256 写回文档
@@ -350,7 +350,7 @@ if ($RecordDigest) {
 	# Only the paragraphs that mention *this* artifact+version are rewritten. A blanket search for
 	# "<n> 字节" would also hit the 1.1.x-era figures in dist\README.txt and in the changelog, which belong
 	# to the other release line - one jar per Minecraft version means those numbers are all different. The
-	# pattern carries the Minecraft version as well ("2.1.0+mc26.2"), so no other jar's figures can be caught.
+	# pattern carries the Minecraft version as well ("2.1.1+mc26.2"), so no other jar's figures can be caught.
 	$versionPattern = [regex]::Escape("$current+mc$mc")
 	# The unit is kept as written: the Chinese documents say "字节", docs\RELEASE_NOTES.md says "bytes".
 	$sizePattern = '([\d,]{4,})(\s*(?:字节|bytes))'
