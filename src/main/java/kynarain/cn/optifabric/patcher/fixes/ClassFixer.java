@@ -9,5 +9,13 @@ package kynarain.cn.optifabric.patcher.fixes;
 import org.objectweb.asm.tree.ClassNode;
 
 public interface ClassFixer {
+	/**
+	 * Fixes one class OptiFine patched.
+	 *
+	 * @param optifine the class as OptiFine's own compilation produced it; a fixer may change it in place
+	 * @param minecraft the game's version of the same class, which is <b>shared and cached</b> for every class
+	 *                  ({@code OptifineInjector.GAME_CLASSES}) and must be treated as immutable - every current
+	 *                  fixer only reads it, and the ones that read it more than once rely on that
+	 */
 	void fix(ClassNode optifine, ClassNode minecraft);
 }

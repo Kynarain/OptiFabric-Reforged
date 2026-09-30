@@ -32,6 +32,15 @@ mod id 从 `optifabric` 改成 **`optifabric_reforged`**,显示名改成 **OptiF
 实测(1.21.1 + `OptiFine_1.21.1_HD_U_J1` + fabric-api 0.116.17 + architectury 13.0.11,不放任何配置文件):
 56 个模组加载、fixer 报告槽位搬移、进世界正常、无注入错误、无 `VerifyError`、无崩溃报告。
 
+### 已知限制:`LocalSlotLayoutFix` 的"保留"判定只看槽号,不看作用域
+
+搬移前会保留"原版也有"的槽位,而这个判定是**按槽号**的:槽位只要在遍历里匹配过一次就整体不搬,但槽号会被复用 ——
+1.21.1 的 `class_757.method_3192` 有 21 个局部变量(原版 18 个),槽位 12 同时住着 OptiFine 自己的 `class_425 rlpg`
+和原版 catch 块的局部变量,于是这个多出来的局部变量被误判为保留、留在原版局部变量中间(1.21.4 是 22 对 19,
+1.21.11 是 18 对 17,**所以 1.21.11 报的"无需搬移"并不是两边本来就一致**)。实测没有破坏本 fixer 针对的捕获
+(Architectury 仍为 FIXED、无注入错误、无 `VerifyError`),它没覆盖到的注入点没有逐个枚举;现在 fixer 会把被丢掉的
+候选槽位连同两侧条目与指令区间打进日志,修法(按作用域而不是按槽号重映射)见类里的注释。
+
 ### 另修
 
 `build.gradle` 的 `processResources` 从来没把 mod id / 显示名声明成 task inputs,于是改名后 Gradle 认为任务
@@ -154,7 +163,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-versio
 真机:八个版本各用修好的 jar 重跑探针(`test-downloads\probe-1.21-aa.ps1`),
 `Resource not found: minecraft:post_effect/fxaa_of_*` **全部为 0 条**,全部进到标题界面。
 
-八个产物各自的字节数与 SHA-256 见 `dist/README.txt` 与对应版本的 `release/notes/mc<版本>.md`。
+八个产物各自的字节数与 SHA-256 见对应版本的 `release/notes/mc<版本>.md`。
 
 ## 1.1.1+mc1.21.11 — 只覆盖 1.21.11 的一版(抗锯齿后处理链)
 
