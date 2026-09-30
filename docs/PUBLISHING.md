@@ -15,13 +15,14 @@
 >
 > ⚠️ **`mc1.21.x` 不是 1.21.x 的开发分支** —— 名字像,内容是 1.1.0 那一刻的快照;从今以后 1.21.x 的修复走 **`1.21.x`**。
 >
-> **发布标签是版本号本身**(例如 `v1.1.0`、`v1.1.2`),不带 `+mc` —— MC 版本留在产物名与标题里;
-> 1.1.0 那次的 10 个 jar 挂在同一个 `v1.1.0` 条目下,单个版本的热修(如 `v1.1.1`)另发一个条目。
+> **发布标签是 `v<版本>+mc<MC版本>`**(例如 `v2.0.0+mc1.21.11`),逐版本唯一 —— 这个仓库同时承载 26.x 线,
+> 该线已占用 `v2.0.0`,而 tag 是仓库级的,所以每个 jar 的 tag 都带上自己的 MC 版本;tag 与产物名、release 标题写同一串。
+> (历史:1.1.0 那次的 10 个 jar 挂在同一个不带 `+mc` 的 `v1.1.0` 条目下;2.0.0 起每个 jar 一个 tag。)
 > `release/publish.ps1` 用 `$defaultTagTarget` 取 tag 的目标分支(当前为 `1.21.x`)。
 
 > **版本号规则**:本项目按 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/) 定版本,`+mc<版本>` 是编译信息。
 > 什么算不兼容修改、什么算新功能、一次改动要同步哪些文件,全部写在 [`docs/VERSIONING.md`](VERSIONING.md);
-> **不要手改版本号**(一次要动 9 个文件,漏一处就文档与产物对不上)。
+> **不要手改版本号**(一次要在项目配置、发布脚本与各处文档里同步,漏一处就文档与产物对不上)。
 
 ## 一、已经准备好的东西
 
@@ -35,15 +36,14 @@
 | 更新日志 | `CHANGELOG.md` | 1.21.11 与 1.20.6 两节 |
 | 页面文案 | `docs/DESCRIPTION.md` | 简要描述 + 详细描述,中英双语,可直接粘贴(已按 1.21.11 更新) |
 | 模组图标 | `src/main/resources/assets/optifabric/icon.png` | 128×128,已接进 `fabric.mod.json`;想换风格直接替换这个文件 |
-| 发布包副本 | `dist/` | 已构建好的 jar + `README.txt`(含 SHA-256),`.gitignore` 排除,本地上传用 |
+| 发布包副本 | `dist/` | 已构建好的 jar,`.gitignore` 排除,本地上传用 |
 
 ## 二、构建发布包
 
 1.21.x 全系列都从**仓库根目录同一个项目**构建,每个版本一个 jar:
 
 ```powershell
-cd I:\mods\OptiFabric
-git checkout 1.21.x          # 从发布分支构建(见文首的分支表)
+cd I:\mods\OptiFabric-1.21.x   # 1.21.x 的 worktree;父仓库 I:\mods\OptiFabric 停在 wip/26.2,别在那里 checkout
 foreach ($v in @("1.21","1.21.1","1.21.3","1.21.4","1.21.6","1.21.7","1.21.8","1.21.9","1.21.10","1.21.11")) {
 	.\gradlew build "-Pmc=$v" --offline
 	Copy-Item "build\libs\OptiFabric-2.0.0+mc$v.jar" dist -Force
@@ -72,20 +72,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-versio
 ## 三、发到 GitHub
 
 ```powershell
-cd I:\mods\OptiFabric
+cd I:\mods\OptiFabric-1.21.x
 git add -A
 git commit -m "OptiFabric 2.0.0+mc1.21.x: OptiFine on Fabric for 1.21 through 1.21.11"
 git remote add origin https://github.com/<你的用户名>/<仓库名>.git
 git push -u origin 1.21.x        # 推当前分支(1.21.x)
 ```
 
-发 Release —— 1.1.0 那次的 10 个 jar 挂在**同一个 `v1.1.0` 条目**下(每个 jar 在正文里写明它对应的 MC 版本,
-这样别人能按自己的游戏版本下载);**单个版本的热修**另发一个条目,标签就是那个版本号:
+发 Release —— **每个 jar 一个条目**,标签是 `v<版本>+mc<MC版本>`(每个 jar 在正文里写明它对应的 MC 版本,
+这样别人能按自己的游戏版本下载):
 
 ```powershell
-# 例:1.21.11 的 1.1.1(只改了这一个版本)
-git tag v1.1.1
-git push origin v1.1.1
+# 例:1.21.11 的 2.0.0(标签带上该 MC 版本,否则会和 26.x 线的 v2.0.0 撞名)
+git tag "v2.0.0+mc1.21.11"
+git push origin "v2.0.0+mc1.21.11"
 ```
 
 然后在 GitHub 网页上基于该 tag 建 Release(`Target` 选 **`1.21.x`** 分支 —— 见文首分支表),

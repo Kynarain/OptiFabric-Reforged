@@ -26,6 +26,8 @@ InjectionError: LVT in net/minecraft/class_757::method_3192 has incompatible cha
 
 Mixin hands a method's locals to an `@Inject` handler **strictly by slot order** (`CallbackInjector` takes the first `extraArgs` non-null locals from `getFirstNonArgLocalIndex` upwards), and OptiFine's build inserts two floats of its own — `guiFarPlane` and `guiOffsetZ` — in the middle of `GameRenderer.render`, pushing the game's `Matrix4f`, `Matrix4fStack` and `GuiGraphics` one or two slots up. The order the handler was compiled against no longer lines up. The new `LocalSlotLayoutFix` moves the locals that have no counterpart in the game's layout to the end of the slot range (7→15 and 10→16 on 1.21.1) and rewrites the local variable table — that table is what Mixin reads the locals from, and no writer in the pipeline regenerates it — while the stack map frames are recomputed by the frame-computing writer that every changed class goes through.
 
+**The post-effect modernisation is now gated by what the release's parser understands.** OptiFine's FXAA post-chain files are rewritten into the 1.21.6+ shape (`vertex_shader` / `fragment_shader`, plus `BlitConfig`) only when the game's own `post_effect/*.json` already uses those keys, and the texture repair only runs where the `GpuTexture` API exists (1.21.6 and up) — triggering on file content alone rewrote 1.21.3 / 1.21.4 into a shape their parser cannot read, which silently disabled anti-aliasing on both.
+
 **All ten jars of this line are 2.0.0**: 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10 and 1.21.11.
 
 Measured on 1.21.1 with `OptiFine_1.21.1_HD_U_J1`, fabric-api 0.116.17 and architectury 13.0.11, no config file: 56 mods load, the fixer reports the slot move, a world opens, and the client stays up with no injection error, no `VerifyError` and no crash report.
@@ -89,7 +91,7 @@ OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recomp
 |---|---|
 | `OptiFabric-2.0.0+mc1.21.11.jar` (871992 bytes) | `7AB4B03405C1809AC3E4F9D06905013DAB6A514030C714FF4E65723BC7C63877` |
 
-The same `v1.21.x` project also builds the other Minecraft releases OptiFine ships a 1.21.x build for — 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9 and 1.21.10 — with `.\gradlew -p v1.21.x build "-Pmc=<version>"`, and each of them passes the same offline verification (see [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)).
+Other Minecraft releases OptiFine ships a build for — 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9 and 1.21.10 — come out of this same repository root (one Gradle project, no `v1.21.x` subproject) with `.\gradlew build "-Pmc=<version>"`, and each of them passes the same offline verification (see [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)).
 
 Full changelog: [`CHANGELOG.md`](CHANGELOG.md) · Usage, troubleshooting and known issues: [`README.md`](README.md) · Verification tooling: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)
 

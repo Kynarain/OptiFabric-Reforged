@@ -24,7 +24,7 @@ OptiFine 不是 Fabric 模组:它的 jar 里是针对原版**混淆**客户端�
 **一个 Minecraft 版本一个 jar** —— 每个 jar 里都打包着该版本的 `official → intermediary` 映射表(官方混淆名每版不同,用错版本会把 OptiFine 重映射成乱码),`fabric.mod.json` 里的 `minecraft` 依赖也精确到该版本。
 
 **作者:** kynarain · 上游:Modmuss50、Chocohead
-**版本:** 1.21.3 – 1.21.11 是 `1.1.2`,1.21 与 1.21.1 是 `1.1.0`
+**版本:** 十个产物都是 `2.0.0`(1.21 – 1.21.11)
 **许可:** MPL-2.0
 
 ## ✨ 主要特性
@@ -82,7 +82,7 @@ mods/OptiFine_1.21.11_HD_U_J9.jar
 ## 📦 安装
 
 1. 准备与本版本**严格一致**的 OptiFine(见下表) —— OptiFabric 会读 `optifine/Config` 里的 `MC_VERSION` 校验,不一致会直接在标题界面报错。**不需要**先运行 OptiFine 安装器。
-2. 把**对应版本**的 jar 与 OptiFine 的 jar 一起放进该 Fabric 版本自己的 `mods/` 目录。不要放两份 OptiFine(会报 `DUPLICATED`),不要放错版本的 OptiFabric,也不要混进 26.x 线的 jar。
+2. 把**对应版本**的 jar 与 OptiFine 的 jar 一起放进该 Fabric 版本自己的 `mods/` 目录。不要放两份 OptiFine(会报 `DUPLICATED`),不要放错版本的 OptiFabric,也不要混进 26.x 线的 jar。**从 1.x 升级时先删掉旧的 `OptiFabric-<版本>+mc1.21.x.jar`** —— 2.0.0 把 mod id 改成了 `optifabric_reforged`(显示名 OptiFabric Reforged),两个 id 同时存在时 Fabric 会**同时加载两份**,OptiFine 会被打两遍补丁。
 3. 用 **Fabric 版本**启动,不要用启动器注入 OptiFine 的 `1.21.x-OptiFine_xxx` 版本(那个是启动器在启动时注入 OptiFine,会与本模组重复)。
 4. 首次启动会明显变慢(实测 5–7 秒,要跑完整的补丁与重映射流程),之后走缓存(1–2 秒)。标题界面出现 OptiFine 版本号、视频设置里出现 OptiFine 选项即表示成功。
 
@@ -99,7 +99,7 @@ curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/opt
 
 ```powershell
 .\gradlew build "-Pmc=1.21.11"                            # PowerShell 里必须加引号,否则 1.21.11 会被拆开
-.\gradlew build "-Pmc=1.21.8" "-Pmod_version_base=1.1.2"  # 1.1.2 那八个产物要连版本号一起给
+.\gradlew build "-Pmc=1.21.8" "-Pmod_version_base=2.0.0"  # 只有该产物的版本号与整条线的基数不同时才需要它
 ```
 
 产物在 `build/libs/OptiFabric-<版本>+mc<MC版本>.jar`。版本号只通过一个脚本改:

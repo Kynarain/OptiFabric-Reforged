@@ -1,7 +1,7 @@
 ﻿# 版本号自动化(SemVer 2.0.0,见 docs/VERSIONING.md)
 #
-# 一次版本号改动要同时落在 9 个地方:项目的 gradle.properties、release\publish.ps1 的映射,以及
-# README / CHANGELOG / docs\ / release\notes\ / release\MANUAL_RELEASE*.md / dist\README.txt 里所有
+# 一次版本号改动要同时落在三个地方:项目的 gradle.properties、release\publish.ps1 的映射,以及
+# README / CHANGELOG / docs\ / release\notes\ / release\MANUAL_RELEASE*.md 里所有
 # "<版本>+mc" 的写法。手改漏一处就会出现文档与产物对不上,所以只走这个脚本。
 #
 #   .\release\version.ps1                                  # 看:当前版本,以及三类递增各会变成什么
@@ -71,9 +71,7 @@ $documentFiles = @(
 	"docs/DESCRIPTION.md",
 	"docs/PUBLISHING.md",
 	"release/MANUAL_RELEASE.md",
-	"release/notes/mc1.21.x.md",
-	"docs/RELEASE_NOTES.md",
-	"dist/README.txt"
+	"docs/RELEASE_NOTES.md"
 )
 # Every per-release note file belongs here too: each one carries its own "<version>+mc<mc>" strings, and a bump
 # that misses them leaves the release page for that Minecraft version describing an older jar. Globbed rather than
@@ -258,8 +256,8 @@ function Update-File([string]$path, [hashtable]$pairs) {
 }
 
 # Same, but the search is a regular expression, so a bump can leave alone the names where this version sits inside
-# a *different*, frozen artifact: dist\README.txt keeps "archive-OptiFabric-1.1.0+mc…-live-verified…" as the
-# reference copy of an older build, and that file is literally called that.
+# a *different*, frozen artifact: an earlier release's file keeps "archive-OptiFabric-1.1.0+mc…-live-verified…" as
+# its name, and that name belongs to that older build, not to this one.
 function Update-FilePattern([string]$path, [string]$pattern, [string]$replacement) {
 	$full = Join-Path $root $path
 	if (-not (Test-Path $full)) { return 0 }
@@ -284,6 +282,47 @@ function Get-BuiltJar([string]$line, [string]$version, [string]$mc) {
 	$name = "$($lines[$line].artifact)-$version+mc$mc.jar"
 
 	return @{ name = $name; path = (Join-Path $root (Join-Path $lines[$line].project "build/libs/$name")) }
+}
+
+# -RecordDigest has to describe what was *published*, so the values come from dist\ whenever that jar exists:
+# build\libs\ is only the working tree's most recent build, and after any rebuild it no longer holds what the
+# release page says. If both directories hold this name with different bytes they are not the same artifact, so
+# the tool never guesses: a real run stops (guessing would rewrite a published size/SHA-256 with a jar nobody can
+# download), while -DryRun writes nothing and therefore reports the difference and computes from the published
+# dist\ copy.
+function Get-DigestJar([string]$line, [string]$version, [string]$mc) {
+	$name = "$($lines[$line].artifact)-$version+mc$mc.jar"
+	$dist = Join-Path $root (Join-Path "dist" $name)
+	$project = if ($lines[$line].project -eq ".") { $root } else { Join-Path $root $lines[$line].project }
+	$built = Join-Path $project "build/libs/$name"
+
+	if (-not (Test-Path $built)) {
+		if (-not (Test-Path $dist)) {
+			throw "还没有构建产物:$built(dist\ 里也没有 $name)`n先跑 .\gradlew build;要记录已发布的那份,请把 jar 放进 dist\"
+		}
+
+		return @{ path = $dist; source = "dist" }
+	}
+
+	if (-not (Test-Path $dist)) { return @{ path = $built; source = "build\libs" } }
+
+	$distSize = (Get-Item $dist).Length
+	$builtSize = (Get-Item $built).Length
+	$distHash = (Get-FileHash $dist -Algorithm SHA256).Hash
+	$builtHash = (Get-FileHash $built -Algorithm SHA256).Hash
+	if ($distSize -ne $builtSize -or $distHash -ne $builtHash) {
+		$conflict = "dist\ 与 build\libs 里的 $name 不是同一份产物,不能猜哪一份:`n" +
+			"  $dist`n    $distSize 字节  $distHash`n" +
+			"  $built`n    $builtSize 字节  $builtHash"
+		if (-not $DryRun) {
+			throw ($conflict + "`n发布页要写的是已经发出去的那份(dist\);确实要改用新构建,请先把新 jar 放进 dist\ 并同步发布清单。")
+		}
+
+		Write-Host "  警告:$conflict"
+		Write-Host "  真实运行(去掉 -DryRun)会就此停下、不写任何文档;本次 DryRun 按已发布的 dist\ 那份计算。"
+	}
+
+	return @{ path = $dist; source = "dist" }
 }
 
 # ---------------------------------------------------------------- listing mode
@@ -330,21 +369,19 @@ if ($Mc) {
 if ($RecordDigest) {
 	$current = if ($Mc) { Resolve-Version $Line $Mc } else { Get-CurrentVersion $Line }
 	$mc = if ($Mc) { $Mc } else { $lines[$Line].mc }
-	$jar = Get-BuiltJar $Line $current $mc
-
-	if (-not (Test-Path $jar.path)) {
-		throw "还没有构建产物:$($jar.path)`n先跑 .\gradlew build"
-	}
+	$jarName = "$($lines[$Line].artifact)-$current+mc$mc.jar"
+	$jar = Get-DigestJar $Line $current $mc
 
 	$size = (Get-Item $jar.path).Length
 	$hash = (Get-FileHash $jar.path -Algorithm SHA256).Hash
 	$sizeText = "$size 字节"
-	Write-Host "产物 $($jar.name)"
+	Write-Host "产物 $jarName"
 	Write-Host "  $sizeText"
 	Write-Host "  SHA-256 $hash"
+	Write-Host "  取自 $($jar.source)\$jarName"
 
 	# Only the paragraphs that mention *this* artifact+version are rewritten. A blanket search for
-	# "<n> 字节" would also hit the ten 1.1.0-era figures in dist\README.txt and in the changelog, which belong
+	# "<n> 字节" would also hit the 1.1.0-era figures kept in the changelog and in release/notes/, which belong
 	# to earlier releases - one jar per Minecraft version means those numbers are all different. With -Mc
 	# the pattern carries the Minecraft version as well, so the other nine jars stay untouched too.
 	# Anchored, because one jar's version string can be a prefix of another's: 2.0.0+mc1.21.1 sits inside
@@ -433,7 +470,7 @@ if ($RecordDigest) {
 
 	Write-Host ""
 	if ($DryRun) { Write-Host "[DryRun] 会更新 $files 个文件、$touched 段" }
-	else { Write-Host "已更新 $files 个文件、$touched 段;请 git diff 复核(尤其 dist\README.txt 与 CHANGELOG)" }
+	else { Write-Host "已更新 $files 个文件、$touched 段;请 git diff 复核(尤其 CHANGELOG 与 release\notes\)" }
 	return
 }
 
@@ -480,6 +517,20 @@ if ($Mc) {
 	$count = Update-File "release/publish.ps1" $publishPairs
 	Write-Host ("  {0,-45} {1} 处" -f "release/publish.ps1", $count)
 	if ($count -eq 0) { Write-Host "    (没找到 publish.ps1 里的默认版本号映射,请手动确认)" }
+
+	# 逐 MC 版本的例外值也要跟着走:整线升版时,凡是值**等于旧基数**的条目都必须一起改写成新版本,
+	# 否则 release\publish.ps1 会继续拿旧版本号去找 jar 与 tag,那些产物会全部对不上。值不等于旧基数的
+	# 是有意的逐版本例外值(见 docs\VERSIONING.md 第五节),不能替用户决定,只打印警告、留原样。
+	$mcOverrides = Get-McVersionMap
+	foreach ($mcKey in @($mcOverrides.Keys | Sort-Object)) {
+		if ($mcOverrides[$mcKey] -eq $current) {
+			$count = Set-McVersion $mcKey $target
+			Write-Host ("  {0,-45} {1} 处" -f "release/publish.ps1  (`$modVersions[""$mcKey""])", $count)
+		}
+		else {
+			Write-Host "  警告:release\publish.ps1 里 $mcKey 单独用 $($mcOverrides[$mcKey]),不等于整线旧版本 $current;本次不改它,要改就用 -Mc $mcKey 单独处理"
+		}
+	}
 }
 
 # 3. every "<version>+mc" reference in the documents. Matching on the bare version covers both the artifact
@@ -511,6 +562,6 @@ if ($Mc) {
 } else {
 	Write-Host "  2. .\release\version.ps1 -Line $Line -RecordDigest"
 }
-Write-Host "     -> 把尺寸与 SHA-256 写回文档(dist/README.txt、CHANGELOG、release/notes/)"
+Write-Host "     -> 把尺寸与 SHA-256 写回文档(README、CHANGELOG、release/notes/、release/MANUAL_RELEASE.md)"
 Write-Host "  3. 按 release\MANUAL_RELEASE*.md 发布;tag 名与产物名成对写,别只写版本号"
 Write-Host "  4. 已发布过的版本号不得复用(§3);内容要改就发新版本"

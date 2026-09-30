@@ -65,6 +65,7 @@ At the earliest point of startup (the loader's `preLaunch`), OptiFabric will:
 1. Install the client you are targeting with **Fabric Loader 0.19.5 or newer**, on **Java 21+**.
 2. Put the **OptiFabric jar for that release** and **your own OptiFine jar for that release** into `.minecraft/mods/`.
    The OptiFine file is named like `OptiFine_1.21.11_HD_U_J9.jar` — dropping it in is enough, you do **not** need to run its installer first.
+   **When upgrading from 1.x, delete the old `OptiFabric-<version>+mc1.21.x.jar` first** — 2.0.0 renamed the mod id to `optifabric_reforged` (display name *OptiFabric Reforged*), and with both ids present Fabric loads both copies and OptiFine gets patched twice.
 3. Start the game. The OptiFine version appears on the title screen when it works.
 
 Fabric API can be loaded alongside (this port is adapted for it specifically; verified with the Fabric API release of each version, e.g. 0.141.6+1.21.11).
@@ -195,6 +196,7 @@ OptiFine 是为原版(以及 Forge)编写的:它的补丁针对**官方混淆名
 1. 用 **Fabric Loader 0.19.5 或更高**安装对应版本的客户端,**用 Java 21 及以上**。
 2. 把**对应这个版本的 OptiFabric jar** 和**你自备的、同版本的 OptiFine jar** 一起放进 `.minecraft/mods/`。
    OptiFine 的文件名形如 `OptiFine_1.21.11_HD_U_J9.jar`,**直接放进去即可**,不需要先运行它的安装器。
+   **从 1.x 升级时先删掉旧的 `OptiFabric-<版本>+mc1.21.x.jar`** —— 2.0.0 把 mod id 改成了 `optifabric_reforged`(显示名 OptiFabric Reforged),两个 id 同时存在时 Fabric 会同时加载两份、OptiFine 会被打两遍补丁。
 3. 启动游戏。标题界面出现 OptiFine 版本号就说明生效了。
 
 Fabric API 可以一起加载(本模组专门针对它做过适配;每个版本都用该版本自己的 Fabric API 测过,例如 1.21.11 用 0.141.6+1.21.11)。

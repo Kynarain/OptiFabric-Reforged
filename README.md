@@ -24,7 +24,7 @@ OptiFine is not a Fabric mod: its jar holds bytecode patches against *obfuscated
 **One jar per Minecraft release** — every jar carries that release's `official → intermediary` mapping table (the obfuscated names differ per release, and the wrong table turns OptiFine into garbage) and pins its `minecraft` dependency to that exact version.
 
 **Author:** kynarain · upstream: Modmuss50, Chocohead
-**Version:** `1.1.2` for 1.21.3 – 1.21.11, `1.1.0` for 1.21 and 1.21.1
+**Version:** `2.0.0` for all ten releases (1.21 – 1.21.11)
 **License:** MPL-2.0
 
 ## ✨ Key Features
@@ -83,7 +83,7 @@ Intermediate files live in `<game dir>/.optifine/<OptiFine version>/`:
 ## 📦 Installation
 
 1. Get the OptiFine build for **exactly** your Minecraft version (see the table below) — OptiFabric reads `MC_VERSION` from `optifine/Config` and refuses to start otherwise. Do **not** run OptiFine's installer.
-2. Put the jar for **your** version **and** OptiFine's jar into that Fabric instance's `mods/` folder. Do not install two OptiFine jars (the game reports `DUPLICATED`), do not use the wrong version of either, and do not mix in the 26.x line's jar.
+2. Put the jar for **your** version **and** OptiFine's jar into that Fabric instance's `mods/` folder. Do not install two OptiFine jars (the game reports `DUPLICATED`), do not use the wrong version of either, and do not mix in the 26.x line's jar. **When upgrading from 1.x, delete the old `OptiFabric-<version>+mc1.21.x.jar` first** — 2.0.0 renamed the mod id to `optifabric_reforged` (display name *OptiFabric Reforged*), and with both ids in `mods/` Fabric loads both copies, so OptiFine gets patched twice.
 3. Launch the **Fabric** profile — not a launcher-made `1.21.x-OptiFine_xxx` profile, which injects OptiFine itself and collides with this mod.
 4. The first start spends a few extra seconds patching and remapping (5–7 s in practice); later starts use the cache (1–2 s). A title screen showing OptiFine's version and OptiFine entries in video settings mean it worked.
 
@@ -100,7 +100,7 @@ curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/opt
 
 ```bash
 ./gradlew build "-Pmc=1.21.11"                            # quotes matter in PowerShell: 1.21.11 is split otherwise
-./gradlew build "-Pmc=1.21.8" "-Pmod_version_base=1.1.2"  # the eight 1.1.2 jars need their version too
+./gradlew build "-Pmc=1.21.8" "-Pmod_version_base=2.0.0"  # only needed when that jar's version differs from the base
 ```
 
 The jars land in `build/libs/OptiFabric-<version>+mc<mc>.jar`. Version numbers only ever change through one script:

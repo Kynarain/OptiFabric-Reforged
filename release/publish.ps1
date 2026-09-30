@@ -30,18 +30,21 @@ param(
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 # 本仓库只有 1.21.x 一条发布线(见 release\MANUAL_RELEASE.md)。
-# 版本基数:$defaultModVersion 是 1.21.x 里没有例外值的那些版本用的。
+# 版本基数:$defaultModVersion 是 1.21.x 里没有例外值的那些版本用的。现在十个产物都是同一个版本号,
+# 所以下面那张例外表是空的 —— 每个 jar 的版本号相同的时候,写进表里是多余的。
 $versions = @("1.21", "1.21.1", "1.21.3", "1.21.4", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11")
 $defaultModVersion = "2.0.0"
-# 逐 MC 版本的例外值:某个版本单独升过版就写在这里(1.21.11 的 1.1.1 = 只修它一个版本的抗锯齿后处理链)。
+# 逐 MC 版本的例外值:只有某个 jar 的版本号**必须与整条线的基数不同**时才写在这里(例如只修了 1.21.11
+# 的那次 1.1.1)。值等于基数的条目是多余的,整线升版时还会被落在后面(version.ps1 会改写等于旧基数的条目)。
 # 这张表由 release\version.ps1 -Mc 维护,别手改(见 docs\VERSIONING.md 第五节)。
-$modVersions = @{ "1.21.11" = "2.0.0"; "1.21.3" = "2.0.0"; "1.21.4" = "2.0.0"; "1.21.6" = "2.0.0"; "1.21.7" = "2.0.0"; "1.21.8" = "2.0.0"; "1.21.9" = "2.0.0"; "1.21.10" = "2.0.0" }
-# 产物名默认就是 OptiFabric(mod id 也是 optifabric)。下面几张逐版本覆盖表现在都是空的 ——
+$modVersions = @{}
+# 产物名默认就是 OptiFabric(mod id 是 optifabric_reforged,显示名见下面的 $defaultModName)。下面几张逐版本覆盖表现在都是空的 ——
 # 只有某个 MC 版本要用别的产物名 / 显示名 / tag 分支时才往里加一条。
 $defaultArtifact = "OptiFabric"
 $modArtifacts = @{}
-# The display name follows the artifact; the per-version override table is empty while every jar is the same mod.
-$defaultModName = "OptiFabric"
+# The display name is the mod's displayName (the jar prefix / artifact stays OptiFabric); the per-version
+# override table is empty while every jar is the same mod.
+$defaultModName = "OptiFabric Reforged"
 $modNames = @{}
 # 本仓库的开发与发布分支:1.21.x 的修复开发与 tag 都在 1.21.x 分支上(见 docs\PUBLISHING.md)。
 $defaultTagTarget = "1.21.x"
@@ -55,7 +58,7 @@ if ($Version -ne "all") {
 $tmp = Join-Path $root "release\tmp"
 New-Item -ItemType Directory -Force $tmp | Out-Null
 
-#1.21.6 / 1.21.7 的 OptiFine 构建自身有缺陷,默认不推荐发布(要发就加 -Version 单独发)
+#1.21.6 / 1.21.7 的 OptiFine 构建自身有缺陷(不推荐),但代码不拦:全量发布时这两版照样会发出去,只是各打一条警告
 $unsupported = @("1.21.6", "1.21.7")
 
 # 注意:tag 是**仓库级**的,而这个仓库同时承载 26.x 线 —— 那条线已经把 "v2.0.0" 用掉了(两条线各自都把"换 mod id"
@@ -83,12 +86,28 @@ $jar = Join-Path $root "dist\$artifact-$modVersion+mc$mc.jar"
 
 	Write-Host "=== $title ==="
 
-	#GitHub —— 每个 jar 一个 release(逐版本 tag),正文就是该版本的发布页。
+	#GitHub —— 每个 jar 一个 release(逐版本 tag),正文就是该版本的发布页。这一步必须能重复执行:
+	#release 已经存在时 gh release create 会以 422 失败(十版早就发过了),所以先 view 一次 ——
+	#在就只把 jar 传上去(--clobber 覆盖同名附件),不在才创建。
 	$gh = "gh release create `"$tag`" `"$jar`" --title `"$title`" --notes-file `"$notes`" --target `"$tagTarget`""
-	if ($DryRun) { Write-Host "  [github]     $gh" }
+	$ghUpload = "gh release upload `"$tag`" `"$jar`" --clobber"
+	if ($DryRun) {
+		Write-Host "  [github]     若 $tag 已存在: $ghUpload"
+		Write-Host "  [github]     否则: $gh"
+	}
 	else {
 		git push origin $tagTarget
-		Invoke-Expression $gh
+		# gh view 在 release 不存在时会往 stderr 写东西;$ErrorActionPreference 是 Stop,先临时放宽,免得它变成终止错误
+		$savedErrorAction = $ErrorActionPreference
+		$ErrorActionPreference = "Continue"
+		gh release view "$tag" *> $null
+		$releaseExists = ($LASTEXITCODE -eq 0)
+		$ErrorActionPreference = $savedErrorAction
+		if ($releaseExists) {
+			Write-Host "  [github]     release $tag 已存在,只上传 jar"
+			Invoke-Expression $ghUpload
+		}
+		else { Invoke-Expression $gh }
 	}
 
 	#Modrinth
