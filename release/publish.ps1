@@ -58,6 +58,17 @@ New-Item -ItemType Directory -Force $tmp | Out-Null
 #1.21.6 / 1.21.7 的 OptiFine 构建自身有缺陷,默认不推荐发布(要发就加 -Version 单独发)
 $unsupported = @("1.21.6", "1.21.7")
 
+# 同一版本号可能覆盖多个 jar(例如 2.0.0 覆盖全部十版)。GitHub 的 tag 就是版本号本身,所以这种情况下只能建
+# **一个** release、把共用的 jar 全部挂上去 —— 否则第二个 gh release create 会撞同一个 tag。Modrinth 与
+# CurseForge 不受影响:它们本来就要求每个 MC 版本一个 version 条目。
+$mcsByVersion = @{}
+foreach ($eachMc in $versions) {
+	$eachVersion = if ($modVersions.ContainsKey($eachMc)) { $modVersions[$eachMc] } else { $defaultModVersion }
+	if (-not $mcsByVersion.ContainsKey($eachVersion)) { $mcsByVersion[$eachVersion] = @() }
+	$mcsByVersion[$eachVersion] += $eachMc
+}
+$releasedTags = @{}
+
 foreach ($mc in $versions) {
 	$modVersion = if ($modVersions.ContainsKey($mc)) { $modVersions[$mc] } else { $defaultModVersion }
 
@@ -80,12 +91,40 @@ $jar = Join-Path $root "dist\$artifact-$modVersion+mc$mc.jar"
 
 	Write-Host "=== $title ==="
 
-	#GitHub
-	$gh = "gh release create `"$tag`" `"$jar`" --title `"$title`" --notes-file `"$notes`" --target `"$tagTarget`""
-	if ($DryRun) { Write-Host "  [github]     $gh" }
+	#GitHub —— 每个**版本号**一个 release,不是每个 jar 一个:共用这个版本号的 jar 一起挂上去
+	#(见 $mcsByVersion)。tag 就是版本号本身,与已有发布一致(v1.1.0、v1.1.2)。
+	if ($releasedTags.ContainsKey($tag)) {
+		Write-Host "  [github]     ($tag 已经建好,这个 jar 挂在那一个 release 上)"
+	}
 	else {
-		git push origin $tagTarget
-		Invoke-Expression $gh
+		$releasedTags[$tag] = $true
+		$shared = @($mcsByVersion[$modVersion] | Where-Object { Test-Path (Join-Path $root "dist\$artifact-$modVersion+mc$_.jar") })
+		if ($shared.Count -eq 0) { $shared = @($mc) }
+		# 真引号,不是反引号转义:这一段拼出来的字符串会被 Invoke-Expression 再解析一次。
+		$attach = ($shared | ForEach-Object { '"' + (Join-Path $root "dist\$artifact-$modVersion+mc$_.jar") + '"' }) -join " "
+		$ghTitle = $title
+		$notesFile = $notes
+
+		if ($shared.Count -gt 1) {
+			# 多个 jar 共用一个版本号:正文取这条线最新的那一版说明,再附上所有附件的尺寸与 SHA-256。
+			$ghTitle = "$modName $modVersion"
+			$bodyMc = $shared[$shared.Count - 1]
+			$body = [System.IO.File]::ReadAllText((Join-Path $root "release\notes\mc$bodyMc.md"), [System.Text.Encoding]::UTF8)
+			$rows = foreach ($eachMc in $shared) {
+				$eachJar = Join-Path $root "dist\$artifact-$modVersion+mc$eachMc.jar"
+				'| {0} | {1} | {2} | {3} |' -f $eachMc, (Split-Path -Leaf $eachJar), (Get-Item $eachJar).Length, (Get-FileHash $eachJar -Algorithm SHA256).Hash
+			}
+			$body += "`r`n---`r`n`r`n## 本条目附带的 $($shared.Count) 个 jar`r`n`r`n| Minecraft | 文件 | 字节 | SHA-256 |`r`n|---|---|---|---|`r`n" + ($rows -join "`r`n") + "`r`n"
+			$notesFile = Join-Path $tmp "github-$tag.md"
+			[System.IO.File]::WriteAllText($notesFile, $body, (New-Object System.Text.UTF8Encoding($false)))
+		}
+
+		$gh = "gh release create `"$tag`" $attach --title `"$ghTitle`" --notes-file `"$notesFile`" --target `"$tagTarget`""
+		if ($DryRun) { Write-Host "  [github]     $gh" }
+		else {
+			git push origin $tagTarget
+			Invoke-Expression $gh
+		}
 	}
 
 	#Modrinth
