@@ -1,4 +1,4 @@
-# GitHub Release notes — tag `v1.1.2`(`OptiFabric-1.1.2+mc1.21.11.jar`)
+# GitHub Release notes — tag `v2.0.0`(`OptiFabric-2.0.0+mc1.21.11.jar`)
 
 > 复制下面 `---` 之间的内容到 GitHub Release 的说明框里(标题用第一行)。英文在前,末尾附中文摘要。
 > 标签是**版本号本身**(`v1.1.2`,不带 `+mc`),与已发的 `v1.1.0` / `v1.2.0` / `v2.0.0` 一致;这一行要手改,
@@ -6,13 +6,31 @@
 
 ---
 
-## OptiFabric 1.1.2+mc1.21.11 — OptiFine on Fabric 1.21.11
+## OptiFabric 2.0.0+mc1.21.11 — OptiFine on Fabric 1.21.11
 
 Run **OptiFine** and **Fabric** in the same 1.21.11 client. Drop OptiFabric and your own OptiFine jar into `mods/`; at startup OptiFabric runs OptiFine's installer, remaps its patches into Fabric's namespace, repairs the structural conflicts with Fabric API, and hands the result to Fabric Loader's class transformer.
 
 **OptiFine is not bundled or redistributed** — bring your own `OptiFine_1.21.11_HD_U_J9.jar` (or another 1.21.11 build).
 
-### New in 1.1.2 — anti-aliasing, on every release from 1.21.3 up
+### New in 2.0.0 — the fork's own mod id, and Architectury support
+
+**The mod id is now `optifabric_reforged`** (display name *OptiFabric Reforged* — the identity the 26.x line already ships). Upgrade note: **delete any older `OptiFabric-<version>+mc1.21.x.jar` before dropping this one in**. With both ids present Fabric loads both copies and OptiFine gets patched twice.
+
+The rename is what makes **Architectury** work. Its metadata declares `breaks: optifabric <1.13.0`, which Fabric Loader enforces before anything runs — and that rule is not ours to change, so this line changed its own id instead. With `optifabric_reforged` the rule simply no longer matches and the two mods load together, with no `fabric_loader_dependencies.json` involved.
+
+Behind that declaration was a genuine bytecode conflict, and it is fixed too. With the declaration neutralised the game still died on its first frame:
+
+```
+InjectionError: LVT in net/minecraft/class_757::method_3192 has incompatible changes at opcode 601
+```
+
+Mixin hands a method's locals to an `@Inject` handler **strictly by slot order** (`CallbackInjector` takes the first `extraArgs` non-null locals from `getFirstNonArgLocalIndex` upwards), and OptiFine's build inserts two floats of its own — `guiFarPlane` and `guiOffsetZ` — in the middle of `GameRenderer.render`, pushing the game's `Matrix4f`, `Matrix4fStack` and `GuiGraphics` one or two slots up. The order the handler was compiled against no longer lines up. The new `LocalSlotLayoutFix` moves the locals that have no counterpart in the game's layout to the end of the slot range (7→15 and 10→16 on 1.21.1) and rewrites the local variable table — that table is what Mixin reads the locals from, and no writer in the pipeline regenerates it — while the stack map frames are recomputed by the frame-computing writer that every changed class goes through.
+
+**All ten jars of this line are 2.0.0**: 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10 and 1.21.11.
+
+Measured on 1.21.1 with `OptiFine_1.21.1_HD_U_J1`, fabric-api 0.116.17 and architectury 13.0.11, no config file: 56 mods load, the fixer reports the slot move, a world opens, and the client stays up with no injection error, no `VerifyError` and no crash report.
+
+### Previously in 1.1.2 — anti-aliasing, on every release from 1.21.3 up
 
 **1.1.2 covers eight jars** — 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10 and 1.21.11 (1.21 and 1.21.1 stay at 1.1.0: OptiFine only ships the old chain location for those, which the repair never touched). On 1.21.11 this jar behaves exactly like 1.1.1, which already had this fix.
 
@@ -36,7 +54,7 @@ This is versioned per artifact: 1.21.3 – 1.21.11 are 1.1.2, 1.21 and 1.21.1 ke
 ### Install
 
 1. Install a 1.21.11 Fabric client (Loader 0.19.5+).
-2. Put `OptiFabric-1.1.2+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough.
+2. Put `OptiFabric-2.0.0+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
 3. Start the game with the **Fabric** profile. The first launch spends a few seconds patching and remapping (cached afterwards under `<game dir>/.optifine/<version>/`).
 
 ### What it took for 1.21.11
@@ -69,7 +87,7 @@ OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recomp
 
 | File | SHA-256 |
 |---|---|
-| `OptiFabric-1.1.2+mc1.21.11.jar` (873615 bytes) | `B62AB6AEBD441E67C75F1FD239DFFF3286B437EA8B6B95AC5597AE7AC4FEFEF0` |
+| `OptiFabric-2.0.0+mc1.21.11.jar` (871323 bytes) | `560F5E71028E206205A103EC1DF2DAAAA6BE16CAD6EE6F36E8E018C5F99DC92E` |
 
 The same `v1.21.x` project also builds the other Minecraft releases OptiFine ships a 1.21.x build for — 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9 and 1.21.10 — with `.\gradlew -p v1.21.x build "-Pmc=<version>"`, and each of them passes the same offline verification (see [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)).
 
@@ -85,9 +103,12 @@ A port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) by Mod
 
 把 OptiFine 接进 Minecraft **1.21.11** 的 Fabric。把本 jar 与自备的 `OptiFine_1.21.11_HD_U_J9.jar` 一起放进 `mods/`,用 Fabric 版本启动即可(**不需要**先运行 OptiFine 安装器);首次启动多花几秒做补丁+重映射,之后走缓存。
 
-- **1.1.2 修复**:抗锯齿在 **1.21.3 起的所有版本**上都是坏的(每次资源重载刷
-  `Resource not found: minecraft:post_effect/fxaa_of_2x.json`,一动抗锯齿或切光影包就 `Failed to load post chain`),
-  见上面英文段的 "New in 1.1.2";1.1.2 覆盖**八个产物**(1.21.3 – 1.21.11),1.21 与 1.21.1 仍停在 1.1.0
+- **2.0.0 的改动**:**mod id 改成 `optifabric_reforged`(显示名 OptiFabric Reforged)** —— 升级前请先删掉旧的
+  `OptiFabric-<版本>+mc1.21.x.jar`,两个 id 同时存在会**同时加载两份**、OptiFine 被打两遍补丁;同时**修掉
+  Architectury 崩在第一帧的局部变量冲突**(`GameRenderer.render` 里 OptiFine 插入的两个局部变量顶高了原版槽位,
+  Mixin 按槽位顺序捕获即失败),1.21.1 + architectury 13.0.11 实测可进世界且不需要任何配置文件;
+  本线**十个产物统一为 2.0.0**(1.21 – 1.21.11)
+- 历史:1.1.2 修好了抗锯齿(覆盖 1.21.3 – 1.21.11 八个产物),1.21 与 1.21.1 当时停在 1.1.0
 - 需要:Fabric Loader ≥ 0.19.5、Java 21+、客户端;Fabric API 可选(实测 0.141.6+1.21.11)
 - 离线校验:被补丁的 **570** 个游戏类与 OptiFine 自身的 **874** 个类全部通过 JVM + ASM 双向校验
 - 真机已验证:启动、主界面、单人、**多人服务器**、方块/区块/物品渲染、**光影**、F3 调试屏,`[ERROR]` 0 条

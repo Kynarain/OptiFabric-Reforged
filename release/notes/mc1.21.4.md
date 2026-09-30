@@ -1,9 +1,21 @@
-# OptiFabric 1.1.2+mc1.21.4
+# OptiFabric 2.0.0+mc1.21.4
 
 **Minecraft 1.21.4** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `OptiFine_1.21.4_HD_U_J3.jar`
 
 状态:**已实测正常(含抗锯齿)**
 
+## 2.0.0 的改动
+
+- **mod id 改为 `optifabric_reforged`(显示名 OptiFabric Reforged)**:先删掉 `mods/` 里旧的
+  `OptiFabric-<版本>+mc1.21.x.jar` 再放新的 —— 两个 id 同时存在时 Fabric 会同时加载两份,OptiFine 会被打两遍补丁;
+- **修掉 Architectury 崩溃**:OptiFine 在 `GameRenderer.render` 中间插入了它自己的两个局部变量,把原版
+  `Matrix4f`/`Matrix4fStack`/`GuiGraphics` 顶高 1–2 个槽位,而 Mixin 的局部变量捕获是**按槽位顺序**比对的,
+  于是整个类变换失败(`InjectionError: LVT ... has incompatible changes at opcode 601`)。新增
+  `LocalSlotLayoutFix` 把 OptiFine 自己的局部变量挪到局部变量区末尾(1.21.1 实测 7→15、10→16),只改槽号不改语义;
+  1.21.1 + architectury 13.0.11 已实测可进世界,且不需要任何配置文件;
+- 顺带修:`processResources` 未把 mod id / 显示名声明为 task inputs,改名曾静默不生效。
+
+细节见仓库根目录 `CHANGELOG.md` 的 2.0.0 一节。
 ## 1.1.2 修了什么
 
 **抗锯齿之前是坏的(或干脆没生效),这一版把它修好了。**
@@ -48,6 +60,6 @@
 
 ## 校验
 
-`OptiFabric-1.1.2+mc1.21.4.jar` — 788131 字节
+`OptiFabric-2.0.0+mc1.21.4.jar` — 785839 字节
 
-`SHA-256: FFD23C03B7B0A8C9E29B2965AA79546CFEF5D4B7F621EF33D002574134CEC24A`
+`SHA-256: 3607448005D3017A23809648760B2C32BC3ED22BF53F7301F6A7CA0640349FB3`

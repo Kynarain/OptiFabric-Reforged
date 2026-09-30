@@ -1,5 +1,53 @@
 # 更新日志
 
+## 2.0.0+mc1.21 … 2.0.0+mc1.21.11 — 换用本分叉自己的 mod id,并修掉让 Architectury 崩在第一帧的局部变量冲突
+
+> **这一版覆盖全部 10 个产物**(1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11),
+> 全部是 2.0.0。**主版本号递增的原因是换了 mod id** —— 按 `docs/VERSIONING.md` 的映射表,改 id 属于不兼容修改。
+
+### 升级前必须做:删掉旧 jar
+
+mod id 从 `optifabric` 改成 **`optifabric_reforged`**,显示名改成 **OptiFabric Reforged**(与 26.x 线一致)。
+身份变了,所以**先把 `mods/` 里旧的 `OptiFabric-<版本>+mc1.21.x.jar` 删掉,再放新的**:两个 id 同时存在时 Fabric 会
+**同时加载两份**,OptiFine 会被打两遍补丁。
+
+### 修好了:装上 Architectury 不再崩在第一帧
+
+用户的报告("和 Architectury 不兼容")其实是两层,分开看才清楚:
+
+1. **声明层**:Architectury 自己的元数据写着 `breaks: optifabric <1.13.0`,Loader 直接拒载,它的三个 1.21.1 构建
+   都一样。这条规则不是我们的元数据,能改的只有我们自己的 id,于是有了上面的改名;改名后规则不再匹配,
+   按常规方式装即可(不需要任何 `fabric_loader_dependencies.json`)。
+2. **字节码层**:把声明中和掉之后,游戏跑到第一帧就崩:
+   `InjectionError: LVT in net/minecraft/class_757::method_3192 has incompatible changes at opcode 601`。
+   Mixin 把方法的局部变量**按槽位顺序**交给 `@Inject` 处理器(`CallbackInjector` 从 `getFirstNonArgLocalIndex`
+   起取前 N 个非空局部变量),而 OptiFine 的构建在 `GameRenderer.render` **中间**插入了它自己的两个 float
+   (`guiFarPlane`、`guiOffsetZ`),把原版的 `Matrix4f`/`Matrix4fStack`/`GuiGraphics` 顶高了 1–2 个槽位,
+   处理器按原版顺序声明的参数因此对不上。
+
+新增 `LocalSlotLayoutFix`:按槽位顺序对齐两边的局部布局,把"原版没有、OptiFine 自己加的"槽位整体挪到方法
+局部变量区末尾(1.21.1 实测 7→15、10→16),只改槽号不改语义;局部变量表随之改写 —— **那张表才是 Mixin 读取
+局部变量的来源,而管线里没有任何 writer 会重建它**;栈帧交给改动类必经的 `FrameComputingWriter` 重算。
+
+实测(1.21.1 + `OptiFine_1.21.1_HD_U_J1` + fabric-api 0.116.17 + architectury 13.0.11,不放任何配置文件):
+56 个模组加载、fixer 报告槽位搬移、进世界正常、无注入错误、无 `VerifyError`、无崩溃报告。
+
+### 另修
+
+`build.gradle` 的 `processResources` 从来没把 mod id / 显示名声明成 task inputs,于是改名后 Gradle 认为任务
+up-to-date、继续展开旧 id(jar 里仍是 `optifabric`)。现已补上 `inputs.property`,改名才会真的生效。
+
+### 顺带修好的工具缺陷
+
+`release\version.ps1 -RecordDigest` 的版本串匹配没有锚定:`2.0.0+mc1.21.1` 是 `2.0.0+mc1.21.11` 的前缀,
+于是 1.21.1 那一次会把 1.21.11 的段落一起改写(实测把 `release/notes/mc1.21.11.md` 的尺寸与 SHA-256 写成了
+1.21.1 的值)。现改为 `(?!\.?\d)`:后面不能再跟"可选点 + 数字" —— 既能匹配 `...1.21.11.jar`,又不会把
+`...1.21` 后面的 `.11` 吃进去。
+
+### 校验
+
+十个产物的字节数与 SHA-256 见各自的发布页(`release/notes/mc<MC>.md`),构建产物在 `build/libs/`。
+
 ## 1.1.2+mc1.21.3 … 1.1.2+mc1.21.11 — 抗锯齿全线修复,并纠正 1.1.1 里的错误结论
 
 > **这一版覆盖 8 个产物**:1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11(都叫 1.1.2)。

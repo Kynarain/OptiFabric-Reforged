@@ -126,16 +126,16 @@ curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/opt
 
 | Minecraft | 产物 | OptiFine 构建 | 状态 |
 |---|---|---|---|
-| 1.21 | `OptiFabric-1.1.0+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
-| 1.21.1 | `OptiFabric-1.1.0+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
-| 1.21.3 | `OptiFabric-1.1.2+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
-| 1.21.4 | `OptiFabric-1.1.2+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
-| 1.21.6 | `OptiFabric-1.1.2+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
-| 1.21.7 | `OptiFabric-1.1.2+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
-| 1.21.8 | `OptiFabric-1.1.2+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
-| 1.21.9 | `OptiFabric-1.1.2+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
-| 1.21.10 | `OptiFabric-1.1.2+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
-| 1.21.11 | `OptiFabric-1.1.2+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
+| 1.21 | `OptiFabric-2.0.0+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
+| 1.21.1 | `OptiFabric-2.0.0+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
+| 1.21.3 | `OptiFabric-2.0.0+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
+| 1.21.4 | `OptiFabric-2.0.0+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
+| 1.21.6 | `OptiFabric-2.0.0+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
+| 1.21.7 | `OptiFabric-2.0.0+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
+| 1.21.8 | `OptiFabric-2.0.0+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
+| 1.21.9 | `OptiFabric-2.0.0+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
+| 1.21.10 | `OptiFabric-2.0.0+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
+| 1.21.11 | `OptiFabric-2.0.0+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
 
 OptiFine 没出过 **1.21.2 / 1.21.5** 的构建,所以这两版没有对应 jar。
 

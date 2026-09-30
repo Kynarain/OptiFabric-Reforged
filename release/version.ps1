@@ -347,7 +347,9 @@ if ($RecordDigest) {
 	# "<n> 字节" would also hit the ten 1.1.0-era figures in dist\README.txt and in the changelog, which belong
 	# to earlier releases - one jar per Minecraft version means those numbers are all different. With -Mc
 	# the pattern carries the Minecraft version as well, so the other nine jars stay untouched too.
-	$versionPattern = [regex]::Escape("$current+mc$mc")
+	# Anchored, because one jar's version string can be a prefix of another's: 2.0.0+mc1.21.1 sits inside
+	# 2.0.0+mc1.21.11, and without the lookahead the 1.21.1 run rewrote 1.21.11's paragraphs in the same file.
+	$versionPattern = [regex]::Escape("$current+mc$mc") + '(?!\.?\d)'
 	# The unit is kept as written: the Chinese documents say "字节", docs\RELEASE_NOTES.md says "bytes".
 	$sizePattern = '([\d,]{4,})(\s*(?:字节|bytes))'
 	$hashPattern = '([0-9A-Fa-f]{64})'
@@ -380,7 +382,7 @@ if ($RecordDigest) {
 			# matters: without it this also matches this release's own name, and then nothing is ever updated.
 			$otherVersion = [regex]::IsMatch($paragraph,
 				[regex]::Escape($lines[$Line].artifact) + '-(?!' + [regex]::Escape($current) + ')\d+\.\d+\.\d+[^\s`]*\+mc')
-			$mentionsCurrent = [regex]::IsMatch($paragraph, [regex]::Escape("$($lines[$Line].artifact)-$current+mc$mc")) -or
+			$mentionsCurrent = [regex]::IsMatch($paragraph, [regex]::Escape("$($lines[$Line].artifact)-$current+mc$mc") + '(?!\.?\d)') -or
 				$paragraph -match $versionPattern
 			$matched = $mentionsCurrent -and -not $otherVersion
 
