@@ -58,16 +58,8 @@ New-Item -ItemType Directory -Force $tmp | Out-Null
 #1.21.6 / 1.21.7 的 OptiFine 构建自身有缺陷,默认不推荐发布(要发就加 -Version 单独发)
 $unsupported = @("1.21.6", "1.21.7")
 
-# 同一版本号可能覆盖多个 jar(例如 2.0.0 覆盖全部十版)。GitHub 的 tag 就是版本号本身,所以这种情况下只能建
-# **一个** release、把共用的 jar 全部挂上去 —— 否则第二个 gh release create 会撞同一个 tag。Modrinth 与
-# CurseForge 不受影响:它们本来就要求每个 MC 版本一个 version 条目。
-$mcsByVersion = @{}
-foreach ($eachMc in $versions) {
-	$eachVersion = if ($modVersions.ContainsKey($eachMc)) { $modVersions[$eachMc] } else { $defaultModVersion }
-	if (-not $mcsByVersion.ContainsKey($eachVersion)) { $mcsByVersion[$eachVersion] = @() }
-	$mcsByVersion[$eachVersion] += $eachMc
-}
-$releasedTags = @{}
+# 注意:tag 是**仓库级**的,而这个仓库同时承载 26.x 线 —— 那条线已经把 "v2.0.0" 用掉了(两条线各自都把"换 mod id"
+# 当作大版本)。所以每个 jar 的 tag 都必须带上自己的 MC 版本,见下面的 $tag。
 
 foreach ($mc in $versions) {
 	$modVersion = if ($modVersions.ContainsKey($mc)) { $modVersions[$mc] } else { $defaultModVersion }
@@ -76,9 +68,9 @@ foreach ($mc in $versions) {
 	$modName = if ($modNames.ContainsKey($mc)) { $modNames[$mc] } else { $defaultModName }
 $jar = Join-Path $root "dist\$artifact-$modVersion+mc$mc.jar"
 	$notes = Join-Path $root "release\notes\mc$mc.md"
-	# Tag shape follows the releases this repo already has (v1.1.0, v1.1.2): the version number alone. The MC
-	# version stays in the artifact name and in the release title, not in the tag.
-	$tag = "v$modVersion"
+	# Tag 必须逐版本唯一:仓库里 26.x 线已经占用了 "v2.0.0",而 tag 是仓库级的。所以 tag 是"版本号 + 该 MC 版本"
+	# (semver 的编译信息,不参与优先级比较);jar 名、release 标题与 tag 用的是同一串,便于互相对照。
+	$tag = "v$modVersion+mc$mc"
 	$title = "$modName $modVersion+mc$mc"
 	# Which branch the tag is made on: gh would otherwise tag the default branch (main), which is not where this
 	# release line lives. This line is released from 1.21.x (see the branch section of docs\PUBLISHING.md);
@@ -91,40 +83,12 @@ $jar = Join-Path $root "dist\$artifact-$modVersion+mc$mc.jar"
 
 	Write-Host "=== $title ==="
 
-	#GitHub —— 每个**版本号**一个 release,不是每个 jar 一个:共用这个版本号的 jar 一起挂上去
-	#(见 $mcsByVersion)。tag 就是版本号本身,与已有发布一致(v1.1.0、v1.1.2)。
-	if ($releasedTags.ContainsKey($tag)) {
-		Write-Host "  [github]     ($tag 已经建好,这个 jar 挂在那一个 release 上)"
-	}
+	#GitHub —— 每个 jar 一个 release(逐版本 tag),正文就是该版本的发布页。
+	$gh = "gh release create `"$tag`" `"$jar`" --title `"$title`" --notes-file `"$notes`" --target `"$tagTarget`""
+	if ($DryRun) { Write-Host "  [github]     $gh" }
 	else {
-		$releasedTags[$tag] = $true
-		$shared = @($mcsByVersion[$modVersion] | Where-Object { Test-Path (Join-Path $root "dist\$artifact-$modVersion+mc$_.jar") })
-		if ($shared.Count -eq 0) { $shared = @($mc) }
-		# 真引号,不是反引号转义:这一段拼出来的字符串会被 Invoke-Expression 再解析一次。
-		$attach = ($shared | ForEach-Object { '"' + (Join-Path $root "dist\$artifact-$modVersion+mc$_.jar") + '"' }) -join " "
-		$ghTitle = $title
-		$notesFile = $notes
-
-		if ($shared.Count -gt 1) {
-			# 多个 jar 共用一个版本号:正文取这条线最新的那一版说明,再附上所有附件的尺寸与 SHA-256。
-			$ghTitle = "$modName $modVersion"
-			$bodyMc = $shared[$shared.Count - 1]
-			$body = [System.IO.File]::ReadAllText((Join-Path $root "release\notes\mc$bodyMc.md"), [System.Text.Encoding]::UTF8)
-			$rows = foreach ($eachMc in $shared) {
-				$eachJar = Join-Path $root "dist\$artifact-$modVersion+mc$eachMc.jar"
-				'| {0} | {1} | {2} | {3} |' -f $eachMc, (Split-Path -Leaf $eachJar), (Get-Item $eachJar).Length, (Get-FileHash $eachJar -Algorithm SHA256).Hash
-			}
-			$body += "`r`n---`r`n`r`n## 本条目附带的 $($shared.Count) 个 jar`r`n`r`n| Minecraft | 文件 | 字节 | SHA-256 |`r`n|---|---|---|---|`r`n" + ($rows -join "`r`n") + "`r`n"
-			$notesFile = Join-Path $tmp "github-$tag.md"
-			[System.IO.File]::WriteAllText($notesFile, $body, (New-Object System.Text.UTF8Encoding($false)))
-		}
-
-		$gh = "gh release create `"$tag`" $attach --title `"$ghTitle`" --notes-file `"$notesFile`" --target `"$tagTarget`""
-		if ($DryRun) { Write-Host "  [github]     $gh" }
-		else {
-			git push origin $tagTarget
-			Invoke-Expression $gh
-		}
+		git push origin $tagTarget
+		Invoke-Expression $gh
 	}
 
 	#Modrinth

@@ -1,7 +1,7 @@
-# GitHub Release notes — tag `v2.0.0`(`OptiFabric-2.0.0+mc1.21.11.jar`)
+# GitHub Release notes — tag `v2.0.0+mc1.21.11`(`OptiFabric-2.0.0+mc1.21.11.jar`)
 
 > 复制下面 `---` 之间的内容到 GitHub Release 的说明框里(标题用第一行)。英文在前,末尾附中文摘要。
-> 标签是**版本号本身**(`v1.1.2`,不带 `+mc`),与已发的 `v1.1.0` / `v1.2.0` / `v2.0.0` 一致;这一行要手改,
+> 标签是**版本号 + 该 MC 版本**(`v2.0.0+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
 > 其余版本号由 `release\version.ps1` 统一改写。
 
 ---
