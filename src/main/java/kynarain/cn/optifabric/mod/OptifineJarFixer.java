@@ -56,6 +56,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Enumeration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -78,6 +79,8 @@ import kynarain.cn.optifabric.util.ZipUtils;
 
 public class OptifineJarFixer {
 	private static final String POST_EFFECT = "assets/minecraft/post_effect/";
+	/** The texture API that arrived with 1.21.6; the texture repair below only makes sense where it exists. */
+	private static final String GPU_TEXTURE = "com/mojang/blaze3d/textures/GpuTexture.class";
 	private static final String POST_SHADER = "assets/minecraft/shaders/post/";
 	private static final String GAME_SCREENQUAD = "assets/minecraft/shaders/core/screenquad.vsh";
 	private static final String SCREENQUAD = "minecraft:core/screenquad";
@@ -111,15 +114,36 @@ public class OptifineJarFixer {
 	public static void fix(File jar, Path minecraftJar) throws IOException {		//Only the game jar is held open here: the jar being rewritten must stay untouched, or Windows refuses to
 		//replace it half way through.
 		try (ZipFile minecraft = openQuietly(minecraftJar)) {
+			// What this release of the game understands decides what may be rewritten, and it is read out of the
+			// game's own jar rather than from a version list: 1.21.6 introduced the post_effect registry (the
+			// "vertex_shader"/"fragment_shader" keys) and the GpuTexture API this texture repair targets. An older
+			// release's parser still expects OptiFine's own "program" key, and rewriting it there breaks the chain:
+			//   Failed to parse post chain at minecraft:post_effect/fxaa_of_2x.json
+			//   JsonSyntaxException: Not a json array: {"BlitConfig":...}; No key program
+			// which silently turns anti-aliasing off - measured on 1.21.3 and 1.21.4, where the published 1.1.2 jar
+			// left those files alone and they parsed fine.
+			boolean postEffectRegistry = minecraft != null && usesPostEffectRegistry(minecraft);
+			boolean gpuTextureApi = minecraft != null && minecraft.getEntry(GPU_TEXTURE) != null;
+
+			if (!postEffectRegistry || !gpuTextureApi) {
+				System.out.println("[OptiFabric] This release has no "
+						+ (!postEffectRegistry ? "post_effect registry" : "GpuTexture API")
+						+ ", so OptiFine's own post-effect files and its texture path are left exactly as it shipped them");
+			}
+
 			ZipUtils.transformInPlace(jar, (zip, entry) -> {
 				String name = entry.getName();
 
 				if (name.startsWith(POST_EFFECT) && name.endsWith(".json")) {
+					if (!postEffectRegistry) return zip.getInputStream(entry);
+
 					byte[] fixed = fixPostEffect(zip, minecraft, entry);
 					return fixed != null ? new ByteArrayInputStream(fixed) : zip.getInputStream(entry);
 				}
 
 				if (name.startsWith(POST_SHADER) && name.endsWith(".vsh")) {
+					if (!postEffectRegistry) return zip.getInputStream(entry);
+
 					byte[] fixed = fixPostVertexShader(zip, minecraft, entry);
 					return fixed != null ? new ByteArrayInputStream(fixed) : zip.getInputStream(entry);
 				}
@@ -130,6 +154,8 @@ public class OptifineJarFixer {
 				}
 
 				if ("net/optifine/shaders/SimpleShaderTexture.class".equals(name)) {
+					if (!gpuTextureApi) return zip.getInputStream(entry);
+
 					byte[] fixed = createGpuTexture(zip, entry);
 					return fixed != null ? new ByteArrayInputStream(fixed) : zip.getInputStream(entry);
 				}
@@ -137,6 +163,29 @@ public class OptifineJarFixer {
 				return zip.getInputStream(entry);
 			});
 		}
+	}
+
+	/**
+	 * Whether the game's own post effects are written in the shape that arrived with the post_effect registry
+	 * (1.21.6): a pass names a {@code vertex_shader} and a {@code fragment_shader} instead of the single
+	 * {@code program} key that every parser before it expects. Read from the game's jar so no release list has to be
+	 * kept in step with it.
+	 */
+	private static boolean usesPostEffectRegistry(ZipFile minecraft) {
+		for (Enumeration<? extends ZipEntry> entries = minecraft.entries(); entries.hasMoreElements(); ) {
+			ZipEntry entry = entries.nextElement();
+			String name = entry.getName();
+
+			if (!name.startsWith(POST_EFFECT) || !name.endsWith(".json")) continue;
+
+			try (InputStream in = minecraft.getInputStream(entry)) {
+				if (new String(in.readAllBytes(), StandardCharsets.UTF_8).contains("\"vertex_shader\"")) return true;
+			} catch (IOException e) {
+				//An entry that cannot be read says nothing about the format; keep looking
+			}
+		}
+
+		return false;
 	}
 
 	/**

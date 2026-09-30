@@ -48,6 +48,26 @@ up-to-date、继续展开旧 id(jar 里仍是 `optifabric`)。现已补上 `inpu
 十行的尺寸与 SHA-256 全写成自己的值**(实测十行全变成 1.21.10 那份的值)。现在只要段落里出现多个版本,就退化为
 **按行**改写、且只改提到本版本的那些行;用扰动测试验证过:只修被改坏的那一行,相邻行不动。
 
+### 修正:后处理文件的现代化改写现在按版本设门
+
+`OptifineJarFixer` 会把 OptiFine 自带的 FXAA 后处理文件从旧写法(`"program"` 键)改写成 1.21.6 起的新写法
+(`"vertex_shader"` / `"fragment_shader"`),并给 blit pass 补 `BlitConfig`。这段改写原本只按**文件内容**触发,
+于是在 **1.21.3 / 1.21.4** 上把文件改成了这两版的解析器读不了的形状:
+
+```
+Failed to parse post chain at minecraft:post_effect/fxaa_of_2x.json
+JsonSyntaxException: Not a json array: {"BlitConfig":...}; No key program
+```
+
+后果是这两版的**抗锯齿链解析失败、静默失效**(实测:不设门时 2 条;已发布的 1.1.2 是 0 条 —— 1.1.2 根本不改这些文件)。
+
+现改为**内容判据**,不再依赖版本号列表:只有游戏自带的 `post_effect/*.json` 使用新键时才做这段改写;只有游戏带
+`GpuTexture` API(1.21.6 起)时才做那处纹理修复。实测:1.21.3 与 1.21.4 由 2 条降到 **0 条**,1.21.11 仍走改写路径
+(未被误跳过),1.21.1 + Architectury 用同一个新 jar 重验仍为 FIXED。
+
+> 提醒:`.optifine` 缓存按 **OptiFabric 版本号**判定新旧,不按 jar 内容。用同一版本号的新构建做验证前,要先删掉实例
+> 里的 `.optifine` 目录,否则会继续使用旧构建写进去的补丁产物(这次就因此先被误导了一次)。
+
 ### 校验
 
 十个产物的字节数与 SHA-256 见各自的发布页(`release/notes/mc<MC>.md`),构建产物在 `build/libs/`。

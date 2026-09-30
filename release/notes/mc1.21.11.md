@@ -60,6 +60,6 @@
 - 真机:1.1.1 已由用户在自己的 1.21.11 实例确认(启动、资源重载、切光影包、开关抗锯齿都正常,`[ERROR]` 0 条);
   1.1.2 用同一个实例再跑一遍资源重载,`Resource not found: minecraft:post_effect/*` **0 条**。
 
-`OptiFabric-2.0.0+mc1.21.11.jar` — 871323 字节
+`OptiFabric-2.0.0+mc1.21.11.jar` — 871992 字节
 
-`SHA-256: 560F5E71028E206205A103EC1DF2DAAAA6BE16CAD6EE6F36E8E018C5F99DC92E`
+`SHA-256: 7AB4B03405C1809AC3E4F9D06905013DAB6A514030C714FF4E65723BC7C63877`
