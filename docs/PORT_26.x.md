@@ -920,6 +920,264 @@ registerFix("net/minecraft/client/renderer/extract/LevelExtractor",
 26.1.2 那份构建**没有这个缺陷**(不加任何修复就打出 `Loaded shaderpack`),所以这一条在那一版上是空操作,也没有
 改变 26.1.2 的产物 —— 那一版重跑的离线数字与 2.0.0 的基线**逐个相同**(见下)。
 
+#### 为什么"强行打开"画不出世界:根因取证(2026-09-26)
+
+2.1.0 那次测量只说明了"强开之后画面是错的",没说明错在哪。补上这一段的方法**不需要开游戏**:OptiFabric 自己会把
+**打过补丁的游戏类**缓存成 `<实例>\.optifine\<OptiFine 版本>\Optifine.classes.gz`,把两个版本各自的这一份解出来,
+再按类、按方法统计对 `net/optifine/shaders/` 的引用(`test-downloads/scan-patched-hooks.ps1` 做类级计数,
+`compare-patched-hooks.ps1` 把类 dump 出来跑 `javap -p -c` 定位到方法级),两边的差就是"哪一处集成没了"。
+
+**加载侧完全正常,而且两边一模一样**(26.2 强开那次 与 26.1.2 正常那次逐行对照):
+
+| 项 | 26.1.2 | 26.2(强开) |
+|---|---|---|
+| `Program loaded` | 27 个 | **27 个,同名同集合** |
+| `gbuffers_terrain` / `shadow` / `composite*` / `final` | 全部编译 | **全部编译** |
+| `Framebuffer created` | `dfb` + `sfb` | **`dfb` + `sfb`** |
+
+也就是说问题**不在"装",在"画"**。方法级的钩子对比(数字是该类里对 `net/optifine/shaders/` 的引用处数):
+
+| 类 | 26.1.2 | 26.2 | 说明 |
+|---|---|---|---|
+| `blaze3d/opengl/GlCommandEncoder` | 25 | **25** | 逐绘制 program 绑定、`Shaders.setChunkSectionInfo`、`activeProgramID`、`setDynamicTransforms` 都在 |
+| `renderer/chunk/ChunkSectionsToRender` | 3 | **3** | `ShadersRender.preRenderChunkLayer` / `postRenderChunkLayer` 都在 |
+| `renderer/LevelRenderer` | 42 | **33** | 地形那段的 `ShadersRender.beginTerrainSolid` / `endTerrain` 仍在;少掉的几处落在被 26.2 改写的提取路径上 |
+| `renderer/extract/LevelExtractor` | 无此类 | **18** | 26.2 新类,OptiFine 已经适配它 |
+| `renderer/rendertype/RenderType` | 8 | **0** | 26.1.2 在 `draw(MeshData)` 里做逐绘制的 `pushProgram`/`popProgram` + `ShadersRender.preRender`/`postRender`;**26.2 那个类里连 `draw(MeshData)` 都没有了**(绘制入口换了架构) |
+| `renderer/feature/ModelFeatureRenderer` | 30 | **0** | 实体/模型那一条:`Shaders.nextEntity` / `nextBlockEntity` / `setEntityColor`、`RenderState.*`、`EmissiveTextures.*` 全没了 |
+| `renderer/feature/CustomFeatureRenderer` | 6 | **0** | 同上(自定义几何那一类) |
+
+这些缺席的钩子**不是我们没打上去**:补丁内容来自 OptiFine 那份构建自带的 `patch/srg/<class>.class.xdelta`,
+我们只负责把 xdelta 打到原版类上(26.2 的流水线自报 `Prepared 562 patched classes (0 skipped, 0 failed)`）。
+两边补丁体量一比就清楚(补丁里声明的 md5 与原版类对不上是**常态**:能正常用光影的 26.1.2 同样对不上,不能当判据):
+
+| 类 | OptiFine 26.1.2 的补丁 | OptiFine 26.2 的补丁 |
+|---|---|---|
+| `renderer/feature/ModelFeatureRenderer` | 9,037 B | **409 B** |
+| `renderer/feature/CustomFeatureRenderer` | 2,054 B | **264 B** |
+| `renderer/rendertype/RenderType` | 8,590 B | **5,348 B** |
+| `renderer/extract/LevelExtractor` | 无此类 | **21,599 B** |
+| `blaze3d/systems/CommandEncoder` | 无此类 | **8,795 B** |
+
+它对**新架构的类补得很大**(说明这份构建确实在往 26.2 上适配),但**实体/模型那两条整合还是空壳** —— 这与它自己
+把光影加载取消掉,是同一件事的两面。
+
+把"OptiFine 打了补丁、但补丁里**一个着色器调用都没有**"的类单独挑出来,缺失的形状就很具体了
+(`test-downloads/shader-gap-table.ps1` 一键复现:它同时读两边的补丁清单与两边的补丁缓存):
+
+| 类 | 26.1.2 补丁 | 26.2 补丁 | 26.2 补丁里有着色器钩子 |
+|---|---|---|---|
+| `renderer/rendertype/PreparedRenderType`(26.2 新的逐绘制入口) | 无此类 | **完全没打补丁** | — |
+| `renderer/StagedVertexBuffer`(26.2 新的区块网格上传) | 无此类 | 6,575 B | **没有** |
+| `client/RotatingSectionStorage`(26.2 新的区块存储) | 无此类 | 7,685 B | **没有** |
+| `renderer/feature/RenderTypeFeatureRenderer` | 无此类 | 2,291 B | **没有** |
+| `blaze3d/opengl/GlRenderPass` | 无此类 | 4,965 B | **没有** |
+| `blaze3d/systems/CommandEncoder` | 无此类 | 8,795 B | **没有** |
+| `renderer/rendertype/RenderType` | 8,590 B(有钩子) | 5,348 B | **没有** |
+| `renderer/feature/ModelFeatureRenderer` | 9,037 B(有钩子) | 409 B | **没有** |
+| `renderer/feature/CustomFeatureRenderer` | 2,054 B(有钩子) | 264 B | **没有** |
+| `blaze3d/opengl/GlCommandEncoder` | 22,692 B(有钩子) | 26,807 B | **有(25 处)** |
+| `renderer/chunk/ChunkSectionsToRender` | 3,538 B(有钩子) | 3,532 B | **有(3 处)** |
+| `renderer/chunk/SectionCompiler` | 8,931 B(有钩子) | 8,720 B | **有** |
+| `renderer/extract/LevelExtractor` | 无此类 | 21,599 B | **有(18 处)** |
+
+**这张表的一个坑,已经核过并纠正**:表里"**没有**"是指"补丁里没有对 `net/optifine/shaders/` 的调用",**不等于**那处补丁是空的 ——
+`StagedVertexBuffer` 的 6,575 B 补丁就把 `finishLastVertexBuilder()` 从 private 改成 public,并**新增了
+`saveRenderState()` / `restoreRenderState()`**;但读它们的方法体就知道那是给 OptiFine 自己那套**VBO 区域 / 分阶段构建**
+用的簿记(把 `lastBuildingDraw` 与 `lastVertexBuilder` 压栈、出栈),`StagedVertexBuffer$ExecuteInfo` 这个 record 也
+**没有**被加任何字段。`RotatingSectionStorage` 的 7,685 B 补丁同理:它调用的是 `net/optifine/render/VboRegion`
+(`updateVboRegion` / `deleteVboRegions`),属于 VBO 区域功能。所以这两处是"**OptiFine 在为它的其它功能做适配**",不是
+"光影管线接上了"。
+
+另一条容易误判的也一并核过:**光影的扩展顶点格式在 26.2 上照样会装** —— `DefaultVertexFormat.updateVertexFormats()`
+在两个版本里都是 `Config.isShaders()` 为真时调 `SVertexFormat.makeExtendedFormatBlock/Entity`。所以问题不是"格式没建",
+而是"用这份格式的那些绘制,在新的路径上没有接上 OptiFine 的着色器状态"。
+
+,这正是这一轮新查出来的东西。好消息:OptiFine 26.2 那份 jar 里的**着色器侧
+API 与 26.1.2 逐字相同** —— `ShadersRender.preRender/postRender(RenderType)`、`preRenderChunkLayer/postRenderChunkLayer`、
+`beginTerrainSolid/Cutout/endTerrain`、`Shaders.pushProgram`、`nextEntity`/`nextBlockEntity`/`setEntityColor`、
+`Shaders.isTerrain(Program)` 全都在,签名没变,所以"把 OptiFine 自己的调用搬进新框架"这条路本身是通的(我们给
+Fabric API 做的那条桥就是这个套路)。难点在**参数拿不到**:26.1.2 上这些钩子是 `RenderType.draw` 的实例方法,
+`this` 就是要的那个 `RenderType`;而 26.2 的逐绘制入口 `PreparedRenderType.drawFromBuffer(...)` 是个 record,
+只带 `RenderPipeline`/`OutputTarget`/`GpuBufferSlice`/`ScissorState`/`List<Texture>`,**没有 `RenderType`**;偏巧
+`ShadersRender.preRender/postRender` 的分发依据就是 `RenderType.getName()`(`eyes` / `crumbling` / `beacon_beam`)、
+`isGlint()` 以及与 `RenderTypes.LINES` / `LINES_TRANSLUCENT` / `waterMask()` 的**身份比较**。也就是说桥接方要么自己
+维护 RenderType ↔ 绘制对象的映射,要么把那部分 OptiFine 逻辑重写一遍 —— 那是"替上游完成整合",不是搬一行调用。
+缺掉的那些钩子本身也偏**实体/特效**(蜘蛛眼、方块破坏、附魔光效、线框、水幕、信标光柱、实体/方块实体取色),
+并不是"地形那一根"。
+
+**最锋利的一条静态结论:完整集合差**(`test-downloads/shader-api-diff.ps1` 一键复现 —— 它把两个缓存里所有"带着色器
+调用"的类逐个反汇编、抽出精确调用目标再求差)。26.1.2 有 **150** 个不同的着色器 API 调用目标(来自 48 个类),26.2 有
+**137** 个(45 个类),而且**26.2 没有任何新增目标,它是 26.1.2 的真子集**,恰好少这 13 个:
+
+| 26.2 上消失的调用 | 26.1.2 上由谁调用 |
+|---|---|
+| `ShadersRender.preRender` / `postRender` | `rendertype/RenderType`(逐绘制的着色器状态,随 `draw(MeshData)` 一起消失) |
+| `Shaders.nextEntity` / `nextBlockEntity` | `feature/ModelFeatureRenderer`、`feature/CustomFeatureRenderer` |
+| `Shaders.beginParticles` / `endParticles` | `feature/ParticleFeatureRenderer`(该类在 26.2 已不存在) |
+| `Shaders.beginSpiderEyes` / `endSpiderEyes` | `feature/ModelFeatureRenderer` |
+| `Shaders.isParticlesBeforeDeferred` | `LevelRenderer` |
+| `Shaders.preRenderHand` / `ShadersRender.renderHandSolid` | `LevelRenderer` |
+| `Shaders.preWater` | `LevelRenderer` |
+| `ShadersRender.endDebug` | `LevelRenderer` |
+
+这条把"缺了钩子"和"画面症状"的关系讲清了,**也顺手推翻了一个想当然的推断**:地形的**阶段**钩子
+(`beginTerrainSolid`/`endTerrain`、`preRenderChunkLayer`/`postRenderChunkLayer`、`Shaders.setChunkSectionInfo`、
+`Shaders.useMidBlockAttrib`)在 26.2 上一个不少;而粒子那条链(`beginParticles`/`endParticles`)**恰恰是少的**,
+可实际画面里**能看见的正是粒子**。所以"缺哪一处钩子 → 地形看不见"这种一对一推断**不成立**。真正贴在症状上的嫌疑是
+**逐绘制那一条**:26.1.2 上 `preRender`/`postRender` + `pushProgram`/`popProgram` 包着**每一次绘制**(地形区块也是经
+`RenderType.draw` 画出去的),而 26.2 的对应入口 `PreparedRenderType.drawFromBuffer` 一个补丁都没有。到底是不是这一条
+造成地形不进画面,**必须在游戏里隔离验证** —— 这正是上面那个 5 用例矩阵要回答的问题。
+
+**结论**:26.2 上"强开光影 → 世界透明"的根因在 **OptiFine 26.2 这份 preview 尚未完成的光影整合**,不在 OptiFabric
+的补丁通道。要让 26.2 真能用光影,得由我们在 26.2 的新渲染框架里**替 OptiFine 补齐**它没写的那部分(实体/模型特性
+渲染器的着色器状态调用,以及 26.2 里已经不存在的逐绘制 program 切换),那已经不是"移植",而是替上游完成整合 ——
+所以 2.1.1 维持现状。**复核时机**:等 OptiFine 出一版不再取消光影加载的 26.2 构建,用上面两条脚本重跑一遍
+(补丁体量 + 钩子计数),一眼就能看出它补完了没有。**截至 2026-09-26 没有这样的构建可等**:BMCLAPI 的 OptiFine 清单里
+26.2 只有 `HD_U_K2 pre1` 这一个(没有 pre2、也没有正式版),26.3 则连一个 OptiFine 构建都没有 —— 也就是说"换一版
+OptiFine 再看"这条路现在不存在,26.2 上光影不可用是当前上游状态下的确定结论,而不是"再等等就好"。
+
+**2026-09-27 复核(两条独立来源,结论不变)**:BMCLAPI 的 `versionList`(当时 498 条)与 optifine.net 官方下载页同时
+确认 —— 26.2 仍然只有 `preview_OptiFine_26.2_HD_U_K2_pre1.jar`,而且它是**当前存在的最新 OptiFine 构建**;26.1.2 是
+K1 pre1/pre2;**26.3 连一个构建都没有**。顺带记两条可用于对照的清单事实:1.20.6 最新为 `HD_U_J1 pre18`,1.21.11 最新为
+正式版 `OptiFine_1.21.11_HD_U_J9.jar`。另外,官方那套 `optifine.net/version/<ver>/<type>.txt` 端点对所有版本都返回
+404(不可用),查清单只能走镜像清单或下载页 —— 省得下次再试一遍。
+
+**如果要动手修,路径已经清楚(设计,尚未实现、也尚未验证)**:真正要补的是**逐绘制**那一条,落点是
+`rendertype/PreparedRenderType.drawFromBuffer(...)`,而它缺 `RenderType` 这件事有干净的解法:
+
+1. **拿到 `RenderType`**:26.2 里是 `RenderType.prepare()` 产出 `PreparedRenderType` 的,所以在这一处挂一张
+   `IdentityHashMap<PreparedRenderType, RenderType>`(或"最近一次 prepare 的类型"的 ThreadLocal),绘制时反查即可 ——
+   **不需要给那个 record 加字段**;
+2. **照 26.1.2 的顺序把绘制体包起来**:`Config.isShaders() && Shaders.isRenderingWorld && !Shaders.isShadowPass` 为真时,
+   进入前 `RenderUtils.setFlushRenderBuffers(false)` → `Shaders.pushProgram()` → `ShadersRender.preRender(renderType)`,
+   退出时逆序 `postRender` → `popProgram` → 还原 flush 标志。这个顺序就是 26.1.2 `RenderType.draw` 的字节码原样,
+   而那四个调用**在 26.2 的 OptiFine jar 里签名完全一致**,可以直接调。实体/方块实体那两条
+   (`nextEntity`/`nextBlockEntity`/`setEntityColor`)要从渲染状态里取回 `Entity`/`BlockEntity`,难得多,而且按上面的
+   分析它们不是"世界透明"的主因。
+
+**但这一段推理的最后一环 —— 究竟哪一处缺失直接造成地形不进画面 —— 只能靠游戏内隔离实验确认**,所以 2.1.1 不改;
+矩阵跑完再决定要不要把它做成实验分支(那会是一个新版本号,不是补丁)。
+
+**实验开关已经做出来了(默认关闭,离线校验通过)**:上面那两步不是纸上方案 —— 源码里已经有两处**属性门控**的开关,
+两个都不设时产物与 2.1.1 一致(离线校验:游戏类 562/562、OptiFine 自身 879/879,日志里既没有接管也没有翻转):
+
+| 开关 | 做什么 | 离线校验结果 |
+|---|---|---|
+| `-Doptifabric.experimentalForceShaderpack=true` | 让 OptiFine 26.2 那句"无条件取消"读成 `false`(`OptifineJarFixer.forceShaderpackLoad`:只把那条 `iconst_1` 翻成 `iconst_0`,不删指令、不动局部变量活跃性,所以栈帧与局部变量表原样有效) | 命中 **1** 处(138/152 那两条在 `ifeq` 里的**没有**被误改);OptiFine 自身 **879 个类仍全部通过**校验 |
+| `-Doptifabric.experimentalPerDraw=true` | 接管 `PreparedRenderType`,把 `drawFromBuffer(ExecuteInfo)` 包进 OptiFine 的 `pushProgram`/`popProgram`(+`setFlushRenderBuffers` 标志),见 `OptifinePerDrawState` 与 `PerDrawShaderStateFix` | 接管 1 个类(562 → **563**),日志 `Wrapped ...drawFromBuffer (1 return path(s))`;JVM 校验 563/563、ASM 0、四个扫描器 0 |
+
+单独用第一个开关就复现出 2.1.0 那次"世界透明"的现场(27 个 program 编译完成、无报错),再叠加第二个开关就是**把假设拿去验**:
+如果地形回来,说明缺的就是逐绘制那一条;如果照旧,嫌疑就落到渲染目标/合成链那一侧。矩阵里对应 `26.2-shaders-perdraw` 用例
+(用 `build\libs` 的 jar,切换开关时自动清掉 `.optifine` 补丁缓存 —— 缓存里存着"上一次按哪组开关打出来的类")。
+**这两个开关验证的只是"字节码合法、开关确实生效";"地形会不会回来"只能在游戏里看**,那正是它们存在的意义。
+
+**这两个开关在 26.1.2 上是空操作,已经单独校验过**(同一份源码服务两条版本,所以这一点必须核):26.1.2 里既没有
+`PreparedRenderType` 这个类(它是 26.2 才有的),它那份构建也没有那句取消,于是日志只有一行
+`No bytes for the extra class net/minecraft/client/renderer/rendertype/PreparedRenderType, leaving it to the game`,
+产物仍是 **567/567**、扫描器全 0 —— 开关开与不开对这条线没有区别。
+
+**实测结果(2026-09-27 凌晨,本机,同一实例/同一世界/同一光影包)**
+
+用上面那套 harness 把三组配置都拍了下来(全部确认是游戏窗口本体:窗口标题 `Minecraft* 26.2 - 单人游戏`、客户区
+854x480、采集时确认为前台窗口):
+
+| 配置 | 日志 | 画面实测 |
+|---|---|---|
+| 关光影(基准) | `No shaderpack loaded.` | 暗棕色场景,主色 (58,41,28)/(72,52,36)/(89,64,44),83.6% 暗于 64 灰阶 —— 地形在渲染 |
+| 强开光影(2.1.0 jar) | `Loaded shaderpack` + **27 个 program** + `dfb`/`sfb` | **约 90% 白屏**(三段均值 245/249/240,主色集中在白色附近,只剩成排淡灰"文字带"),没有地形、没有快捷栏 |
+| 强开 + 逐绘制实验开关 | 同上,另加 `Took over PreparedRenderType` + `Wrapped …drawFromBuffer (1 return path)` | **仍然什么都没有渲染**(用户在游戏里直接确认);采集到的帧 1 是中调偏蓝、颜色丰富(161 色),帧 2/3 变成近乎纯色(3 色 / 125 色,均值 30 上下) |
+
+**结论一:逐绘制那条假设被证伪。** 把 26.1.2 在 `RenderType.draw` 上的 `pushProgram`/`popProgram`(+flush 标志)原样补到
+26.2 的新绘制入口之后,画面**没有任何改善** —— 缺的"逐绘制 program 存取"不是"世界不呈现"的原因。
+
+**结论二:合成链本身在 26.2 上是被触发的。** 静态核对:呈现链入口 `Shaders.renderCompositeFinal` 在 26.1.2 与 26.2 上
+**都由 `GameRenderer` 调用**(两个版本的补丁缓存里各命中 1 个类,同为 `net/minecraft/client/renderer/GameRenderer`),
+所以"世界画进 dfb 却从不呈现"也不能归因于这条调用缺失。
+
+**结论三:剩下的嫌疑指向"写进 dfb 的那一步"。** 已排除:多加载(27 个 program 相同)、阶段钩子(地形那几条都在)、
+逐绘制钩子(补回去无效)、合成触发(在)。剩下的候选是**新的绘制/上传路径与光影管线之间的对接**,其中嫌疑最大的是
+**顶点格式与 pipeline 的匹配**:`DefaultVertexFormat.updateVertexFormats()` 在光影开启时会把方块/实体格式换成 OptiFine
+的扩展格式(两个版本都会换),而 26.1.2 的 `RenderType` 补丁(8,590 B、含着色器调用)会连带重建对应对象;26.2 的
+`RenderType` 补丁(5,348 B、**零**着色器调用)没有这一步,而 26.2 的 `RenderPipeline` 是预先构造好的对象。若缓冲区里是
+扩展格式的顶点、而 pipeline 仍按原版属性布局解释,画出来的就是"什么也没有" —— 这与三组实测完全吻合(关光影正常、
+开光影全白、补逐绘制无效)。**这条尚未逐项验证**,验证它需要往格式/pipeline 那一层做实验,已经不是"补几行调用"的量级。
+
+**结论四(实测根因,2026-09-27):光影为世界创建的 render pass,附件挂在了游戏主帧缓冲上,而不是它自己的 dfb/sfb。**
+
+只读探针挂在 `GlCommandEncoder.createRenderPass`(开 `-Doptifabric.experimentalFormatProbe=true`,并且只在
+`Shaders.isRenderingWorld` 为真时记录),26.2 强开光影时世界渲染期间的 pass 是:
+
+| pass 名(OptiFine 自己提供的标签) | 颜色附件 | 深度附件 | 当时的 OptiFine 状态 |
+|---|---|---|---|
+| `BL: opaque` | **20(854x480)** | **21(854x480)** | `shadowPass=true`,`program=shadow` |
+| `BL: translucent` | 20 | 21 | `shadowPass=true`,`program=shadow` |
+| `BL: opaque` | 20 | 21 | `shadowPass=false`,`program=`**`gbuffers_terrain`** |
+| `BL: translucent` | 20 | 21 | `shadowPass=false`,`program=gbuffers_water` |
+| `Immediate draw with …/entity_translucent` | 20 | 21 | `program=gbuffers_hand` |
+| `Particles - Solid` / `- Translucent`、`Sky disc`、`ShadersHorizon`、`Sky sun`/`Sky moon`、`Stars` | 20 | 21 | `gbuffers_basic` / `gbuffers_skybasic` / `gbuffers_skytextured` |
+
+配合区块探针的状态轨迹(每帧固定为 `OPAQUE shadowPass=true program=shadow` → `TRANSLUCENT shadowPass=true
+program=shadow` → `OPAQUE shadowPass=false program=gbuffers_terrain` → `TRANSLUCENT shadowPass=false
+program=gbuffers_water`),可以确定:
+
+* **pass 的名字、程序选择、阴影 pass 与主 pass 的切换全部正确** —— 地形确实是在主 pass 里用 `gbuffers_terrain`
+  画的,连阴影 pass 也在正常跑;
+* **唯独附件始终是纹理 20/21,也就是游戏自己的主帧缓冲**,而不是 OptiFine 的 `dfb`(colortex 组)与 `sfb`(阴影图)。
+
+于是合成链 `final` 读到的是一块**从没被写过**的 dfb,屏幕上就是那张 ~90% 白屏 —— 这一条把此前所有"日志看起来都正常"
+的观察一次性解释通了:不是缺少钩子、不是格式不匹配、也不是状态标志错乱,而是**OptiFine 对 26.2 那套
+`RenderPassDescriptor` 的适配只做了一半:它认得这些 pass(名字都是它起的),却没把渲染目标换成自己的帧缓冲。**
+
+**为什么这一处从 OptiFabric 侧修不了(已核实,不是猜)**:顺理成章的修法是"在 `createRenderPass` 里把附件换成 OptiFine
+自己的 dfb/sfb",但 26.2 的 pass API 只接受 `GpuTextureView`,而 **OptiFine 26.x 的 `ShadersFramebuffer` 依旧是裸 GL 对象**:
+
+* 它的纹理访问器全是 GL 那一套(`getGlFramebuffer()`、`setFramebufferTexture2D(...)`),真正的纹理 id 藏在**私有**字段里
+  (`colorTextureUnits`、`FlipTextures colorTexturesFlip`、`IntBuffer depthTextures`),**没有任何 `GpuTextureView` 访问器**;
+* 游戏侧能把 GL id 包成纹理对象的构造器 `GlTexture(int, …, int id, FrameBufferCache)` 与
+  `GlTextureView(GlTexture, …)` 都是 **protected**,必须反射才能用。
+
+这正是"26.1.2 能用、26.2 不能用"的根:26.1.2 的游戏也走裸 GL,OptiFine 的 `bindFramebuffer()` 直接生效;26.2 换成了
+命令编码器 + `GpuTextureView`,而 OptiFine 这一版**还没把自己的帧缓冲改成游戏的纹理对象**,于是它创建的世界 pass
+只能(也只能)挂在游戏主帧缓冲上。因此从外部"接上"这条链,等于反射进入 OptiFine 的私有 GL 帧缓冲、为它的每张纹理
+合成游戏纹理对象 —— 那是替上游把这份集成补完,而不是打几行补丁;任何一版 OptiFine 改动都会让它失效。
+
+**限制界定(可直接引用的结论)**:在 OptiFine 26.2(`preview HD_U_K2_pre1`)上,强制加载光影包后**世界不会出现在画面上**
+(实测屏幕约 90% 为白),原因是该构建把世界 pass 的渲染目标挂到了游戏主帧缓冲、而合成链读取的是它自己从未被写入的
+dfb;这既不是 OptiFabric 的补丁通道问题,也不是顶点格式、加载顺序或状态标志问题(各自都有实测排除)。**2.1.1 因此
+保持"尊重 OptiFine 自己的取消、26.2 上光影不可用"的现状**;等 OptiFine 出新构建时,用本文的探针
+(`-Doptifabric.experimentalFormatProbe=true`)重跑一次即可判断它是否补完了这一处。
+
+**当时还没跑、现在已经不重要的对照(留档)**:原本计划跑"26.2 强开 + 移走 Fabric API"与 `shaderPack=(internal)`
+两个对照。第一条已由代码阅读降级——`OptifineFrapiBridge` 只对"游戏包之外的模型"生效(`needsFabricPath` 要求
+`emitQuads` 的声明类不以 `net.minecraft.` 开头),所以只装 Fabric API、没有内容 mod 的实例里原版方块仍旧走
+OptiFine 自己那条路;第二条跑过了,而且**无效**:在 26.2 上 `shaderPack=(internal)` 根本不加载(日志 `No shaderpack
+loaded.`、`Program loaded` 0 行),那次拍到的只是一张普通渲染的截图。
+
+**harness 记录(同一次排查的教训)**:旧采集脚本给出的那套"强开 = 230 色 / 3 帧完全相同"的像素判定**不可信** ——
+它量的是屏幕中心固定的 60% 区域(不是游戏窗口矩形),而且 `SetForegroundWindow` 失败时照样截图,于是量到的可能是
+**别的窗口**(实测那张"26.2 透明世界"的截图其实是一个浅色应用窗口)。现在这条路改成:`hidden-desktop.ps1`(与
+`hidden-desktop-lib.ps1`)把客户端跑在**独立 Windows 桌面**上(不抢焦点),画面用游戏自带 F2 直接取帧缓冲
+(`probe-262-hidden.ps1`),怀疑卡住时用 `jstack` 线程转储定位(`diag-262-hidden.ps1`)。两个必须记住的点:
+隐藏桌面上的窗口不会被呈现,`glfwSwapBuffers` 在垂直同步下会**永久阻塞**渲染线程(所以要先 `enableVsync:false`);
+而且它仍然会满速渲染,**必须把 `maxFps` 压到个位数**,否则会在后台抢走可观的 GPU(实测 43%)。
+
+还有一处 harness 陷阱值得记下:**离线校验流程会复用工作目录里已经修好的 `OptiFine-mapped.jar`**(日志里
+`setup finished in 92 ms` 就是它压根没干活的特征),所以任何**改动 OptiFine jar 本身**的开关(比如下面那个强制加载)
+都必须先删掉 `test-downloads\<版本>\game\.optifine` 才会生效 —— 本轮就在这上面白跑了一次校验。
+
+跑起来之后还踩到第二个坑,值得记下来,因为它**在日志里完全无声**:隐藏那次客户端根本没进世界,却既不报错也不写任何
+日志。读 26.2 的字节码才看清两条沉默的失败路径 —— `Gui.buildInitialScreens` 只在 `quickPlayData().isEnabled()` 为真时
+才调 `QuickPlay.connect`,否则**直接开 `TitleScreen`**(不写日志);而 `QuickPlay.joinSingleplayerWorld` 在
+`LevelStorageSource.levelExists(id)` 为假时给的是"无效标识符"的 `DisconnectedScreen`(同样不写日志),两者的窗口
+标题都只是 `Minecraft* 26.2`。已核对过的排除项:参数编码没问题(PowerShell 与隐藏桌面两条路径都实测到
+`U+65B0 U+7684 U+4E16 U+754C`,世界名原样到达)、`isEnabled()` 为真(日志里没有 `Quick play disabled`)、世界
+DataVersion 与 26.2 一致(4790,不会弹升级确认)。**剩下的变量只有世界名本身**:两次没进世界的运行传的是中文
+`新的世界`,而 16:16 那次真进了世界的运行传的是 ASCII 的 `OptiTest` —— 这也顺带解释了 `launch-26.ps1` 注释里那句
+"26.2 上 quick play 有时不开世界"的老现象。**处置**:harness 的世界副本已改名为 ASCII 的 `OptiTest`,探针优先挑
+ASCII 名的世界、遇到非 ASCII 名会显式告警;**中文名与 ASCII 名(同一份世界内容)的对照复跑尚未做**,需要开游戏,
+等用户不在玩游戏时再跑。
+
 ### 离线校验(两个口径)
 
 ```powershell
