@@ -201,6 +201,18 @@ public class OptifineFixer {
 		//hasCustomOutlineRendering (from its Forge compatibility interface) and the nbtTag/nbtTagUpdateMs fields,
 		//and both its own RandomTileEntity and the recompiled class_757 call them - a NoSuchMethodError waiting
 		//for the first block entity render. The class is applied here; the scanners check what that costs.
+		//net/minecraft/client/renderer/GameRenderer
+		//OptiFine's build adds two locals of its own in the middle of render() (guiFarPlane and guiOffsetZ, both
+		//floats), which pushes the game's Matrix4f, Matrix4fStack and GuiGraphics one or two slots further up.
+		//Mixin hands a method's locals to an @Inject handler strictly by slot order, so any handler that captures
+		//this method's locals the way the game declares them - Architectury's MixinGameRenderer is the one that
+		//reported it - fails the whole class with
+		//  InjectionError: LVT in class_757::method_3192 has incompatible changes at opcode 601
+		// and the game dies on its first frame. Moving OptiFine's own locals past the end of the local range puts
+		// the game's locals back into the order those handlers were compiled against (see LocalSlotLayoutFix).
+		//The descriptor is left out on purpose, exactly as in the two entries above: it differs between releases,
+		//and the fixer then works off the descriptor OptiFine's own class carries.
+		registerFix("class_757", new LocalSlotLayoutFix(null, "method_3192"));
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {

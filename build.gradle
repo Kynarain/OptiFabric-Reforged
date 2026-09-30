@@ -17,6 +17,12 @@ plugins {
 // nothing here refers to it.)
 def targetMc = (project.findProperty("mc") ?: project.minecraft_version).toString()
 
+// The mod id and display name this line publishes. They are inputs of processResources below - without an
+// inputs.property for them Gradle treats the expanded fabric.mod.json as up to date and keeps handing out the
+// previous id, which is how a rename silently fails to take effect.
+def modId = "optifabric_reforged"
+def modName = "OptiFabric Reforged"
+
 // Yarn is published per release and its build number is part of the version string, so the supported releases
 // are listed here (latest yarn build of each). Adding a release is one line.
 def yarnBuilds = [
@@ -91,6 +97,8 @@ processResources {
     inputs.property "loader_version", project.loader_version
     inputs.property "mixin_compatibility_level", mixinCompatibilityLevel
     inputs.property "optifabric_custom", customMetadata
+    inputs.property "optifabric_id", modId
+    inputs.property "optifabric_name", modName
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
@@ -98,9 +106,15 @@ processResources {
                 "minecraft_version": targetMc,
                 "loader_version": project.loader_version,
                 "optifabric_custom": customMetadata,
-                // The id and the display name stay as published: this line is "optifabric" / OptiFabric.
-                "optifabric_id": "optifabric",
-                "optifabric_name": "OptiFabric",
+                // The fork's own id, not upstream OptiFabric's, and the same pair the 26.x line ships. Third-party
+                // metadata that gates on the old id therefore stops matching - Architectury declares
+                // `breaks: optifabric <1.13.0`, which is what kept these two mods from loading together. The crash
+                // behind that declaration is fixed (see LocalSlotLayoutFix); the declaration itself is not ours to
+                // change, so the id is the only lever left. Note that a mod id is an identity change: any user who
+                // keeps an older OptiFabric-<ver>+mc1.21.x.jar in mods/ would load both, so the release notes have to
+                // say to delete it.
+                "optifabric_id": modId,
+                "optifabric_name": modName,
                 "optifabric_verbs": "patches, remaps and applies"
     }
 

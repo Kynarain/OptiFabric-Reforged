@@ -375,6 +375,9 @@ Unable to bake model: 0       Mixin transformation: 0      InjectionError: 0
 | **56,042 次模型烘焙失败**(方块全没了) | 同上手法:`ModelLoader$BakerImpl.bake` 变成转发,三条注入点都搬进了重载 | 同上,恢复原版方法体(已核对转发传参与原版一致) |
 | **开存档报"网络协议错误"** | OptiFine 用 `net.optifine.ChunkOF` 取代 `WorldChunk`,Fabric 的 `@At(value="NEW", target="WorldChunk")` 精确匹配不到 → `class_631` 整个类变换失败 | `ObjectCreationPointFix`:在 OptiFine 创建子类处**前面**插入惰性 `NEW class_2818; POP` 标记(`NEW;POP` 的合法性由 `NewPopTest` 用 ASM 与真实 JVM 双向验证) |
 | 区块构建时崩(隐患,提前拦住) | indigo 注入 `BlockPos.iterate`,而 OptiFine 重写了那段循环 | 声明 `fabric-renderer-api-v1:contains_renderer`,让 indigo 按 Fabric 的机制让位(OptiFine 本身就是渲染器) |
+| **装了 Architectury 后第一帧崩**(用户报告,非 fabric-api) | OptiFine 在 `class_757.render` **中间**插入了它自己的两个 float 局部变量(`guiFarPlane`、`guiOffsetZ`),把原版的 `Matrix4f`/`Matrix4fStack`/`GuiGraphics` 顶高了 1–2 个槽位。Mixin 的 `LocalCapture` 是**按槽位顺序**把局部变量交给处理器的(`CallbackInjector` 从 `getFirstNonArgLocalIndex` 起取前 N 个非空局部变量,再与处理器声明的参数逐个比对),Architectury 的 `MixinGameRenderer` 声明的正是原版顺序,于是在 `InjectionError: LVT in net/minecraft/class_757::method_3192 has incompatible changes at opcode 601` 处整个类变换失败 | `LocalSlotLayoutFix`:按槽位顺序对齐两边的局部布局,把"原版没有、OptiFine 自己加的"槽位整体挪到方法局部变量区的末尾,只改槽号不改语义;局部变量表随之改写(那张表才是 Mixin 读取局部变量的来源,且**没有任何一个 writer 会重建它**),栈帧由管线的 `FrameComputingWriter`(`COMPUTE_FRAMES`)重算 |
+
+**这一条与前七条的区别**:前面几条的目标都是 **fabric-api** 的处理器,而这一条来自**第三方模组**——同一种"按槽位捕获"的失败模式对所有用 `LocalCapture` 的模组都成立,`LocalsScan` 只会看 fabric-api,所以这类报告只能从用户侧进来。**另外它有两层,别混为一谈**:一是 Architectury 自己声明的 `breaks optifabric <1.13.0`(Loader 直接拒载,连崩溃都到不了),二是声明背后那个真实的字节码冲突(中和声明后第一帧就崩)。`LocalSlotLayoutFix` 修的是第二层;第一层不是我们的元数据,能改的只有我们自己的 id —— 1.21.x 线因此改用 `optifabric_reforged`(与 26.x 线一致),于是那条规则不再匹配,用户按常规方式装即可。判据可复现:`test-downloads/check-architectury.ps1`(复现崩溃)与 `test-downloads/check-architectury-fix.ps1`(验证修复;它会读 jar 里的 id 自行决定要不要写那份中和声明)。
 
 ## 离线校验工具链(全部只读,可重复运行)
 
