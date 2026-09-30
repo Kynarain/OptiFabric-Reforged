@@ -394,10 +394,30 @@ if ($RecordDigest) {
 			$previousMatched = $true
 
 			$before = $paragraph
-			$after = [regex]::Replace($before, $sizePattern, { param($m) "$size" + $m.Groups[2].Value })
-			# In a markdown table the size is a bare cell next to the digest, with no unit after it.
-			$after = [regex]::Replace($after, '\|\s*[\d,]{4,}\s*\|', { param($m) "| $size |" })
-			$after = [regex]::Replace($after, $hashPattern, $hash)
+			# A single paragraph can name several jars at once - the release checklist's table has one row per
+			# Minecraft version - and rewriting every figure in it gives all ten rows the same size and hash
+			# (whichever version was processed last). When more than one release is named, only the lines that
+			# name this one are rewritten.
+			$versionsHere = @([regex]::Matches($before, '\+mc(1\.21(?:\.\d+)?)') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+			if ($versionsHere.Count -gt 1) {
+				# The loop variable must not be called $line: PowerShell variable names are case-insensitive, so
+				# that is the same variable as this script's -Line parameter and assigning to it throws.
+				$perLine = foreach ($row in ($before -split "`r`n")) {
+					if ($row -notmatch [regex]::Escape("$current+mc$mc") + '(?!\.?\d)') { $row; continue }
+
+					$fixed = [regex]::Replace($row, $sizePattern, { param($m) "$size" + $m.Groups[2].Value })
+					$fixed = [regex]::Replace($fixed, '\|\s*[\d,]{4,}\s*\|', { param($m) "| $size |" })
+
+					[regex]::Replace($fixed, $hashPattern, $hash)
+				}
+				$after = ($perLine -join "`r`n")
+			}
+			else {
+				$after = [regex]::Replace($before, $sizePattern, { param($m) "$size" + $m.Groups[2].Value })
+				# In a markdown table the size is a bare cell next to the digest, with no unit after it.
+				$after = [regex]::Replace($after, '\|\s*[\d,]{4,}\s*\|', { param($m) "| $size |" })
+				$after = [regex]::Replace($after, $hashPattern, $hash)
+			}
 			if ($after -ne $before) { $paragraphs[$i] = $after; $changes++ }
 		}
 
