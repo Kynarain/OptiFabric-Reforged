@@ -89,8 +89,8 @@ mods/OptiFine_1.21.11_HD_U_J9.jar
 PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版本名>/` 下,`.optifine/` 缓存也建在那里;没开隔离才是 `.minecraft/mods`。
 
 ```powershell
-# 1.21.11 的 OptiFine(正式发布版,国内直链会 302 到官方 maven 分发)
-curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/optifine/1.21.11/HD_U/J9"
+# 1.21.11 的 OptiFine(该版本最新正式版):用提示里的「下载 OptiFine」按钮即可,或打开
+# https://optifine.net/downloads 自行下载 OptiFine_1.21.11_HD_U_J9.jar
 ```
 
 ## 🔨 从源码构建
@@ -235,7 +235,7 @@ OptiFabric/
 
 ## 🔐 许可
 
-**MPL-2.0** —— 见 [`LICENSE.txt`](LICENSE.txt)。核心逻辑移植自 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric),移植文件保留来源说明。OptiFine 本体**不包含、也不随本项目分发** —— 版权归 sp614x,请自行从 [optifine.net](https://optifine.net/)(或上面的国内镜像)获取。
+**MPL-2.0** —— 见 [`LICENSE.txt`](LICENSE.txt)。核心逻辑移植自 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric),移植文件保留来源说明。OptiFine 本体**不包含、也不随本项目分发** —— 版权归 sp614x,请自行从 [optifine.net](https://optifine.net/)获取。
 
 ## 🙋 支持与排查
 

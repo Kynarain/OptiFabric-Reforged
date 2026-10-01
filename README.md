@@ -90,8 +90,8 @@ Intermediate files live in `<game dir>/.optifine/<OptiFine version>/`:
 With version isolation enabled (PCL2 / HMCL), the game directory and `mods/` both live under `versions/<name>/`, and the `.optifine/` cache is created there too.
 
 ```powershell
-# OptiFine 1.21.11 (an official release; the mirror redirects to the official maven distribution)
-curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/optifine/1.21.11/HD_U/J9"
+# OptiFine 1.21.11, the newest final build for it: use the "Download OptiFine" button in the prompt,
+# or open https://optifine.net/downloads and download OptiFine_1.21.11_HD_U_J9.jar from there.
 ```
 
 ## 🔨 Building from Source
@@ -237,7 +237,7 @@ OptiFabric/
 
 ## 🔐 License
 
-**MPL-2.0** — see [`LICENSE.txt`](LICENSE.txt). The core mechanism is a port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric); ported files keep their origin headers. OptiFine itself is **not** included or redistributed — it is sp614x's work, get it from [optifine.net](https://optifine.net/) (or the mirror above).
+**MPL-2.0** — see [`LICENSE.txt`](LICENSE.txt). The core mechanism is a port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric); ported files keep their origin headers. OptiFine itself is **not** included or redistributed — it is sp614x's work, get it from [optifine.net](https://optifine.net/).
 
 ## 🙋 Support
 

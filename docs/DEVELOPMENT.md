@@ -1425,7 +1425,9 @@ src/main/java/kynarain/cn/optifabric/Optifabric.java           入口(preLaunch;
                                   patcher/fixes/**             逐个版本的字节码 fixer(见上表最后一行)
 ```
 
-## 国内镜像(实测)
+## 曾经测过的国内镜像(仅存档,模组**不使用**)
+
+下面这些端点当初为了解 OptiFine 的分发方式实测过,结论保留下来当资料。**模组与文档都不再引用它们**:下载只走 OptiFine 官网两步流程(`adloadx` 页面 -> `downloadx` token),失败时如实报原因,不自动回退任何镜像。
 
 | 用途 | 地址 | 实测 |
 |---|---|---|

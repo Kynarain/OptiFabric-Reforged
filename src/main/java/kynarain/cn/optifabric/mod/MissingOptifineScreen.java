@@ -469,7 +469,7 @@ public class MissingOptifineScreen extends Screen {
 	 * Places the bottom furniture - the buttons, the URL field above them, the caption above that and the
 	 * status line above that - and then as much of the text block as fits between it and the heading.
 	 *
-	 * <p>The block is bottom-anchored just above the status line (the reference layout), but never closer to
+	 * <p>The block is centred in the band between the heading and the status line, but never closer to
 	 * the heading than {@code gap} and never above {@link #TOP_MARGIN}: {@code firstY} is computed from the
 	 * real {@code height} and can therefore never be negative. When the block does not fit, explanation lines
 	 * are given up <em>longest first</em>, so the shortest explanation survives longest and the required lines
@@ -524,7 +524,11 @@ public class MissingOptifineScreen extends Screen {
 		}
 
 		boolean fits = blockHeight(kept.size(), step, fontHeight) <= bottom - top;
-		int firstY = fits ? Math.max(top, bottom - blockHeight(kept.size(), step, fontHeight)) : top;
+		// Centre the block in the band between the heading and the status line. Pinning it to the bottom
+		// left a large empty hole under the heading whenever the block was short (a couple of lines), which
+		// is what made the screen look top-heavy and unbalanced.
+		int slack = Math.max(0, (bottom - top) - blockHeight(kept.size(), step, fontHeight));
+		int firstY = fits ? top + slack / 2 : top;
 
 		for (int i = 0; i < kept.size(); i++) {
 			kept.get(i).y = firstY + i * step;

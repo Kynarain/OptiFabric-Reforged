@@ -109,7 +109,7 @@ Full changelog: [`CHANGELOG.md`](CHANGELOG.md) · Usage, troubleshooting and kno
 
 ### Credits and license
 
-A port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) by Modmuss50 and Chocohead, licensed under **MPL-2.0**. OptiFine itself is neither included nor redistributed; get it from the official site (in China the `bmclapi2.bangbang93.com/optifine/1.21.11/HD_U/J9` mirror works — 302 to the official maven distribution).
+A port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) by Modmuss50 and Chocohead, licensed under **MPL-2.0**. OptiFine itself is neither included nor redistributed; get it from the official site.
 
 ---
 
