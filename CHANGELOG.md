@@ -1,9 +1,67 @@
 # 更新日志
 
-> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.1.1+mc26.2`、`2.1.0+mc26.2`、
-> `2.0.0+mc26.1.2`、`1.2.0+mc26.1.2`)与 **1.21.x**(`1.1.0` – `1.1.2`,十个 MC 版本)。1.21.x 那条线在自己的分支上,
-> 它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.1.1`;`2.1.0` 有缺陷、已被取代)与
+> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.2.0+mc26.2`、`2.1.1+mc26.2`、
+> `2.1.0+mc26.2`、`2.0.0+mc26.1.2`、`1.2.0+mc26.1.2`)与 **1.21.x**(`1.1.0` – `1.1.2`,十个 MC 版本)。1.21.x
+> 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.0`)与
 > **26.1.2**(冻结在 `2.0.0`),所以这一线也有了"逐 MC 版本的版本号"。
+
+## 2.2.0+mc26.2 — 26.x 线的第五版(缺 OptiFine / 预览版过旧时给出提示,并从官方站直接下载)
+
+> **次版本号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
+> 「向下兼容地新增功能或支持范围 → 次版本号」。这一版**新增了一个用户可见的功能**(缺 OptiFine 时的提示、
+> 官方站下载、以及下载后的重启确认),**没有移除任何支持、也没有改变已有的行为**,所以是次版本号。
+> 按 §3,已发布的 `2.1.1+mc26.2` 冻结(它那份 jar 与它那一节记录都原样留着),26.1.2 继续用 `2.0.0+mc26.1.2`。
+
+**这一版是 1.21.x 那条线上同一功能的移植**,按 26.2 的客户端 API 改写(`GuiGraphicsExtractor`、`EditBox`、
+`Component`、`setScreenAndShow`、`stop`、`rebuildWidgets`)。行为:
+
+- **没有装 OptiFine**:每次启动都会给出提示;
+- **装的是更旧的 preview**:每个构建只提示一次;
+- **装的是 final(正式版)**:不论新旧**都不提示** —— final 是正式发布,不是"过旧的预览";
+- **下载只走 OptiFine 官方站的两步流程**(`https://optifine.net/adloadx?f={file}`,页面见
+  `https://optifine.net/downloads`),**保存前先校验**(校验器同时接受 `srg/net/optifine/Config.class` ——
+  新版 OptiFine 的 jar 实际把 `Config` 放在那里);本包**不含、也不分发** OptiFine,也不指向任何第三方镜像
+  (两个 README 里的镜像地址在这一版被删掉了);
+- **Windows 上下载后自动重启**:用 JNA 的 `GetCommandLineW` + `CreateProcessW`(26.2 自带 JNA 5.17.0),
+  因此 `build.gradle` 增加了两条 `compileOnly` 的 JNA 依赖 —— 只编译期使用,不进 jar。
+
+**支持表**(`OptifineSupport`,数据来自 `https://optifine.net/downloads`,2026-10-02 读取):26.2 →
+`preview_OptiFine_26.2_HD_U_K2_pre1`(26.2 **没有** final 构建,所以最新预览就是最新构建);26.1.2 →
+`preview_OptiFine_26.1.2_HD_U_K1_pre2`。比较用的是 OptiFine 自己的版本串(`net.optifine.Config.VERSION`,
+即文件名去掉 `.jar` 与 `preview_` 前缀),不是文件名的猜测。
+
+新增的文件:`mod/OptifineSupport.java`(支持表与比较)、`mod/OptifineDownloader.java`(官方下载与重启)、
+`mod/MissingOptifineScreen.java`(提示界面);`mixin/MixinTitleScreen.java` 与两个 README、`build.gradle` 同步更新。
+
+### 2.2.0 这一版没有改的东西
+
+**26.2 上光影仍不可用**:OptiFine 26.2 preview 自己取消了光影包加载,本模组照旧**原样留着**
+(见下一节 2.1.1 的说明)。本版只增加提示与下载,没有碰那条判据。
+
+**构建侧一个字没改**:26.x 这一线的目标版本只来自根目录 `gradle.properties` 的 `minecraft_version`(没有 `-Pmc`,
+也没有 `-Pmod_version_base`)。这一版发布时它产出的是 **`OptiFabric-Reforged-2.2.0+mc26.2.jar`**;
+`26.1.2` 那一份仍是冻结的 **`OptiFabric-Reforged-2.0.0+mc26.1.2.jar`**(内容不变,不重新构建、不重发,
+按 §3 与 §5 记在 `release/publish.ps1` 的 `$modVersions` 例外值表里)。所以**这一版只有一个 jar**。
+
+### 验证(2.2.0)
+
+**离线**(`powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1 -Version 26.2`):
+`Prepared 562 patched classes (0 skipped, 0 failed)`、`verified OK: 562`、`FAILED: 0`、`ASM verifier problems: 0`;
+OptiFine 自身的类 **879 / 879**(2 个 Forge-only 类不适用)、ASM 0;`AtTargetScan PROBLEMS: 0`、
+`RefmapScan MISSING members: 0`、`RuntimeContractScan` broken 0 / lost overrides 0 / unresolvable 0、
+`LambdaScan DANGLING handles: 0`。**数字与 2.1.1 记下的基线逐个相同** —— 本版改的是启动期提示与下载,
+不进补丁管线,所以 562 这个数不该动。
+
+同一份源码的 26.1.2 口径(`-Version 26.1.2`):**567 / 567**、0 失败,四个扫描器同样全 0,与 2.0.0 / 2.1.1
+记下的基线相同(2.2.0 没有碰那一版的产物)。这一条是拿**上面这个 jar 本体**跑出来的(2.2.0 只有一份源码,
+`build\libs` 里也只有 26.2 一个产物;`verify-26.ps1` 按 `<版本>+mc<MC>` 找 jar,所以那份 jar 临时复制成
+`+mc26.1.2` 的名字喂给它) —— 它证明的是**这份代码在 26.1.2 的客户端与 OptiFine 上照样全绿**,而不是"又构建了一个
+26.1.2 的产物"。26.1.2 那一版的产物仍是冻结的 `2.0.0+mc26.1.2`。
+
+提示与下载这条路径是**运行期**行为(要在真机上点了按钮才算数),离线校验只能证明补丁管线没被改坏。
+
+产物:`OptiFabric-Reforged-2.2.0+mc26.2.jar` — 178300 字节
+`SHA-256: 3D6248F2E246B56F084BEFE279358C317E2DE32CFEB5DA2A3AADD76A39A2F7BC`
 
 ## 2.1.1+mc26.2 — 26.x 线的第四版(撤回 2.1.0 那次"修光影"的改动:26.2 上光影用不了,强行打开还会让世界画不出来)
 
@@ -65,7 +123,7 @@ unresolvable 0、`LambdaScan DANGLING handles: 0`。
 ## 2.1.0+mc26.2 — 26.x 线的第三版(新增 Minecraft 26.2 支持)
 
 > ⚠️ **这一版有一个已被取代的缺陷(见上一节)**:它把 OptiFine 26.2 preview 对光影包加载的取消删掉了、
-> 把加载强行打开;真机测量下来,选了光影包之后世界**只画粒子、方块透明**。请改用 **`2.1.1+mc26.2`** ——
+> 把加载强行打开;真机测量下来,选了光影包之后世界**只画粒子、方块透明**。请改用 **`2.2.0+mc26.2`** ——
 > 本节其余内容(26.2 的移植记录、离线数字、产物尺寸与摘要)按 §3 原样保留,属于历史记录。
 
 > **次版本号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是

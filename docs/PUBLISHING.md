@@ -2,8 +2,9 @@
 
 本文档记录"把本项目发出去"需要做的步骤。仓库里已经准备好的东西、以及**你还需要自己做的部分**都写在下面。
 
-> 本仓库只有**一条发布线**:**26.x** = `2.1.1+mc26.2`(26.1.2 那一个是 `2.0.0+mc26.1.2`,已发布、内容不变)。
-> `2.1.1` 是修订版,它取代 `2.1.0+mc26.2` —— 那一版把 OptiFine 取消掉的光影包加载强行打开,选了光影包的世界只画粒子;
+> 本仓库只有**一条发布线**:**26.x** = `2.2.0+mc26.2`(26.1.2 那一个是 `2.0.0+mc26.1.2`,已发布、内容不变)。
+> `2.2.0` 新增了缺 OptiFine 时的提示与官方站下载(功能新增 → 次版本号);`2.1.1` 是修订版,它取代 `2.1.0+mc26.2`
+> —— 那一版把 OptiFine 取消掉的光影包加载强行打开,选了光影包的世界只画粒子;
 > **26.2 上光影不可用**这一点必须在发布说明里写明(release/notes/mc26.2.md 已经写好)。
 > 26.1 起 Minecraft **未混淆**,官方名即运行名,
 > 没有 yarn、也没有真正的 intermediary 可重映射(26.1.2 只发布占位 `intermediary:0.0.0`),所以这一线是
@@ -40,12 +41,12 @@
 | 项目 | 位置 | 说明 |
 |---|---|---|
 | 源码仓库 | 仓库根目录 | 已配好 `.gitignore`(不含 OptiFine、测试工件、构建产物) |
-| 构建配置 | `build.gradle` / `gradle.properties`(仓库根目录) | 版本号 `2.1.1+mc26.2`,产物名 `OptiFabric-Reforged-2.1.1+mc26.2.jar` |
+| 构建配置 | `build.gradle` / `gradle.properties`(仓库根目录) | 版本号 `2.2.0+mc26.2`,产物名 `OptiFabric-Reforged-2.2.0+mc26.2.jar` |
 | 许可 | `LICENSE.txt` | MPL-2.0(上游 OptiFabric 的许可,移植必须保留) |
 | 使用者文档 | `README.md` | 原理、安装、已知问题、排查(已按 26.2 更新) |
 | 开发记录 | `docs/DEVELOPMENT.md` | 逐轮排查与可复现的离线校验工具 |
 | 移植记录 | `docs/PORT_26.x.md` | 26.x 为什么单独一条线、官方名带来的每一类冲突、26.2 那四处(含**故意不修**的那一处) |
-| 更新日志 | `CHANGELOG.md` | 26.x 的 2.1.1 / 2.1.0 / 2.0.0 / 1.2.0 四节,后面是 1.21.x / 1.20.6 的历史 |
+| 更新日志 | `CHANGELOG.md` | 26.x 的 2.2.0 / 2.1.1 / 2.1.0 / 2.0.0 / 1.2.0 五节,后面是 1.21.x / 1.20.6 的历史 |
 | 页面文案 | `docs/DESCRIPTION.md` | 简要描述 + 详细描述,中英双语,可直接粘贴(已按 26.2 更新) |
 | 模组图标 | `src/main/resources/assets/optifabric/icon.png` | 128×128,已接进 `fabric.mod.json`;想换风格直接替换这个文件 |
 | 发布包副本 | `dist/` | 已构建好的 jar + `README.txt`(含 SHA-256),`.gitignore` 排除,本地上传用 |
@@ -58,10 +59,10 @@
 cd I:\mods\OptiFabric
 git checkout 26.x          # 从发布分支构建(见文首的分支表)
 .\gradlew build --offline
-Copy-Item "build\libs\OptiFabric-Reforged-2.1.1+mc26.2.jar" dist -Force
+Copy-Item "build\libs\OptiFabric-Reforged-2.2.0+mc26.2.jar" dist -Force
 ```
 
-> 这一线**没有 `-Pmc`**:`minecraft_version` 就是 `26.2`、`mod_version_base` 就是 `2.1.1`(都在根目录
+> 这一线**没有 `-Pmc`**:`minecraft_version` 就是 `26.2`、`mod_version_base` 就是 `2.2.0`(都在根目录
 > `gradle.properties` 里);26.1.2 那份用的是它自己的版本号,记在 `release\publish.ps1` 的 `$modVersions` 里。
 > 要升版别手改,走 `.\release\version.ps1 -Line 26.x -Kind <major|minor|patch>`(只给某一个 MC 版本升版就加
 > `-Mc <MC 版本>`)—— 它一次把 `gradle.properties`、`release/publish.ps1` 与各文档里那 9 处一起改掉
@@ -69,8 +70,8 @@ Copy-Item "build\libs\OptiFabric-Reforged-2.1.1+mc26.2.jar" dist -Force
 
 产物在 `build\libs\`(顺手复制到 `dist\`,里面已有一份现成的):
 
-- `OptiFabric-Reforged-2.1.1+mc26.2.jar` ← **上传这个**
-- `OptiFabric-Reforged-2.1.1+mc26.2-sources.jar`(可选,一般不用发)
+- `OptiFabric-Reforged-2.2.0+mc26.2.jar` ← **上传这个**
+- `OptiFabric-Reforged-2.2.0+mc26.2-sources.jar`(可选,一般不用发)
 
 发布之前建议先跑一遍离线验证(一条命令,几分钟):
 
@@ -83,7 +84,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
 ```powershell
 cd I:\mods\OptiFabric
 git add -A
-git commit -m "OptiFabric Reforged 2.1.1+mc26.2: OptiFine on Fabric for 26.2"
+git commit -m "OptiFabric Reforged 2.2.0+mc26.2: OptiFine on Fabric for 26.2"
 git remote add origin https://github.com/<你的用户名>/<仓库名>.git
 git push -u origin 26.x        # 推当前分支(26.x)
 ```
@@ -91,12 +92,12 @@ git push -u origin 26.x        # 推当前分支(26.x)
 发 Release —— 标签就是版本号本身,`1.2.0` 那个旧条目原样保留:
 
 ```powershell
-git tag v2.1.1
-git push origin v2.1.1
+git tag v2.2.0
+git push origin v2.2.0
 ```
 
 然后在 GitHub 网页上基于该 tag 建 Release(`Target` 选 **`26.x`** 分支 —— 见文首分支表),
-把 `OptiFabric-Reforged-2.1.1+mc26.2.jar`
+把 `OptiFabric-Reforged-2.2.0+mc26.2.jar`
 (以及 `-sources.jar`,可选)作为附件上传。仓库根目录的发布脚本也能做同样的事:
 
 ```powershell
@@ -122,7 +123,7 @@ git push origin v2.1.1
    - 模组加载器:**Fabric**
    - 许可:**MPL-2.0**(与上游一致,必须一致)
    - 分类建议:Optimization / Miscellaneous
-2. **上传文件**:一个 jar **一个文件**,版本名用 `2.1.1+mc26.2`,并在文件设置里把 **26.2** 勾上。
+2. **上传文件**:一个 jar **一个文件**,版本名用 `2.2.0+mc26.2`,并在文件设置里把 **26.2** 勾上。
    changelog 用 `release/notes/mc26.2.md`。
 3. **项目描述**:`docs/DESCRIPTION.md` 里给了成套文案 —— "简介"栏粘贴**简要描述**(英文在前、中文在后,CF 要求英文排最前),
    项目正文粘贴**详细描述**(有中文和英文两版,CF 支持 Markdown;里面已经带了"支持的版本"表)。

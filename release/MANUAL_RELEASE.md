@@ -21,25 +21,25 @@
 
 | 版本 | 版本号 / 标签 | jar | 字节 | SHA-256 | 正文 |
 |---|---|---|---|---|---|
-| 26.2 | 2.1.1+mc26.2 / v2.1.1 | dist\OptiFabric-Reforged-2.1.1+mc26.2.jar | 138982 | D9286B81851F0473C4DAEA2DFE06D216CF2315681F6116145086E4C3F1B6043E | release/notes/mc26.2.md |
+| 26.2 | 2.2.0+mc26.2 / v2.2.0 | dist\OptiFabric-Reforged-2.2.0+mc26.2.jar | 178300 | 3D6248F2E246B56F084BEFE279358C317E2DE32CFEB5DA2A3AADD76A39A2F7BC | release/notes/mc26.2.md |
 | 26.1.2 | 2.0.0+mc26.1.2 / v2.0.0 | dist\OptiFabric-Reforged-2.0.0+mc26.1.2.jar | 177166 | FBB432C2D9C8B0E7E06F0FDA4A0C1B6A8F302D5D09ABD7CE67F13CBE04A5CF60 | release/notes/mc26.1.2.md |
 
 ## 三处平台各自要填什么
 
 ### GitHub Release
 
-- **Tag**:`v2.1.1`(本仓库的 tag 只写版本号,已发布的 `v1.2.0` / `v2.0.0` 就是这样;MC 版本留在产物名与标题里),
-  target 选 **`26.x` 分支的当前提交**;
-- **Release title**:OptiFabric Reforged 2.1.1+mc26.2;
+- **Tag**:`v2.2.0`(本仓库的 tag 只写版本号,已发布的 `v1.2.0` / `v2.0.0` / `v2.1.0` / `v2.1.1` 就是这样;MC 版本留在产物名与标题里),
+  target 选 **提交 `4d4e0fb`(26.x 线的发布提交,当前在 `wip/26.2` 上)**;
+- **Release title**:OptiFabric Reforged 2.2.0+mc26.2;
 - **Describe this release**:粘贴 `release/notes/mc26.2.md`(Markdown);
-- **Attach binaries**:上传 `dist\OptiFabric-Reforged-2.1.1+mc26.2.jar`(正文里已写好尺寸与 SHA-256,方便用户校验)。
+- **Attach binaries**:上传 `dist\OptiFabric-Reforged-2.2.0+mc26.2.jar`(正文里已写好尺寸与 SHA-256,方便用户校验)。
 
 ### Modrinth
 
 | 字段 | 填什么 |
 |---|---|
-| Name | OptiFabric Reforged 2.1.1+mc26.2 |
-| Version number | 2.1.1+mc26.2 |
+| Name | OptiFabric Reforged 2.2.0+mc26.2 |
+| Version number | 2.2.0+mc26.2 |
 | Release channel | Release |
 | Game versions | 只勾 **26.2** |
 | Loaders | Fabric |
@@ -52,7 +52,7 @@
 
 | 字段 | 填什么 |
 |---|---|
-| Display name | OptiFabric Reforged 2.1.1+mc26.2 |
+| Display name | OptiFabric Reforged 2.2.0+mc26.2 |
 | Release type | Release |
 | Game version | Minecraft **26.2** 加 Fabric(只勾该版) |
 | Changelog | 粘贴 `release/notes/mc26.2.md`,格式选 Markdown |
@@ -66,7 +66,7 @@
       只给一个 MC 版本升版就加 `-Mc 26.2`。规则见 [`docs/VERSIONING.md`](../docs/VERSIONING.md);
       不要手改 —— 一次要动 9 个文件);
 - [ ] `.\gradlew build --offline` 通过(这一线没有 `-Pmc`,目标版本来自根目录 `gradle.properties` 的
-      `minecraft_version`),且产物名是 `OptiFabric-Reforged-2.1.1+mc26.2.jar`;
+      `minecraft_version`),且产物名是 `OptiFabric-Reforged-2.2.0+mc26.2.jar`;
 - [ ] `.\release\version.ps1 -Line 26.x -RecordDigest` 跑过,正文里的尺寸与 SHA-256 与 `dist\` 里的 jar 一致;
 - [ ] jar 里**没有** OptiFine 的类或资源、没有 `mappings/mappings.tiny`(26.x 本就不该有映射表);
 - [ ] `LICENSE.txt_OptiFabric-Reforged` 在(`jar` 任务按 `archives_base_name` 给 `LICENSE.txt` 改名),
