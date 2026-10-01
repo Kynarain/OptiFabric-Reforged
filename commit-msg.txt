@@ -1,1 +1,0 @@
-Release 2.2.0: prompt when OptiFine is missing or an older preview, download it from the official site, and confirm before restarting
