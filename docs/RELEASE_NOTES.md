@@ -1,16 +1,29 @@
-# GitHub Release notes — tag `v2.1.0+mc1.21.11`(`OptiFabric-2.1.0+mc1.21.11.jar`)
+# GitHub Release notes — tag `v2.2.0+mc1.21.11`(`OptiFabric-2.2.0+mc1.21.11.jar`)
 
 > 复制下面 `---` 之间的内容到 GitHub Release 的说明框里(标题用第一行)。英文在前,末尾附中文摘要。
-> 标签是**版本号 + 该 MC 版本**(`v2.1.0+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
+> 标签是**版本号 + 该 MC 版本**(`v2.2.0+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
 > 其余版本号由 `release\version.ps1` 统一改写。
 
 ---
 
-## OptiFabric 2.1.0+mc1.21.11 — OptiFine on Fabric 1.21.11
+## OptiFabric 2.2.0+mc1.21.11 — OptiFine on Fabric 1.21.11
 
 Run **OptiFine** and **Fabric** in the same 1.21.11 client. Drop OptiFabric and your own OptiFine jar into `mods/`; at startup OptiFabric runs OptiFine's installer, remaps its patches into Fabric's namespace, repairs the structural conflicts with Fabric API, and hands the result to Fabric Loader's class transformer.
 
 **OptiFine is not bundled or redistributed** — bring your own `OptiFine_1.21.11_HD_U_J9.jar` (or another 1.21.11 build).
+
+### New in 2.2.0 — the game says what is missing, and fetches it from OptiFine's own site
+
+**A missing OptiFine is no longer silent.** Until 2.2.0 the game simply started without OptiFine and none of its features; the user had to guess what was wrong. The title screen now consults the support table this mod carries and, in two cases, says so on a screen instead:
+
+- **Nothing in `mods/` at all** — "OptiFine is not installed": shown on **every** launch until a jar is there, naming the build and the file name this Minecraft release expects. `Continue to main menu` lets that one session through and writes nothing.
+- **A jar is there but its build is older** than the newest one this release knows — "OptiFine version mismatch": the game **keeps running with the OptiFine you have**, and the screen is only a recommendation. `Continue anyway` records that build in `config/optifabric-mismatch-ack.txt` so it is not mentioned again. Only a **preview** older than the table is ever worth interrupting for; a final build you already have is left alone even when a newer final exists.
+
+**The download comes from OptiFine's own site, and only from where you point it.** The `Download OptiFine` button (called `Download the right build` in the mismatch case) puts the jar the table asks for into `mods\`. The URL field is pre-filled with the official two-step flow — the `optifine.net/adloadx?f=<file>` page carries a one-use token, and the jar is behind `downloadx?f=<file>&x=<token>` on the same host. The mod ships **no** third-party or mirror URL and never falls back to one: if that path fails (a non-200 status, no token on the page, a body that is not a zip, a zip that is not OptiFine, an unreachable host), the screen states the reason and swaps the button for `Open the official download page` plus `Re-check` — you fetch the named jar yourself, drop it in `mods/`, and re-check picks it up. The field is editable: a URL of your own carrying `{mc}` / `{type}` / `{patch}` / `{file}` is expanded from the table and fetched directly, but that choice is yours alone.
+
+**A finished download asks before it restarts.** A success (or a re-check that finds the jar) no longer quits the game on its own: it asks **"Restart the game to make OptiFine take effect?"**, and `Restart now` re-runs the game with **the command line this JVM was started with**. On Windows a JVM cannot read its own command line back (a space in the game directory breaks `ProcessHandle`), so the raw line is read with JNA's `GetCommandLineW` and re-executed verbatim through `CreateProcessW`; elsewhere `ProcessHandle` is used. When a launcher hides the command line the game says it cannot restart automatically and leaves the restart to you. JNA 5.14.0 is a `compileOnly` dependency — it is not bundled in the jar.
+
+**Both READMEs carry the support table** (OptiFabric version → Minecraft version → required OptiFine build) and state that it lists the newest **final** build, using the newest preview only where a release has no final build yet; `release\version.ps1 -CheckSupport` fails when a README table, `release\notes\mc<MC>.md` and the mod's own table disagree. Every third-party mirror link has been removed from the README and `docs/DEVELOPMENT.md`: downloads only ever go through the official site.
 
 ### New in 2.1.0 — the crash report explains itself, and one more mod gets its injection target back
 
@@ -68,7 +81,7 @@ This is versioned per artifact: 1.21.3 – 1.21.11 are 1.1.2, 1.21 and 1.21.1 ke
 ### Install
 
 1. Install a 1.21.11 Fabric client (Loader 0.19.5+).
-2. Put `OptiFabric-2.1.0+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
+2. Put `OptiFabric-2.2.0+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
 3. Start the game with the **Fabric** profile. The first launch spends a few seconds patching and remapping (cached afterwards under `<game dir>/.optifine/<version>/`).
 
 ### What it took for 1.21.11
@@ -101,7 +114,7 @@ OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recomp
 
 | File | SHA-256 |
 |---|---|
-| `OptiFabric-2.1.0+mc1.21.11.jar` (875059 bytes) | `86F1EFB252EF246E29468BD309AD8B4E95117446C1D185587A075005A7AE4AF0` |
+| `OptiFabric-2.2.0+mc1.21.11.jar` (914733 bytes) | `7301EDD4B7634E8C8EE1B1845A0D1F73651396AF3A9E18E7E1F4988E298F2ACC` |
 
 Other Minecraft releases OptiFine ships a build for — 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9 and 1.21.10 — come out of this same repository root (one Gradle project, no `v1.21.x` subproject) with `.\gradlew build "-Pmc=<version>"`, and each of them passes the same offline verification (see [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)).
 
@@ -117,6 +130,12 @@ A port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) by Mod
 
 把 OptiFine 接进 Minecraft **1.21.11** 的 Fabric。把本 jar 与自备的 `OptiFine_1.21.11_HD_U_J9.jar` 一起放进 `mods/`,用 Fabric 版本启动即可(**不需要**先运行 OptiFine 安装器);首次启动多花几秒做补丁+重映射,之后走缓存。
 
+- **2.2.0 的改动**:`mods/` 里没有 OptiFine(或装的是比支持表更旧的**预览版**)时不再默默启动 —— 标题界面打开前会弹出说明界面,
+  写明该 MC 版本需要的构建与文件名,`下载 OptiFine` 从 OptiFine **官网**的两步流程取回它(不带、也不回退任何第三方镜像;
+  失败就如实报原因并换成 `打开官网下载页` + `重新检查`,你放好 jar 再点重新检查);地址栏可以换成你自己的地址;
+  下载成功后**先问一句**`是否重启游戏使 OptiFine 生效?`,`立即重启` 用启动本进程时的那条命令行重开游戏再结束自己
+  (Windows 用 JNA 读原始命令行 —— 游戏目录带空格时 JVM 读不回自己的命令行);完全没装时每次启动都会提示,
+  装了但较旧则只在**预览版**较旧时提示一次,点`仍要继续`后记进 `config/optifabric-mismatch-ack.txt` 不再重复;
 - **2.1.0 的改动**:崩溃报告多出一节 `OptiFabric: OptiFine / mixin conflict` —— 最常见的
   `NoClassDefFoundError: … net.optifine.reflect.Reflector` 是**别的模组的 mixin 没能注入到 OptiFine 改写过的类里**,
   报告现在说明原因,并给出用 `-Dmixin.debug=true` 让 Mixin **点名**模组的做法(README 的"支持与排查"同);
