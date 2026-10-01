@@ -6,7 +6,12 @@
  *   - MinecraftClient#openScreen was removed in 1.20.6, setScreen is used instead;
  *   - the Fabric screen API integration (compat.fabricscreenapi.Events) and the Text/DrawContext
  *     compatibility shims upstream needed are gone; the 1.20.6 Yarn API is used directly;
- *   - the dead "render(MatrixStack...)" target was dropped, 1.20.6 renders screens into a DrawContext.
+ *   - the dead "render(MatrixStack...)" target was dropped, 1.20.6 renders screens into a DrawContext;
+ *   - the download prompt runs before the error gate: a jar that is simply older than the newest build
+ *     this release knows loads without any error at all, and "nothing in mods/" is an error state, so
+ *     the prompt has to be decided first. When it does not take the screen over, the error gate below
+ *     still runs, which is what keeps the "OptiFine could not be found" dialog reachable after the
+ *     prompt has been dismissed for this session.
  */
 
 package kynarain.cn.optifabric.mixin;
@@ -32,7 +37,9 @@ import net.minecraft.util.math.MathHelper;
 
 import net.fabricmc.loader.api.FabricLoader;
 
+import kynarain.cn.optifabric.mod.MissingOptifineScreen;
 import kynarain.cn.optifabric.mod.OptifabricError;
+import kynarain.cn.optifabric.mod.OptifineSupport;
 import kynarain.cn.optifabric.mod.OptifineVersion;
 
 /**
@@ -52,6 +59,33 @@ public abstract class MixinTitleScreen extends Screen {
 
 	@Inject(method = "init", at = @At("RETURN"))
 	private void init(CallbackInfo info) {
+		// The download prompt owns the jar states it exists for - nothing in mods/ at all, and an OptiFine
+		// that is older than the newest build this release knows. It is decided from the jar itself, not from
+		// OptifabricError: an older build of the *same* Minecraft release loads without any error at all
+		// (OptifineVersion only complains about a jar for another release), and the user still has to be told
+		// that a newer one exists. So this has to run before the error gate below.
+		OptifineSupport.Build expected = OptifineSupport.forMc(FabricLoader.getInstance().getRawGameVersion());
+		MissingOptifineScreen.Mode prompt = MissingOptifineScreen.modeFor(OptifineVersion.jarType, expected, OptifineVersion.version);
+
+		if (prompt != null && MissingOptifineScreen.shouldPrompt(prompt, OptifineVersion.version)) {
+			System.out.println((prompt == MissingOptifineScreen.Mode.MISSING
+					? "[OptiFabric] OptiFine is not installed - showing the download screen"
+					: "[OptiFabric] The installed OptiFine build is not the one this Minecraft version expects - showing the download screen")
+					+ " (installed " + (OptifineVersion.version == null ? "nothing" : OptifineVersion.version)
+					+ ", recommended " + expected.file + ")");
+			client.setScreen(new MissingOptifineScreen(prompt, expected, OptifineVersion.version));
+
+			// Mode B (an older build) is a one-time recommendation: remember the build as soon as the prompt is
+			// shown, so a later launch with the same jar does not nag again. Mode A must appear on every launch
+			// and never consults the acknowledgement file, so it is deliberately not written here.
+			if (prompt == MissingOptifineScreen.Mode.MISMATCH) {
+				MissingOptifineScreen.acknowledge(OptifineVersion.version);
+			}
+
+			return;
+		}
+
+		// Everything below is the error dialog, and it is only for a real error.
 		if (!OptifabricError.hasError()) return;
 
 		String actionButtonText, helpButtonText;

@@ -10,16 +10,39 @@
 
 | Minecraft | 产物 | OptiFine 构建 | Java |
 |---|---|---|---|
-| 1.20.6 | `OptiFabric-1.0.0+mc1.20.6.jar` | `preview_OptiFine_1.20.6_HD_U_I9_pre1.jar` | 21 |
+| 1.20.6 | `OptiFabric-1.0.0+mc1.20.6.jar` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
 
 - mod id `optifabric`,仅客户端,要求 **Fabric Loader ≥ 0.19.3**。
 - 一个 jar 只对应一个版本:jar 里打包着该版本的 `official → intermediary` 映射表(混淆名每版不同,用错版本会把 OptiFine 重映射坏),`fabric.mod.json` 里的 `minecraft` 依赖也精确到该版本。
-- 1.20.6 的 OptiFine **只有 preview 构建**,下载后直接丢进 `mods/` 即可(它是安装器形态,OptiFabric 会自己运行 `optifine.Patcher`):
-  ```powershell
-  curl.exe -L -o preview_OptiFine_1.20.6_HD_U_I9_pre1.jar `
-    "https://bmclapi2.bangbang93.com/optifine/1.20.6/HD_U_I9/pre1"
-  ```
+- 1.20.6 的 OptiFine **只有 preview 构建**,下载后直接丢进 `mods/` 即可(它是安装器形态,OptiFabric 会自己运行 `optifine.Patcher`)。请到 OptiFine 官网 <https://optifine.net/downloads> 的 **Minecraft 1.20.6** 一节里自己取:`preview_OptiFine_1.20.6_HD_U_J1_pre18.jar`(2024-09-27,J1_pre18)它是该版本最新的构建。本模组**不携带、也不指向任何第三方镜像**:它只会从 OptiFine 官网下载,失败时也只告诉你原因并让你去官网手动下载。
 - 离线字节码校验 **425 / 425 通过**、ASM 数据流验证器 0 问题;真机验证:进入主界面、单人存档、多人服务器、模型与区块渲染、光影生效。
+
+表里这一列是该 MC 版本**最新的正式版** OptiFine;若该版本官方还没有正式版,则用**最新的预览版**代替。
+1.20.6 就是后者:OptiFine 为它发布过 `HD_U_I9_pre1`(2024-06-06)、`HD_U_J1_pre17`(2024-09-25)、`HD_U_J1_pre18`(2024-09-27)
+三个构建,全是预览版,没有正式版,所以最新那个 `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` 就是建议项(也是下载按钮会取的那个)。
+同一 MC 版本的其它构建同样可用 —— 游戏内提示只在你 mods/ 里的 jar 是**预览版**、且比表里这个更旧时才会出现(你已经装了正式版就不会被打扰,哪怕有更新的正式版)。
+
+### OptiFabric 版本 → Minecraft 版本 → 需要的 OptiFine 构建
+
+这张表与模组里自带的那张(`OptifineSupport`)一致;本分支只构建 1.20.6 一个版本,所以只有一行。
+
+| OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 |
+|---|---|---|
+| `1.0.0+mc1.20.6` | 1.20.6 | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` |
+
+当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是弹出一个界面告诉你缺哪个文件:
+上面有「下载 OptiFine」按钮,从 OptiFine **官网**(`optifine.net`,也是本模组唯一会去下载的地方)取回它,旁边就是打开 mods 文件夹;
+按钮上方的地址栏可以换成你自己的地址,那样就只从你填的地方取。
+
+两种提示的行为:
+
+- **mods/ 里完全没有 OptiFine**:每次启动都会提示;点「继续返回主菜单」只是这次会话不再出现,它不会被记住,下次启动还会提示。
+- **装的是更旧的预览版**(比如 `HD_U_I9_pre1`、`HD_U_J1_pre17`):提示会建议换成最新的那个,点「仍要继续」后把该构建记到 `config/optifabric-mismatch-ack.txt`,同一个构建不再重复提示。
+- **装的是正式版**(或比表里更新的构建):不提示 —— 只有预览版才值得为它打断你。
+
+下载下来的 jar 会先校验(`PK` 归档 + OptiFine 自己的 `Config.class`),再按官方文件名原子写入 `mods/`,然后弹出确认框问是否立即重启;
+Windows 上「立即重启」走 JNA 的 `GetCommandLineW` + `CreateProcessW`(路径里有空格时 `ProcessHandle` 读不回自己的命令行),其它系统走 `ProcessHandle`,两条路都会在启动新进程后结束当前进程。
+下载失败时界面只显示具体原因 + 「打开官网下载页」+「重新检查」,**不会**换一个源重试。
 
 ## 安装
 
