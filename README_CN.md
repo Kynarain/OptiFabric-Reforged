@@ -24,7 +24,7 @@ OptiFine 不是 Fabric 模组:它的 jar 里是针对原版**混淆**客户端�
 **一个 Minecraft 版本一个 jar** —— 每个 jar 里都打包着该版本的 `official → intermediary` 映射表(官方混淆名每版不同,用错版本会把 OptiFine 重映射成乱码),`fabric.mod.json` 里的 `minecraft` 依赖也精确到该版本。
 
 **作者:** kynarain · 上游:Modmuss50、Chocohead
-**版本:** 十个产物都是 `2.0.0`(1.21 – 1.21.11)
+**版本:** 十个产物都是 `2.1.0`(1.21 – 1.21.11)
 **许可:** MPL-2.0
 
 ## ✨ 主要特性
@@ -99,7 +99,7 @@ curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/opt
 
 ```powershell
 .\gradlew build "-Pmc=1.21.11"                            # PowerShell 里必须加引号,否则 1.21.11 会被拆开
-.\gradlew build "-Pmc=1.21.8" "-Pmod_version_base=2.0.0"  # 只有该产物的版本号与整条线的基数不同时才需要它
+.\gradlew build "-Pmc=1.21.8" "-Pmod_version_base=2.1.0"  # 只有该产物的版本号与整条线的基数不同时才需要它
 ```
 
 产物在 `build/libs/OptiFabric-<版本>+mc<MC版本>.jar`。版本号只通过一个脚本改:
@@ -126,16 +126,16 @@ curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/opt
 
 | Minecraft | 产物 | OptiFine 构建 | 状态 |
 |---|---|---|---|
-| 1.21 | `OptiFabric-2.0.0+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
-| 1.21.1 | `OptiFabric-2.0.0+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
-| 1.21.3 | `OptiFabric-2.0.0+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
-| 1.21.4 | `OptiFabric-2.0.0+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
-| 1.21.6 | `OptiFabric-2.0.0+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
-| 1.21.7 | `OptiFabric-2.0.0+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
-| 1.21.8 | `OptiFabric-2.0.0+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
-| 1.21.9 | `OptiFabric-2.0.0+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
-| 1.21.10 | `OptiFabric-2.0.0+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
-| 1.21.11 | `OptiFabric-2.0.0+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
+| 1.21 | `OptiFabric-2.1.0+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
+| 1.21.1 | `OptiFabric-2.1.0+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
+| 1.21.3 | `OptiFabric-2.1.0+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
+| 1.21.4 | `OptiFabric-2.1.0+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
+| 1.21.6 | `OptiFabric-2.1.0+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
+| 1.21.7 | `OptiFabric-2.1.0+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
+| 1.21.8 | `OptiFabric-2.1.0+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
+| 1.21.9 | `OptiFabric-2.1.0+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
+| 1.21.10 | `OptiFabric-2.1.0+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
+| 1.21.11 | `OptiFabric-2.1.0+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
 
 OptiFine 没出过 **1.21.2 / 1.21.5** 的构建,所以这两版没有对应 jar。
 

@@ -24,7 +24,7 @@ OptiFine is not a Fabric mod: its jar holds bytecode patches against *obfuscated
 **One jar per Minecraft release** — every jar carries that release's `official → intermediary` mapping table (the obfuscated names differ per release, and the wrong table turns OptiFine into garbage) and pins its `minecraft` dependency to that exact version.
 
 **Author:** kynarain · upstream: Modmuss50, Chocohead
-**Version:** `2.0.0` for all ten releases (1.21 – 1.21.11)
+**Version:** `2.1.0` for all ten releases (1.21 – 1.21.11)
 **License:** MPL-2.0
 
 ## ✨ Key Features
@@ -100,7 +100,7 @@ curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/opt
 
 ```bash
 ./gradlew build "-Pmc=1.21.11"                            # quotes matter in PowerShell: 1.21.11 is split otherwise
-./gradlew build "-Pmc=1.21.8" "-Pmod_version_base=2.0.0"  # only needed when that jar's version differs from the base
+./gradlew build "-Pmc=1.21.8" "-Pmod_version_base=2.1.0"  # only needed when that jar's version differs from the base
 ```
 
 The jars land in `build/libs/OptiFabric-<version>+mc<mc>.jar`. Version numbers only ever change through one script:
@@ -127,16 +127,16 @@ The development environment is not supported: `gradlew runClient` is refused out
 
 | Minecraft | jar | OptiFine build | State |
 |---|---|---|---|
-| 1.21 | `OptiFabric-2.0.0+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ verified |
-| 1.21.1 | `OptiFabric-2.0.0+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ verified |
-| 1.21.3 | `OptiFabric-2.0.0+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ verified |
-| 1.21.4 | `OptiFabric-2.0.0+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ verified |
-| 1.21.6 | `OptiFabric-2.0.0+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ starts and plays, **crashes as soon as shaders are enabled** (below) |
-| 1.21.7 | `OptiFabric-2.0.0+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ same |
-| 1.21.8 | `OptiFabric-2.0.0+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ verified |
-| 1.21.9 | `OptiFabric-2.0.0+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ verified |
-| 1.21.10 | `OptiFabric-2.0.0+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ verified |
-| 1.21.11 | `OptiFabric-2.0.0+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ verified |
+| 1.21 | `OptiFabric-2.1.0+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ verified |
+| 1.21.1 | `OptiFabric-2.1.0+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ verified |
+| 1.21.3 | `OptiFabric-2.1.0+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ verified |
+| 1.21.4 | `OptiFabric-2.1.0+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ verified |
+| 1.21.6 | `OptiFabric-2.1.0+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ starts and plays, **crashes as soon as shaders are enabled** (below) |
+| 1.21.7 | `OptiFabric-2.1.0+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ same |
+| 1.21.8 | `OptiFabric-2.1.0+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ verified |
+| 1.21.9 | `OptiFabric-2.1.0+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ verified |
+| 1.21.10 | `OptiFabric-2.1.0+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ verified |
+| 1.21.11 | `OptiFabric-2.1.0+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ verified |
 
 OptiFine never shipped a build for **1.21.2 / 1.21.5**, so there is no jar for those.
 

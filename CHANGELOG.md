@@ -1,5 +1,87 @@
 # 更新日志
 
+## 2.1.0+mc1.21 … 2.1.0+mc1.21.11 — 崩溃报告自己说明原因,并让 SophisticatedCore 这类模组重新有注入目标
+
+> **这一版覆盖全部 10 个产物**(1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11),
+> 全部是 2.1.0,行为一致。**次版本号递增的原因是新能力:崩溃报告里新增一节诊断,固定的几个模组冲突不再需要用户自己猜**;
+> 没有任何东西被移除(按 `docs/VERSIONING.md` 的映射表,新能力走 minor,不兼容修改才走 major)。
+> mod id 与 2.0.0 相同(仍是 `optifabric_reforged`),从 2.0.0 升上来直接换 jar 即可。
+
+### 新增:崩溃报告里的 `OptiFabric` 诊断节
+
+本项目被问得最多的一类崩溃是 `NoClassDefFoundError: Could not initialize class
+net.optifine.reflect.Reflector`(有些实例连崩溃报告都不留,直接退出)。它的链条是:OptiFine 的崩溃报告器通过
+`Reflector` 读自己的版本号 → 这次读取要加载某个游戏类 → 那个类因为**另一个模组的 mixin 没能注入到 OptiFine
+改写过的类里**而无法完成加载 —— 于是报告停在 `Reflector`,**完全没提是哪个模组**。
+
+现在只要原因链里出现那个签名(`net.optifine.reflect.Reflector`,或 `Mixin transformation of` / `Mixin apply for mod`),
+崩溃报告就会多出一节 `OptiFabric: OptiFine / mixin conflict`,写明发生了什么、真正的模组名只在
+`-Dmixin.debug=true` 下才会被 Mixin 打出来、已知的三类冲突,以及该怎么办(删掉那个模组,或者不用 OptiFine)。
+它是 `@Unique` 方法,签名不匹配时一个字都不加,整段还包在 `try/catch` 里 —— **诊断永远不会顶掉它要解释的那份报告**。
+
+### 新增:README 的排查配方
+
+`README.md` / `README_CN.md` 的"支持与排查"里补了同一套做法:如何用 `-Dmixin.debug=true` 让 Mixin **点名**失败的
+模组(`Mixin apply for mod <模组> failed … -> net.minecraft.class_<n>`),以及已知的三类:
+捕获/修改方法局部变量或参数的模组、要求某个方法里调用点数量正好相等的模组、注入点本身就是某个调用点而 OptiFine
+把它换成了自己的方法的模组。不加这个参数时 `latest.log` 里没有任何指向元凶的信息。
+
+### 修好了:SophisticatedCore / Sophisticated Backpacks 装上就启动崩
+
+它的 `client.ParticleEngineMixin` 用 `@ModifyArgs` 要求 `class_702.method_34020`(ParticleEngine)。OptiFine 重编译时
+把那段循环折进了 `lambda$addBlockDestroyEffects$13`(描述符一样),补丁后的类里**根本没有** `method_34020`,
+`@ModifyArgs` 按名字 + 描述符找不到,`require = 1` 于是让整个类变换失败。现在用
+`RestoreVanillaMethodsFix("method_34020")` 把原版方法体补回去当注入目标 —— 补丁类里没有任何地方引用它,是死代码。
+
+**实测(1.21.1 + SophisticatedCore / Sophisticated Backpacks 那个整合包)**:`Restored vanilla
+net/minecraft/class_702.method_34020(...)V so injections into it have a target`、
+`Prepared 425 patched classes (0 skipped, 0 failed)`、`Mixing client.ParticleEngineMixin … into
+net.minecraft.class_702` 不再失败,客户端走到声音引擎、无崩溃报告。
+
+### 还有两个:**故意不修**
+
+它们不是槽位问题,修不了,只能由模组作者改,清单在 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) 的冲突表里:
+
+- **CarryOn 2.2.6.13**(1.21.1):它的 `LevelRendererMixin` 注入在 `class_761` 里对 `class_702.method_3049` 的
+  **调用点**上,而 OptiFine 把那两处调用换成了自己的 `class_702.render(…)` → 注入点数量为 0。槽位修复器在这里是
+  空操作(该方法原版局部变量本来就不按槽号排列,19 个候选 > 上限 8);伪造一个调用点会让粒子画两遍、回调时机也变;
+- **ShoulderSurfing 5.2.0**(1.21.1):它的 `CameraMixin` 要求 `class_4184`(Camera)里调用点**数量正好相等**,
+  而 OptiFine 重写 Camera 后数量不符。
+
+### `LocalSlotLayoutFix` 的稳健性:不是搬流程,是搬之前别把类型和布局搞错
+
+2.0.0 那次独立复核在 `LocalSlotLayoutFix` 里查出四个缺陷(都不改变已发布版本上的搬移结果,本版一并修掉):
+
+- 槽位类型原来是"从第一条提到它的指令猜",于是 `long`/`double` 这类**占两个槽位的候选**只被分配一个槽,两个宽候选
+  还会被分到同一个目标槽 —— 那是**非法字节码**。现在先读方法自己的局部变量表,读不到才退回 opcode 探测(只认
+  `*LOAD`/`*STORE`);
+- 布局回退原来**逐方法**选表示法:只有一侧带局部变量表时,两边会用不同表示法比较(`Z` 对 `I`),遍历错位后撞上
+  ">8"上限 —— 于是这个 fixer 存在的意义(阻止那次注入失败)反而没生效。现在只要有一侧来自 opcode 回退,就**按
+  类别**比较,只有两侧都来自各自的表时才用精确比较;日志会写明每侧用的是哪种表示法;
+- ">8"上限的消息与"无需搬移"两条路径原来会把两种原因混为一谈(或干脆不说话),现在分开说;
+- `ClassFixer.fix` 注明:传进来的 minecraft `ClassNode` 是共享缓存,**必须当成只读**。
+
+### 已知限制:`LocalSlotLayoutFix` 的"保留"判定只看槽号,不看作用域
+
+搬移前会保留"原版也有"的槽位,而这个判定是**按槽号**的:槽位只要在遍历里匹配过一次就整体不搬,但槽号会被复用 ——
+1.21.1 的 `class_757.method_3192` 有 21 个局部变量(原版 18 个),槽位 12 同时住着 OptiFine 自己的 `class_425 rlpg`
+和原版 catch 块的局部变量,于是这个多出来的局部变量被误判为保留、留在原版局部变量中间(1.21.4 是 22 对 19,
+1.21.11 是 18 对 17,**所以 1.21.11 报的"无需搬移"并不是两边本来就一致**)。实测没有破坏本 fixer 针对的捕获
+(Architectury 仍为 FIXED、无注入错误、无 `VerifyError`),它没覆盖到的注入点没有逐个枚举;现在 fixer 会把被丢掉的
+候选槽位连同两侧条目与指令区间打进日志,修法(按作用域而不是按槽号重映射)见类里的注释。
+
+> 提醒:`.optifine` 缓存按 **OptiFabric 版本号**判定新旧,不按 jar 内容。用同一版本号的新构建做验证前,要先删掉实例
+> 里的 `.optifine` 目录,否则会继续使用旧构建写进去的补丁产物(这次就因此先被误导了一次)。
+
+### 校验
+
+十个产物的字节数与 SHA-256 见各自的发布页(`release/notes/mc<MC>.md`),构建产物在 `build/libs/`。
+
+---
+
+> **下面这一节记录的是已经发出去的 2.0.0**(jar 内容与发布页都已冻结)。当时发布的十个 jar 里只有本节写的东西;
+> 上面 2.1.0 的那几条**不在** 2.0.0 里 —— 它们的 jar 已经发布了,而那之后的改动属于新版本(§3)。
+
 ## 2.0.0+mc1.21 … 2.0.0+mc1.21.11 — 换用本分叉自己的 mod id,并修掉让 Architectury 崩在第一帧的局部变量冲突
 
 > **这一版覆盖全部 10 个产物**(1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11),
@@ -31,15 +113,6 @@ mod id 从 `optifabric` 改成 **`optifabric_reforged`**,显示名改成 **OptiF
 
 实测(1.21.1 + `OptiFine_1.21.1_HD_U_J1` + fabric-api 0.116.17 + architectury 13.0.11,不放任何配置文件):
 56 个模组加载、fixer 报告槽位搬移、进世界正常、无注入错误、无 `VerifyError`、无崩溃报告。
-
-### 已知限制:`LocalSlotLayoutFix` 的"保留"判定只看槽号,不看作用域
-
-搬移前会保留"原版也有"的槽位,而这个判定是**按槽号**的:槽位只要在遍历里匹配过一次就整体不搬,但槽号会被复用 ——
-1.21.1 的 `class_757.method_3192` 有 21 个局部变量(原版 18 个),槽位 12 同时住着 OptiFine 自己的 `class_425 rlpg`
-和原版 catch 块的局部变量,于是这个多出来的局部变量被误判为保留、留在原版局部变量中间(1.21.4 是 22 对 19,
-1.21.11 是 18 对 17,**所以 1.21.11 报的"无需搬移"并不是两边本来就一致**)。实测没有破坏本 fixer 针对的捕获
-(Architectury 仍为 FIXED、无注入错误、无 `VerifyError`),它没覆盖到的注入点没有逐个枚举;现在 fixer 会把被丢掉的
-候选槽位连同两侧条目与指令区间打进日志,修法(按作用域而不是按槽号重映射)见类里的注释。
 
 ### 另修
 
@@ -73,9 +146,6 @@ JsonSyntaxException: Not a json array: {"BlitConfig":...}; No key program
 现改为**内容判据**,不再依赖版本号列表:只有游戏自带的 `post_effect/*.json` 使用新键时才做这段改写;只有游戏带
 `GpuTexture` API(1.21.6 起)时才做那处纹理修复。实测:1.21.3 与 1.21.4 由 2 条降到 **0 条**,1.21.11 仍走改写路径
 (未被误跳过),1.21.1 + Architectury 用同一个新 jar 重验仍为 FIXED。
-
-> 提醒:`.optifine` 缓存按 **OptiFabric 版本号**判定新旧,不按 jar 内容。用同一版本号的新构建做验证前,要先删掉实例
-> 里的 `.optifine` 目录,否则会继续使用旧构建写进去的补丁产物(这次就因此先被误导了一次)。
 
 ### 校验
 

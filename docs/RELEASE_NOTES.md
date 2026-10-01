@@ -1,16 +1,28 @@
-# GitHub Release notes — tag `v2.0.0+mc1.21.11`(`OptiFabric-2.0.0+mc1.21.11.jar`)
+# GitHub Release notes — tag `v2.1.0+mc1.21.11`(`OptiFabric-2.1.0+mc1.21.11.jar`)
 
 > 复制下面 `---` 之间的内容到 GitHub Release 的说明框里(标题用第一行)。英文在前,末尾附中文摘要。
-> 标签是**版本号 + 该 MC 版本**(`v2.0.0+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
+> 标签是**版本号 + 该 MC 版本**(`v2.1.0+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
 > 其余版本号由 `release\version.ps1` 统一改写。
 
 ---
 
-## OptiFabric 2.0.0+mc1.21.11 — OptiFine on Fabric 1.21.11
+## OptiFabric 2.1.0+mc1.21.11 — OptiFine on Fabric 1.21.11
 
 Run **OptiFine** and **Fabric** in the same 1.21.11 client. Drop OptiFabric and your own OptiFine jar into `mods/`; at startup OptiFabric runs OptiFine's installer, remaps its patches into Fabric's namespace, repairs the structural conflicts with Fabric API, and hands the result to Fabric Loader's class transformer.
 
 **OptiFine is not bundled or redistributed** — bring your own `OptiFine_1.21.11_HD_U_J9.jar` (or another 1.21.11 build).
+
+### New in 2.1.0 — the crash report explains itself, and one more mod gets its injection target back
+
+**The crash this project is asked about most now diagnoses itself.** `NoClassDefFoundError: Could not initialize class net.optifine.reflect.Reflector` happens because *another* mod's mixin failed to apply to a class OptiFine patches: OptiFine's crash reporter reads its own version through `Reflector`, that read loads the game class, and the class can no longer finish loading — so the report ends at `Reflector` and never names the mod. When the cause chain carries that signature (or `Mixin transformation of` / `Mixin apply for mod`), the report now gets a short `OptiFabric: OptiFine / mixin conflict` section: what happened, that Mixin only names the mod with **`-Dmixin.debug=true`**, the three families that fail this way, and what to do (remove that mod, or play without OptiFine). It adds nothing when the signature is absent, and the whole addition is wrapped so a diagnostic can never replace the report it was meant to explain. The same recipe is in both READMEs.
+
+**SophisticatedCore / Sophisticated Backpacks no longer crash on startup** (measured on 1.21.1 with that pack): its `client.ParticleEngineMixin` asks for `class_702.method_34020`, which OptiFine's recompile folded into `lambda$addBlockDestroyEffects$13`, so the patched class has no such method and `@ModifyArgs` with `require = 1` fails the whole class. The vanilla body is restored as the injection target — nothing in the patched classes refers to it, so it stays dead code.
+
+**Two cases stay broken by design**, both on 1.21.1, neither fixable from here (the table is in [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)): **CarryOn** 2.2.6.13 injects at a call site inside `WorldRenderer` that OptiFine replaced with its own `ParticleManager.render` overload — zero injection points, and faking one would draw the particles twice; **ShoulderSurfing** 5.2.0 expects an exact call-site count in `Camera`, which OptiFine's rewrite of that class changes. Both need the mod author to retarget or relax the matcher.
+
+**`LocalSlotLayoutFix` no longer guesses.** A wide (`long`/`double`) candidate used to be given one slot — two of them could even share a destination, which is invalid bytecode — and when only one side carried a local variable table the two layouts were compared in different representations (`Z` against `I`). The slot type now comes from the method's own table, comparison is by category whenever either side came from the opcode fallback, and the two "gave up" paths say which cause fired. Move sets are unchanged from 2.0.0 on every release.
+
+**All ten jars of this line are 2.1.0**: 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10 and 1.21.11. Nothing was removed, and the mod id is unchanged (`optifabric_reforged`), so upgrading from 2.0.0 is a jar swap.
 
 ### New in 2.0.0 — the fork's own mod id, and Architectury support
 
@@ -28,7 +40,7 @@ Mixin hands a method's locals to an `@Inject` handler **strictly by slot order**
 
 **The post-effect modernisation is now gated by what the release's parser understands.** OptiFine's FXAA post-chain files are rewritten into the 1.21.6+ shape (`vertex_shader` / `fragment_shader`, plus `BlitConfig`) only when the game's own `post_effect/*.json` already uses those keys, and the texture repair only runs where the `GpuTexture` API exists (1.21.6 and up) — triggering on file content alone rewrote 1.21.3 / 1.21.4 into a shape their parser cannot read, which silently disabled anti-aliasing on both.
 
-**All ten jars of this line are 2.0.0**: 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10 and 1.21.11.
+**All ten jars of the 2.0.0 release were 2.0.0**: 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10 and 1.21.11.
 
 Measured on 1.21.1 with `OptiFine_1.21.1_HD_U_J1`, fabric-api 0.116.17 and architectury 13.0.11, no config file: 56 mods load, the fixer reports the slot move, a world opens, and the client stays up with no injection error, no `VerifyError` and no crash report.
 
@@ -56,7 +68,7 @@ This is versioned per artifact: 1.21.3 – 1.21.11 are 1.1.2, 1.21 and 1.21.1 ke
 ### Install
 
 1. Install a 1.21.11 Fabric client (Loader 0.19.5+).
-2. Put `OptiFabric-2.0.0+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
+2. Put `OptiFabric-2.1.0+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
 3. Start the game with the **Fabric** profile. The first launch spends a few seconds patching and remapping (cached afterwards under `<game dir>/.optifine/<version>/`).
 
 ### What it took for 1.21.11
@@ -89,7 +101,7 @@ OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recomp
 
 | File | SHA-256 |
 |---|---|
-| `OptiFabric-2.0.0+mc1.21.11.jar` (871992 bytes) | `7AB4B03405C1809AC3E4F9D06905013DAB6A514030C714FF4E65723BC7C63877` |
+| `OptiFabric-2.1.0+mc1.21.11.jar` (875059 bytes) | `86F1EFB252EF246E29468BD309AD8B4E95117446C1D185587A075005A7AE4AF0` |
 
 Other Minecraft releases OptiFine ships a build for — 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9 and 1.21.10 — come out of this same repository root (one Gradle project, no `v1.21.x` subproject) with `.\gradlew build "-Pmc=<version>"`, and each of them passes the same offline verification (see [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)).
 
@@ -105,11 +117,16 @@ A port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) by Mod
 
 把 OptiFine 接进 Minecraft **1.21.11** 的 Fabric。把本 jar 与自备的 `OptiFine_1.21.11_HD_U_J9.jar` 一起放进 `mods/`,用 Fabric 版本启动即可(**不需要**先运行 OptiFine 安装器);首次启动多花几秒做补丁+重映射,之后走缓存。
 
+- **2.1.0 的改动**:崩溃报告多出一节 `OptiFabric: OptiFine / mixin conflict` —— 最常见的
+  `NoClassDefFoundError: … net.optifine.reflect.Reflector` 是**别的模组的 mixin 没能注入到 OptiFine 改写过的类里**,
+  报告现在说明原因,并给出用 `-Dmixin.debug=true` 让 Mixin **点名**模组的做法(README 的"支持与排查"同);
+  同时**修好 SophisticatedCore / Sophisticated Backpacks 装上就启动崩**(1.21.1 实测,补回 `class_702.method_34020`
+  作为注入目标);**CarryOn 与 ShoulderSurfing 仍故意不修**(注入点在 OptiFine 改写后的字节码里对不上,只能模组侧改);
 - **2.0.0 的改动**:**mod id 改成 `optifabric_reforged`(显示名 OptiFabric Reforged)** —— 升级前请先删掉旧的
   `OptiFabric-<版本>+mc1.21.x.jar`,两个 id 同时存在会**同时加载两份**、OptiFine 被打两遍补丁;同时**修掉
   Architectury 崩在第一帧的局部变量冲突**(`GameRenderer.render` 里 OptiFine 插入的两个局部变量顶高了原版槽位,
   Mixin 按槽位顺序捕获即失败),1.21.1 + architectury 13.0.11 实测可进世界且不需要任何配置文件;
-  本线**十个产物统一为 2.0.0**(1.21 – 1.21.11)
+  2.0.0 那次**十个产物统一为 2.0.0**(1.21 – 1.21.11)
 - 历史:1.1.2 修好了抗锯齿(覆盖 1.21.3 – 1.21.11 八个产物),1.21 与 1.21.1 当时停在 1.1.0
 - 需要:Fabric Loader ≥ 0.19.5、Java 21+、客户端;Fabric API 可选(实测 0.141.6+1.21.11)
 - 离线校验:被补丁的 **570** 个游戏类与 OptiFine 自身的 **874** 个类全部通过 JVM + ASM 双向校验

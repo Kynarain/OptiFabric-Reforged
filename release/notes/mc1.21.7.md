@@ -1,8 +1,24 @@
-# OptiFabric 2.0.0+mc1.21.7
+# OptiFabric 2.1.0+mc1.21.7
 
 **Minecraft 1.21.7** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar`
 
 状态:**不开光影可正常启动(2026-09-13 实机确认);启用光影会在启动阶段崩溃 —— 该版 OptiFine 预览构建自身缺陷,本移植不提供光影支持(见文末"已知限制")**
+
+## 2.1.0 的改动
+
+- **崩溃报告现在自己说明原因**:最常见的那类崩溃 `NoClassDefFoundError: Could not initialize class
+  net.optifine.reflect.Reflector` 源于**别的模组的 mixin 没能注入到 OptiFine 改写过的类里**,OptiFine 的崩溃报告器读自己
+  版本号时正好撞上它,于是报告停在 `Reflector`、不说是哪个模组。现在报告里会多出一节 `OptiFabric: OptiFine / mixin conflict`,
+  说明发生了什么、真正的模组名要加 `-Dmixin.debug=true` 才会被 Mixin 打出来、已知的三类,以及怎么办 —— 删掉那个模组,
+  或者不用 OptiFine。README 的"支持与排查"里有同一套做法;
+- **SophisticatedCore / Sophisticated Backpacks 装上不再启动崩**(1.21.1 实测,配该整合包):它的 `ParticleEngineMixin`
+  要求的 `class_702.method_34020` 被 OptiFine 重编译折进了 lambda,补丁后的类里没有这个方法;本版把原版方法体补回去当
+  注入目标(死代码),注入不再失败;
+- **两个故意不修**:CarryOn(注入在 OptiFine 换掉的调用点上)与 ShoulderSurfing(要求 `Camera` 里调用点数量正好相等),
+  它们的注入在 OptiFine 改写后的字节码里对不上,只能在模组侧改。清单见 `docs/DEVELOPMENT.md` 的冲突表;
+- 另修:`LocalSlotLayoutFix` 的类型判定与布局比较不再猜错(`long`/`double` 不再被当成一个槽位)。
+
+细节见仓库根目录 `CHANGELOG.md` 的 2.1.0 一节。
 
 ## 2.0.0 的改动
 
@@ -60,6 +76,6 @@
 
 ## 校验
 
-`OptiFabric-2.0.0+mc1.21.7.jar` — 826327 字节
+`OptiFabric-2.1.0+mc1.21.7.jar` — 829394 字节
 
-`SHA-256: 0F8C635C0A7E3F0A1D9129D0F1FE68129BFB8CDD0C0FDAB3DF3282B064373A9B`
+`SHA-256: FB0DF39A57B24FD6E23897C7000AEF1DF15C863ECB2CA50C5352D1A2856546AB`
