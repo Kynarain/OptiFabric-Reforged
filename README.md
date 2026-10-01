@@ -140,6 +140,30 @@ The development environment is not supported: `gradlew runClient` is refused out
 
 OptiFine never shipped a build for **1.21.2 / 1.21.5**, so there is no jar for those.
 
+The build in this table is the newest **final** OptiFine release for that Minecraft version; when a version has no
+final release yet, the newest **preview** is used instead (that is why 1.21.4 lists J3 rather than the newer
+J4_pre2 preview). Any other build of the same Minecraft version still works - the in-game prompt only appears
+when the jar in mods/ is a **preview** older than the one listed here - a final build you already have is left alone, even when a newer final exists.
+
+### OptiFabric version → Minecraft version → required OptiFine build
+
+This is the same list the mod itself carries (and `release\notes\mc<MC>.md` states per release); `release\version.ps1 -CheckSupport` fails when the three disagree.
+
+| OptiFabric version | Minecraft version | Required OptiFine build |
+|---|---|---|
+| `2.1.0+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
+| `2.1.0+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
+| `2.1.0+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
+| `2.1.0+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
+| `2.1.0+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
+| `2.1.0+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
+| `2.1.0+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
+| `2.1.0+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
+| `2.1.0+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
+| `2.1.0+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
+
+When OptiFabric loads and that jar is missing, or is not the build its Minecraft version expects, the game says so on a screen instead of starting silently: it names the file, offers a `Download OptiFine` button that fetches it from OptiFine's **official** site (`optifine.net`, the only source this mod ever uses), and opens the mods folder for you — the URL field above the buttons can be replaced with a source of your own, which is then the only place the jar is fetched from.
+
 ### The 1.21.6 / 1.21.7 shader limitation
 
 Both releases **start and play normally** without shaders (the title screen renders, worlds load, the integrated server, chunk building and saving all work), but **enabling a shader pack crashes the game** during startup:

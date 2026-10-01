@@ -11,6 +11,11 @@
 #   .\release\version.ps1 -Line 1.21.x -Part               # 只打印当前版本号(给别的脚本用)
 #   .\release\version.ps1 -Line 1.21.x -RecordDigest       # 构建之后:把产物的字节数与 SHA-256 写回文档
 #
+# 发布前离线核对"哪一版 MC 要哪个 OptiFine 构建":README 表、release\notes\ 与模组里的 OptifineSupport
+# 三者必须同名,不看网络。改动支持表或换 OptiFine 构建之后跑一遍:
+#
+#   .\release\version.ps1 -CheckSupport
+#
 # 一个 jar 对应一个 MC 版本,所以"只改了某一个 MC 版本的行为"时,只给那一个产物升版,不要连累其余九个:
 #
 #   .\release\version.ps1 -Line 1.21.x -Mc 1.21.11 -Kind patch   # 1.1.0+mc1.21.11 -> 1.1.1+mc1.21.11,其余不动
@@ -44,6 +49,9 @@ param(
 	[switch]$DryRun,
 	# Write the built jar's size and SHA-256 into the documents that record them.
 	[switch]$RecordDigest,
+	# Offline cross-check: the README tables, release\notes\mc<MC>.md and the mod's own support table must name
+	# the same OptiFine build for every Minecraft version. Touches no network and writes no file.
+	[switch]$CheckSupport,
 	# Allow a new version that is not greater than the current one.
 	[switch]$Force
 )
@@ -323,6 +331,85 @@ function Get-DigestJar([string]$line, [string]$version, [string]$mc) {
 	}
 
 	return @{ path = $dist; source = "dist" }
+}
+
+# ---------------------------------------------------------------- support table mode
+
+# -CheckSupport: which OptiFine build a Minecraft version needs is written down in three places - the table in
+# README.md / README_CN.md, the "需求 OptiFine `<文件名>`" line of release\notes\mc<MC>.md, and the table the mod
+# itself carries (src\main\java\kynarain\cn\optifabric\mod\OptifineSupport.java, which is what the prompt screen
+# names and what the downloader saves as). A row that disagrees with a note sends users to the wrong jar, and
+# neither README is allowed to drift from the other. All of it is local text, so this check never needs the
+# network - it is a document consistency check, not a download check.
+if ($CheckSupport) {
+	$readmes = @("README.md", "README_CN.md")
+	$supportPath = "src/main/java/kynarain/cn/optifabric/mod/OptifineSupport.java"
+	$maps = [ordered]@{}
+
+	foreach ($file in $readmes) {
+		$map = @{}
+		foreach ($rowText in ((Read-ReleaseFile $file) -split "`r?`n")) {
+			# Only the "OptiFabric version | Minecraft version | OptiFine build" table matches: in the
+			# compatibility table above it the second column holds a jar name, not a bare version, and no other
+			# table in these files has a bare version followed by a .jar in the next column.
+			$row = [regex]::Match($rowText, '^\|\s*[^|]*\|\s*(\d[\d.]*)\s*\|\s*`?([^`|\s]+\.jar)`?\s*\|')
+			if ($row.Success) { $map[$row.Groups[1].Value] = $row.Groups[2].Value }
+		}
+		if ($map.Count -eq 0) { throw "$file 里找不到「OptiFabric 版本 | Minecraft 版本 | OptiFine 构建」这张表" }
+		$maps[$file] = $map
+	}
+
+	# The mod's own table: new Build("1.21.1", "HD_U_J1", "", "OptiFine_1.21.1_HD_U_J1.jar", null)
+	$support = @{}
+	foreach ($entry in [regex]::Matches((Read-ReleaseFile $supportPath),
+			'new Build\(\s*"([\d.]+)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]+\.jar)"')) {
+		$support[$entry.Groups[1].Value] = $entry.Groups[4].Value
+	}
+	if ($support.Count -eq 0) { throw "$supportPath 里读不到支持表(OptifineSupport 的 new Build(...) 写法变了?)" }
+	$maps[$supportPath] = $support
+
+	$notes = @{}
+	foreach ($note in (Get-ChildItem (Join-Path $root "release/notes") -Filter "mc*.md" | Sort-Object Name)) {
+		$mcVersion = $note.BaseName -replace '^mc', ''
+		$match = [regex]::Match((Read-ReleaseFile ("release/notes/" + $note.Name)),
+			'需求[^\r\n]*OptiFine[^\r\n]*`([^`]+\.jar)`')
+		if (-not $match.Success) { throw "release\notes\$($note.Name) 里找不到「需求 OptiFine ``<文件名>``」这一行" }
+		$notes[$mcVersion] = $match.Groups[1].Value
+	}
+
+	# 1.21 sorts before 1.21.1 by padding each part, which [version] would do too - but not for "1.21" alone.
+	# The loop variable must not be $mc either: that is the -Mc parameter (names are case-insensitive).
+	$sortKey = { param($part) (($part -split '\.') | ForEach-Object { $_.PadLeft(4, '0') }) -join '.' }
+	$problems = @()
+
+	foreach ($mcVersion in ($notes.Keys | Sort-Object -Property $sortKey)) {
+		foreach ($name in $maps.Keys) {
+			if (-not $maps[$name].ContainsKey($mcVersion)) {
+				$problems += "$name 里缺少 Minecraft $mcVersion 一行"
+			} elseif ($maps[$name][$mcVersion] -ne $notes[$mcVersion]) {
+				$problems += "$name 里 $mcVersion 写的是 $($maps[$name][$mcVersion]),release\notes\mc$mcVersion.md 要求 $($notes[$mcVersion])"
+			}
+		}
+	}
+
+	foreach ($name in $maps.Keys) {
+		foreach ($mcVersion in $maps[$name].Keys) {
+			if (-not $notes.ContainsKey($mcVersion)) { $problems += "$name 里有 Minecraft $mcVersion,但 release\notes\mc$mcVersion.md 不存在" }
+		}
+	}
+
+	Write-Host "支持表核对:$($notes.Count) 个 Minecraft 版本 x $($maps.Count) 处写法(离线)"
+	foreach ($name in $maps.Keys) { Write-Host ("  {0,-64} {1} 行" -f $name, $maps[$name].Count) }
+
+	if ($problems.Count -gt 0) {
+		Write-Host ""
+		foreach ($problem in $problems) { Write-Host "  $problem" }
+		throw "支持表不一致:$($problems.Count) 处(README 两张表、release\notes\、OptifineSupport.java 必须同名)"
+	}
+
+	Write-Host ""
+	Write-Host "支持表一致:三种写法都指向同一批 OptiFine 构建。"
+	return
 }
 
 # ---------------------------------------------------------------- listing mode

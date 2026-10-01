@@ -78,6 +78,10 @@ dependencies {
     compileOnly "org.ow2.asm:asm-tree:${project.asm_version}"
     compileOnly "org.ow2.asm:asm-commons:${project.asm_version}"
     compileOnly "org.ow2.asm:asm-analysis:${project.asm_version}"
+    // JNA is provided at runtime by Minecraft itself (it is what the Windows self-restart uses). compileOnly
+    // keeps it out of the jar. 5.14.0 is the version Minecraft 1.21.1 declares; the 5.x API used here is stable.
+    compileOnly "net.java.dev.jna:jna:5.14.0"
+    compileOnly "net.java.dev.jna:jna-platform:5.14.0"
 }
 
 def targetJavaVersion = 21

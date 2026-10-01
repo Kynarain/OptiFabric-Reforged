@@ -37,6 +37,10 @@ public final class OptifabricRuntime {
 		if (setupAttempted) return;
 		setupAttempted = true;
 
+		// Debug hook, off unless the property is set: run the OptiFine downloader's resolution, validation
+		// and save paths without the screen (-Doptifabric.optifineDownloadTest=<url>[,<file>[,<flags>]]).
+		OptifineDownloader.selfTestFromProperty(FabricLoader.getInstance().getRawGameVersion());
+
 		if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT) {
 			System.out.println("[OptiFabric] Not a client environment, OptiFine will not be loaded");
 			return;

@@ -137,7 +137,30 @@ curl.exe -L -o OptiFine_1.21.11_HD_U_J9.jar "https://bmclapi2.bangbang93.com/opt
 | 1.21.10 | `OptiFabric-2.1.0+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
 | 1.21.11 | `OptiFabric-2.1.0+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
 
+表里这一列是该 MC 版本**最新的正式版** OptiFine;若该版本官方还没有正式版,则用**最新的预览版**代替
+(所以 1.21.4 写的是 J3,而不是更新的预览 J4_pre2)。同一 MC 版本的其它构建同样可用 —— 游戏内提示只在你 mods/ 里的
+jar 是**预览版**、且比表里这个更旧时才会出现(你已经装了正式版就不会被打扰,哪怕有更新的正式版)。
+
 OptiFine 没出过 **1.21.2 / 1.21.5** 的构建,所以这两版没有对应 jar。
+
+### OptiFabric 版本 → Minecraft 版本 → 需要的 OptiFine 构建
+
+这张表与模组里自带的那张一致,也和 `release\notes\mc<MC>.md` 每版写的要求一致;三者只要有一处对不上,`release\version.ps1 -CheckSupport` 就会失败。
+
+| OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 |
+|---|---|---|
+| `2.1.0+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
+| `2.1.0+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
+| `2.1.0+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
+| `2.1.0+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
+| `2.1.0+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
+| `2.1.0+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
+| `2.1.0+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
+| `2.1.0+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
+| `2.1.0+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
+| `2.1.0+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
+
+当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是弹出一个界面告诉你缺哪个文件:上面有 `下载 OptiFine` 按钮,从 OptiFine **官网**(`optifine.net`,也是本模组唯一会去下载的地方)取回它,旁边就是打开 mods 文件夹;按钮上方的地址栏可以换成你自己的地址,那样就只从你填的地方取。
 
 ### 1.21.6 / 1.21.7 的光影限制
 
