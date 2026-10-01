@@ -61,6 +61,18 @@ public class OptifineFixer {
 		//net/minecraft/client/particle/ParticleManager
 		registerFix("class_702", new ParticleManagerFix());
 
+		//net/minecraft/client/particle/ParticleEngine (sophisticatedcore's client.ParticleEngineMixin)
+		//The recompile moved the block-breaking particle loop into a lambda of its own - the patched class has
+		//lambda$addBlockDestroyEffects$13 with exactly the descriptor the mixin asks for, and no method_34020 at
+		//all. @ModifyArgs resolves its target by name AND descriptor, finds nothing, and with require = 1 that
+		//fails the whole class: the crash surfaces as "Mixin transformation of net.minecraft.class_702 failed"
+		//during OptiFine's own Reflector bootstrap. The vanilla body has the ParticleEngine.add call site the
+		//mixin injects at, and nothing in the patched class (or in any other patched class) refers to
+		//method_34020, so restoring it gives the injection a target and stays dead code.
+		//(This is RestoreVanillaMethodsFix and not StubInjectionTargetFix: the stub fixer needs the method to
+		//still be in OptiFine's class so it can rename it, and returns immediately when it is gone.)
+		registerFix("class_702", new RestoreVanillaMethodsFix("method_34020"));
+
 		//net/minecraft/client/render/model/json/ModelOverrideList
 		registerFix("class_806", new ModelOverrideListFix());
 
