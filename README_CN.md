@@ -224,7 +224,7 @@ OptiFabric/
 - **卡在加载界面**:取两次线程转储(`jstack <pid>`,间隔十几秒)对比。两次栈相同、CPU 不涨即为卡死;栈顶停在原生调用(如 `glfwSwapBuffers`)属于呈现层问题 —— 加载期间不要最小化窗口(开着垂直同步时最小化会让 Render 线程一直阻塞)。
 - **`NoClassDefFoundError: Could not initialize class net.optifine.reflect.Reflector`**(或启动阶段直接退出、连崩溃报告都没有):OptiFine 的崩溃报告器会通过 `Reflector` 读取自己的版本号,这次读取会加载某个游戏类,而该类因为**另一个模组的 mixin 没能注入到 OptiFine 改写过的类里**而无法完成加载。`logs/latest.log` 只会指出是哪个类,不会指出是哪个模组。
 - **定位模组**:在 JVM 参数里加上 `-Dmixin.debug=true`(启动器设置 → Java/JVM 参数,或实例的高级设置)再启动一次 —— Mixin 只在 debug 模式下打印失败的模组名。加了这个参数后日志里会出现 `Mixin apply for mod <模组> failed … -> net.minecraft.class_<n>`,紧跟着通常就是真正的注入错误。
-- **解决办法**是删掉日志里点名的那个模组,或者干脆不用 OptiFine。这属于 OptiFine 自身的类补丁与该模组注入之间的冲突,已知有三类:在 OptiFine 重写的类里捕获/修改方法局部变量或参数的模组;要求某个方法里调用点数量正好相等的模组;以及 —— **OptiFabric 这边改不了的一类** —— 注入点本身就是某个调用点、而 OptiFine 把它换成了自己的方法(例如把原版 `ParticleManager.method_3049` 调用换成 `ParticleManager.render`),注入点数量直接变成 0,只能由模组作者放宽条件或改指向。不加参数时 `latest.log` 里没有任何指向元凶的信息 —— 堆栈最后停在 OptiFine 的 `Reflector`,不要据此猜测。
+- **解决办法**是删掉日志里点名的那个模组,或者干脆不用 OptiFine。这属于 OptiFine 自身的类补丁与该模组注入之间的冲突,已知有三类:在 OptiFine 重写的类里捕获/修改方法局部变量或参数的模组;要求某个方法里调用点数量正好相等的模组;以及 —— **OptiFabric 这边改不了的一类** —— 注入点本身就是某个调用点、而 OptiFine 把它换成了自己的方法(例如把原版 `ParticleManager.method_3049` 调用换成 `ParticleManager.render`),注入点数量直接变成 0,只能由模组作者放宽条件或改指向。不加参数时 `latest.log` 里没有任何指向元凶的信息 —— 堆栈最后停在 OptiFine 的 `Reflector`,不要据此猜测。 1.21.1 上的已知病例:`CarryOn` 2.2.6.13(注入在 OptiFine 换掉的 `ParticleManager` 调用点上)与 `ShoulderSurfing` 5.2.0(要求 `Camera` 里调用点数量恰好相等)**我们修不了**;`SophisticatedCore` 的 `ParticleEngineMixin` 已在本构建中修好(它的目标方法被折进了 lambda)。`EntityCulling` 曾被怀疑但已排除 —— 移除它没有任何变化。
 
 下列日志不影响运行:
 
