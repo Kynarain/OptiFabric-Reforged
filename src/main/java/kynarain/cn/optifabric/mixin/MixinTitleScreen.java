@@ -26,6 +26,11 @@
  * 26.2 renamed Minecraft#setScreen to #setScreenAndShow (26.1.2 has both, 26.2 only the new name), so this
  * file calls #setScreenAndShow - which is the one name that compiles on both releases of the 26.x line.
  *
+ * The download prompt (MissingOptifineScreen) is the 26.x counterpart of the one the 1.21.x line carries, and
+ * it is ported the same way: the jar states it owns - nothing in mods/ at all, and an OptiFine older than the
+ * newest build this release knows - are handed to it before the error gate below, because an older build of
+ * the *same* Minecraft release loads without any error at all. Everything else in this file is unchanged.
+ *
  * NOT yet verified in game: 26.1 replaced "render into a draw context" with "extract a render state" plus a
  * separate renderer, so the version label is now added from extractRenderState instead of render. That is
  * the faithful reading of the new API, but it only holds up once it has been seen on screen.
@@ -54,7 +59,9 @@ import net.minecraft.util.Util;
 
 import net.fabricmc.loader.api.FabricLoader;
 
+import kynarain.cn.optifabric.mod.MissingOptifineScreen;
 import kynarain.cn.optifabric.mod.OptifabricError;
+import kynarain.cn.optifabric.mod.OptifineSupport;
 import kynarain.cn.optifabric.mod.OptifineVersion;
 
 /**
@@ -74,16 +81,46 @@ public abstract class MixinTitleScreen extends Screen {
 
 	@Inject(method = "init", at = @At("RETURN"))
 	private void init(CallbackInfo info) {
+		// The download prompt owns the jar states it exists for - nothing in mods/ at all, and an OptiFine
+		// that is older than the newest build this release knows. It is decided from the jar itself, not from
+		// OptifabricError: an older build of the *same* Minecraft release loads without any error at all
+		// (OptifineVersion only complains about a jar for another release), and the user still has to be told
+		// that a newer one exists. So this has to run before the error gate below.
+		OptifineSupport.Build expected = OptifineSupport.forMc(FabricLoader.getInstance().getRawGameVersion());
+		MissingOptifineScreen.Mode prompt = MissingOptifineScreen.modeFor(OptifineVersion.jarType, expected, OptifineVersion.version);
+
+		if (prompt != null) {
+			if (MissingOptifineScreen.shouldPrompt(prompt, OptifineVersion.version)) {
+				System.out.println((prompt == MissingOptifineScreen.Mode.MISSING
+						? "[OptiFabric] OptiFine is not installed - showing the download screen"
+						: "[OptiFabric] The installed OptiFine build is not the one this Minecraft version expects - showing the download screen")
+						+ " (installed " + (OptifineVersion.version == null ? "nothing" : OptifineVersion.version)
+						+ ", recommended " + expected.file + ")");
+				minecraft.setScreenAndShow(new MissingOptifineScreen(prompt, expected, OptifineVersion.version));
+
+				// Mode B (an older build) is a one-time recommendation: remember the build as soon as the prompt is
+				// shown, so a later launch with the same jar does not nag again. Mode A must appear on every launch
+				// and never consults the acknowledgement file, so it is deliberately not written here.
+				if (prompt == MissingOptifineScreen.Mode.MISMATCH) {
+					MissingOptifineScreen.acknowledge(OptifineVersion.version);
+				}
+			}
+
+			return;
+		}
+
+		// Everything below is the error dialog, and it is only for a real error.
 		if (!OptifabricError.hasError()) return;
 
 		String actionButtonText, helpButtonText;
 		BooleanConsumer action;
+		// A jar state that is valid in itself (OPTIFINE_MOD, OPTIFINE_INSTALLER, SOMETHING_ELSE) with an error
+		// set means OptiFabric could not bring that OptiFine in at all. A build newer than this release knows
+		// about is one such state: it is left alone above while it loads, and when it does not patch, the
+		// failure dialog below is what the user needs. Asserting "no error to show" for those states threw out
+		// of the title screen - which is exactly what must not happen to a user whose OptiFine is newer than
+		// this OptiFabric release. (The 1.21.x line carries the same change; it is part of this port.)
 		switch (OptifineVersion.jarType) {
-		case SOMETHING_ELSE: //Valid jar states, we shouldn't be here
-		case OPTIFINE_INSTALLER:
-		case OPTIFINE_MOD:
-			throw new IllegalStateException("No error to show!");
-
 		case MISSING: //Errors relating to the OptiFine jar, link the mods folder
 		case CORRUPT_ZIP:
 		case INCOMPATIBLE:

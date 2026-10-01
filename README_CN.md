@@ -85,15 +85,16 @@ mods/<OptiFine jar>
 
 PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版本名>/` 下,`.optifine/` 缓存也建在那里。
 
-```powershell
-# 26.2 的 OptiFine(preview;路径是四段,补丁号带 K2 前缀)
-curl.exe -L -o preview_OptiFine_26.2_HD_U_K2_pre1.jar `
-  "https://bmclapi2.bangbang93.com/optifine/26.2/HD_U_K2/pre1"
-
-# 26.1.2 的 OptiFine(同样的形状,前缀是 K1)
-curl.exe -L -o preview_OptiFine_26.1.2_HD_U_K1_pre2.jar `
-  "https://bmclapi2.bangbang93.com/optifine/26.1.2/HD_U_K1/pre2"
+```text
+# 26.2 和 26.1.2 都只有预览版,两个文件都在同一个页面的「Preview versions」列表里:
+#   https://optifine.net/downloads
+#   Minecraft 26.2   -> preview_OptiFine_26.2_HD_U_K2_pre1.jar
+#   Minecraft 26.1.2 -> preview_OptiFine_26.1.2_HD_U_K1_pre2.jar
+# 打开上面那个页面,展开你的 Minecraft 版本下的「Preview versions」,下载这里写的那个文件。
+# OptiFine 官网是本模组唯一会去下载的地方,也是这份说明里唯一给出的地址。
 ```
+
+当 OptiFabric 已加载、而上面那个 jar **不在**,或者 `mods/` 里的 jar 是比它**更旧的预览版**时,游戏不再默默启动,而是弹出一个界面告诉你:上面写着要哪个文件,有一个 `下载 OptiFine` 按钮从 OptiFine **官网**(`optifine.net/adloadx`,本模组唯一会用的来源)取回它,旁边就是打开 mods 文件夹;按钮上方的地址栏可以换成你自己的地址,那样就只从你填的地方取。**缺 jar** 每次启动都会提示(这一次的关闭只在本次会话有效);**旧预览版**每个构建只提示一次,记在 `config/optifabric-mismatch-ack.txt`。已经装了**正式版**则完全不提示,哪怕有更新的正式版。
 
 ## 🔨 从源码构建
 
@@ -136,15 +137,20 @@ OptiFine 写的样子**。这条线并没有因此变窄:同一份源码仍能�
 记下的完全一致(见下面「验证状态」),所以 26.1.2 没有被丢开 —— 它那份 jar 只是没有变,26.1.2 上继续用
 `2.0.0+mc26.1.2`。
 
-OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26.1.1、26.1.3、26.2.1、26.3 的**构建列表是空的** —— 可以自己核一遍(判断依据是返回的**正文**是不是空数组):
-
-```powershell
-curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.1.2"   # 列出 pre1 / pre2
-curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.2"     # 列出 HD_U_K2(pre1)
-curl.exe -s "https://bmclapi2.bangbang93.com/optifine/26.3"     # -> []
-```
+OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26.1.1、26.1.3、26.2.1、26.3 在 OptiFine 的下载页上**一个构建都没有** —— 可以自己核一遍:<https://optifine.net/downloads>,某个版本没有构建时,它标题下面的表格就是空的。
 
 26.2.1 与 26.3 是 26.2 之后的版本,每个都要各自重新移植一遍 —— 而且得先有 OptiFine 的构建才能移,这就是这条线停在 26.2 的原因。
+
+### OptiFabric 版本 → Minecraft 版本 → 建议的 OptiFine 构建
+
+这张表就是模组里自带的那张(`OptifineSupport.BUILDS`),也是游戏内提示会写出来、并主动提供下载的那个构建。规则是:**该 Minecraft 版本有正式版就用最新的正式版,没有才用最新的预览版**。OptiFine 对这条线的两个版本都还没有正式版,所以两行写的都是预览版 —— 哪天某一版出了正式版,那一行的文件就换成正式版。
+
+| OptiFabric 版本 | Minecraft 版本 | 建议的 OptiFine 构建 | 类型 |
+|---|---|---|---|
+| `2.1.1+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 预览版(尚无正式版) |
+| `2.0.0+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 预览版(尚无正式版) |
+
+同一 Minecraft 版本的其它构建同样可用;只有当你 `mods/` 里的 jar 是**预览版**、且比表里这个更旧时,提示才会出现。已经装了**正式版**就不会被打扰,哪怕有更新的正式版。
 
 | | |
 |---|---|
@@ -202,7 +208,7 @@ OptiFabric-Reforged/
 
 ## 🔐 许可
 
-**MPL-2.0** —— 见 [`LICENSE.txt`](LICENSE.txt)。核心逻辑移植自 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric),移植文件保留来源说明。OptiFine 本体**不包含、也不随本项目分发** —— 版权归 sp614x,请自行从 [optifine.net](https://optifine.net/)(或上面的国内镜像)获取。
+**MPL-2.0** —— 见 [`LICENSE.txt`](LICENSE.txt)。核心逻辑移植自 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric),移植文件保留来源说明。OptiFine 本体**不包含、也不随本项目分发** —— 版权归 sp614x,请自行从官网获取:<https://optifine.net/downloads>。
 
 ## 🙋 支持与排查
 

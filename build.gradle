@@ -40,6 +40,14 @@ dependencies {
     compileOnly "org.ow2.asm:asm-tree:${project.asm_version}"
     compileOnly "org.ow2.asm:asm-commons:${project.asm_version}"
     compileOnly "org.ow2.asm:asm-analysis:${project.asm_version}"
+
+    // JNA is provided at runtime by Minecraft itself (it is what the Windows self-restart in
+    // OptifineDownloader uses). compileOnly keeps it out of the jar. 5.17.0 is the version Minecraft 26.2
+    // declares in its own version json - the 1.21.x line compiles the same code against 5.14.0, which is what
+    // 1.21.1 declares, and the 5.x API used here (Kernel32.GetCommandLineW/CreateProcessW plus the two
+    // WinBase records) has the same shape in both.
+    compileOnly "net.java.dev.jna:jna:5.17.0"
+    compileOnly "net.java.dev.jna:jna-platform:5.17.0"
 }
 
 // The release itself requires Java 25.
