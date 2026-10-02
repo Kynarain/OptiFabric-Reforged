@@ -1,9 +1,55 @@
 # 更新日志
 
-> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.2.0+mc26.2`、`2.1.1+mc26.2`、
-> `2.1.0+mc26.2`、`2.0.0+mc26.1.2`、`1.2.0+mc26.1.2`)与 **1.21.x**(`1.1.0` – `1.1.2`,十个 MC 版本)。1.21.x
-> 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.0`)与
-> **26.1.2**(冻结在 `2.0.0`),所以这一线也有了"逐 MC 版本的版本号"。
+> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.2.1+mc26.2`、`2.2.0+mc26.2`、
+> `2.1.1+mc26.2`、`2.1.0+mc26.2`、`2.0.0+mc26.1.2`、`1.2.0+mc26.1.2`)与 **1.21.x**(`1.1.0` – `1.1.2`,十个 MC
+> 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.1`)
+> 与 **26.1.2**(`2.2.1`),所以这一线也有了"逐 MC 版本的版本号"。
+
+## 2.2.1+mc26.2 — 26.x 线的第六版(丢掉 Mixin 为被替换的类缓存的 ClassInfo,修好 @ModifyVariable 的 LVTGeneratorError)
+
+> **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
+> 「修 fixer、修兼容性 → 修订号」。这一版**不移除任何支持、也不新增支持范围**,只是修掉一个会让 mixin 整个类变换
+> 失败的缺陷,所以是修订号(`2.2.0 → 2.2.1`)。**同一个修复在本仓库的 1.21.x 线上先落地并已真机实测**(主界面、
+> 进世界、光影包在世界里编译),这一版是把它补到 26.x 的两个产物上。按 §3,已发布的 `2.2.0+mc26.2` 与
+> `2.2.0+mc26.1.2` 冻结(它们那一节记录原样留着);**这一版出两个 jar** —— 26.1.2 的例外值也跟着升到 2.2.1。
+
+### 改了什么
+
+**症状**:某些 mixin 让**整个类**的变换失败,日志里只有 Fabric 那句
+`Mixin transformation of net.minecraft.class_757 failed`;真正的异常是 Mixin 抛的
+
+    LVTGeneratorError: Could not locate method metadata for method_3196 generating LVT in net/minecraft/class_757
+
+也就是**需要解析局部变量的注入(`@ModifyVariable` 与 locals 捕获)在 OptiFine 改过的类上必然失效**,而且它在
+`require` / `expect` 之前就抛出,受影响的模组自己无法绕开。
+
+**根因**:Mixin 为每个类建一份 `ClassInfo`(取自它的字节码提供者 —— 在 Fabric 上就是 Knot,也就是本模组的 game
+transformer)并缓存。Fabric 在 `preLaunch` 入口点**之前**就准备好了 Mixin 的配置,所以对本模组替换掉的那些类,缓存里
+可能已经存着**游戏自己的**那一份,而 Mixin 稍后拿到、要变换的却是 **OptiFine 的**那一份。两者对某个成员的记录一旦
+不一致,查找就落空:Locals 用 `ClassInfo#findMethod(name, descriptor, access | INCLUDE_INITIALISERS)` 找正在变换的
+方法,而 `ClassInfo.Member#matchesFlags` 要求"存成 private 的成员必须用 ACC_PRIVATE 查";OptiFine 重编译
+`GameRenderer.getFov`(`method_3196`)时把它从 private 放宽成 public,于是对着缓存里那份**游戏**记录查不到。
+
+**修复**:`GameTransformerHook` 记住**它实际替换掉**的类(Loader 自己打过补丁的类不在此列),安装完这些类之后按
+**内部名**(斜杠形式)丢掉它们在 Mixin 缓存里的条目 —— 新文件 `mod/MixinClassMetadata.java`(113 行),每个类最多丢
+一次,取不到缓存时只报告一次、不影响其它逻辑(过期元数据仍然能跑,只是那些解析类元数据的 mixin 照旧失败)。Mixin
+于是按**它实际拿到**的字节重建元数据:正在变换的类通过 `ClassInfo#fromClassNode` 进入 Mixin 的目标上下文,而那只在缓存
+里**没有**条目时才重建。
+
+### 验证(2.2.1)
+
+**离线**(两个产物各跑一次,`test-downloads\verify-26.ps1 -SkipBuild`,喂给它的就是这一版自己的 jar):26.2 →
+`Prepared 562 patched classes (0 skipped, 0 failed)`、`verified OK: 562`、`FAILED: 0`、`ASM verifier problems: 0`;
+26.1.2 → **567 / 567**、0 失败、ASM 0。OptiFine 自身的类两边都是 **879 / 879**(2 个 Forge-only 类不适用)、ASM 0;
+`AtTargetScan PROBLEMS: 0`、`RefmapScan MISSING members: 0`、`RuntimeContractScan` broken 0 / lost overrides 0 /
+unresolvable 0、`LambdaScan DANGLING handles: 0`。**两列数字与 2.2.0 记下的基线逐个相同** —— 丢缓存发生在补丁安装
+**之后**,不参与字节码修复,所以补丁类数量与验证器结论都不该动。
+
+**真机**:同一个修复在 **1.21.x 线**上真机端到端跑过(主界面、进世界、光影包在世界里编译);26.2 与 26.1.2 这两份
+**没有**在真机上重跑,而丢缓存那一步只在启动期执行,离线校验覆盖不到它。
+
+产物:`OptiFabric-Reforged-2.2.1+mc26.2.jar` — 180469 字节
+`SHA-256: 5241EBBEF7C108244D90D0229C440B4F0E8B53E7292D21B401074C106079841F`
 
 ## 2.2.0+mc26.2 — 26.x 线的第五版(缺 OptiFine / 预览版过旧时给出提示,并从官方站直接下载)
 
@@ -40,8 +86,9 @@
 
 **构建侧一个字没改**:26.x 这一线的目标版本只来自根目录 `gradle.properties` 的 `minecraft_version`(没有 `-Pmc`,
 也没有 `-Pmod_version_base`)。这一版发布时它产出的是 **`OptiFabric-Reforged-2.2.0+mc26.2.jar`**;
-`26.1.2` 那一份仍是冻结的 **`OptiFabric-Reforged-2.0.0+mc26.1.2.jar`**(内容不变,不重新构建、不重发,
-按 §3 与 §5 记在 `release/publish.ps1` 的 `$modVersions` 例外值表里)。所以**这一版只有一个 jar**。
+`26.1.2` 那一份当时仍是冻结的 **`OptiFabric-Reforged-2.0.0+mc26.1.2.jar`**(内容不变,不重新构建、不重发,
+按 §3 与 §5 记在 `release/publish.ps1` 的 `$modVersions` 例外值表里)。所以**那一版只有一个 jar**
+(2.2.1 起两个 MC 版本各出一个 jar)。
 
 ### 验证(2.2.0)
 
@@ -56,7 +103,7 @@ OptiFine 自身的类 **879 / 879**(2 个 Forge-only 类不适用)、ASM 0;`AtTa
 记下的基线相同(2.2.0 没有碰那一版的产物)。这一条是拿**上面这个 jar 本体**跑出来的(2.2.0 只有一份源码,
 `build\libs` 里也只有 26.2 一个产物;`verify-26.ps1` 按 `<版本>+mc<MC>` 找 jar,所以那份 jar 临时复制成
 `+mc26.1.2` 的名字喂给它) —— 它证明的是**这份代码在 26.1.2 的客户端与 OptiFine 上照样全绿**,而不是"又构建了一个
-26.1.2 的产物"。26.1.2 那一版的产物仍是冻结的 `2.0.0+mc26.1.2`。
+26.1.2 的产物"。26.1.2 那一版的产物在当时仍是冻结的 `2.0.0+mc26.1.2`(2.2.1 起它也出自己的 jar)。
 
 提示与下载这条路径是**运行期**行为(要在真机上点了按钮才算数),离线校验只能证明补丁管线没被改坏。
 
@@ -123,7 +170,7 @@ unresolvable 0、`LambdaScan DANGLING handles: 0`。
 ## 2.1.0+mc26.2 — 26.x 线的第三版(新增 Minecraft 26.2 支持)
 
 > ⚠️ **这一版有一个已被取代的缺陷(见上一节)**:它把 OptiFine 26.2 preview 对光影包加载的取消删掉了、
-> 把加载强行打开;真机测量下来,选了光影包之后世界**只画粒子、方块透明**。请改用 **`2.2.0+mc26.2`** ——
+> 把加载强行打开;真机测量下来,选了光影包之后世界**只画粒子、方块透明**。请改用 **`2.2.1+mc26.2`** ——
 > 本节其余内容(26.2 的移植记录、离线数字、产物尺寸与摘要)按 §3 原样保留,属于历史记录。
 
 > **次版本号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是

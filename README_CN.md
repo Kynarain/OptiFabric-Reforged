@@ -24,7 +24,7 @@ OptiFine 不是 Fabric 模组:它的 jar 里是针对原版客户端类的字节
 Minecraft **26.1 起未混淆** —— 官方名就是运行期名字,既没有 yarn,也没有真正可用的 intermediary(26.1.2 只发布占位 `0.0.0`)。所以本线不取任何映射、需要 Loom 的非重映射 flavour,运行期命名空间是 `official`。本线还有**自己的 mod id**:有些模组声明 `"breaks": {"optifabric": "*"}`,而 Fabric Loader 按 **id** 匹配 —— 只改显示名没有用。
 
 **作者:** kynarain · 上游:Modmuss50、Chocohead
-**版本:** `2.1.1`(`OptiFabric-Reforged-2.2.0+mc26.2.jar`)
+**版本:** `2.2.1`(`OptiFabric-Reforged-2.2.1+mc26.2.jar`)
 **许可:** MPL-2.0
 
 ## ✨ 主要特性
@@ -101,7 +101,7 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 需要 **JDK 25**,仓库根目录就是 Gradle 项目:
 
 ```powershell
-.\gradlew build          # -> build/libs/OptiFabric-Reforged-2.2.0+mc26.2.jar
+.\gradlew build          # -> build/libs/OptiFabric-Reforged-2.2.1+mc26.2.jar
 ```
 
 版本号必须与 Minecraft 版本成对出现,而且只通过一个脚本改:
@@ -128,7 +128,7 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 
 | Minecraft | 产物 | OptiFine 构建 | Java | 状态 |
 |---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.2.0+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**没有光影**,见下) |
+| 26.2 | `OptiFabric-Reforged-2.2.1+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**没有光影**,见下) |
 | 26.1.2 | `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
 
 `2.1.1` 是修订版,它**取代 `2.1.0+mc26.2`**:那一版把 OptiFine 取消掉的光影包加载强行打开,而选了光影包之后世界
@@ -147,7 +147,7 @@ OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26
 
 | OptiFabric 版本 | Minecraft 版本 | 建议的 OptiFine 构建 | 类型 |
 |---|---|---|---|
-| `2.2.0+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 预览版(尚无正式版) |
+| `2.2.1+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 预览版(尚无正式版) |
 | `2.0.0+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 预览版(尚无正式版) |
 
 同一 Minecraft 版本的其它构建同样可用;只有当你 `mods/` 里的 jar 是**预览版**、且比表里这个更旧时,提示才会出现。已经装了**正式版**就不会被打扰,哪怕有更新的正式版。
