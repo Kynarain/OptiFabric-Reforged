@@ -12,6 +12,9 @@
  *   - it works for any class name, with no generated stub mixins and no Mixin API coupling;
  *   - Mixin (and every other mod's mixins into those classes) still applies afterwards, because the
  *     bytes we hand over are the input to the Mixin transformer, not its output;
+ *   - Mixin's cached class metadata for the classes just taken over is dropped (see MixinClassMetadata), since
+ *     Mixin fills that cache before the patched classes are installed here and would otherwise go on describing
+ *     the game's copies of them;
  *   - classes loader patched itself (the client brand retriever, the entrypoint) are left alone.
  *
  * The field is located by type rather than by name, so a rename in Loader does not break it, but the
@@ -20,6 +23,8 @@
 package kynarain.cn.optifabric.mod;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import net.fabricmc.loader.impl.FabricLoaderImpl;
@@ -36,7 +41,12 @@ public final class GameTransformerHook {
 		return inject(transformer, patchedClasses);
 	}
 
-	/** Injects into the given transformer; separate from the lookup above so it can be exercised off-line. */
+	/**
+	 * Injects into the given transformer; separate from the lookup above so it can be exercised off-line.
+	 *
+	 * <p>Whatever was actually installed here also has its Mixin class metadata dropped, which is the other half
+	 * of the takeover - see {@link MixinClassMetadata}.
+	 */
 	public static int inject(GameTransformer transformer, Map<String, byte[]> patchedClasses) throws ReflectiveOperationException {
 		Field field = null;
 
@@ -65,12 +75,15 @@ public final class GameTransformerHook {
 		int added = 0;
 		int kept = 0;
 
+		List<String> replaced = new ArrayList<>();
+
 		for (Map.Entry<String, byte[]> entry : patchedClasses.entrySet()) {
 			if (target.containsKey(entry.getKey())) {
 				//Loader patched this class itself (client brand, entrypoint, ...), its version wins
 				kept++;
 			} else {
 				target.put(entry.getKey(), entry.getValue());
+				replaced.add(entry.getKey());
 				added++;
 			}
 		}
@@ -78,6 +91,16 @@ public final class GameTransformerHook {
 		if (kept > 0) {
 			System.out.println("[OptiFabric] Kept Fabric's own patch for " + kept + " class(es)");
 		}
+
+		//Now that OptiFine's copies are the ones Fabric will serve, Mixin's metadata for them has to go: Mixin
+		//cached whatever these classes looked like before this ran, and a mixin that resolves class metadata
+		//(Locals, and therefore @ModifyVariable) fails the whole class when the two disagree. Only the classes
+		//this actually replaced - a class whose bytes are still Loader's are unchanged and stay cached.
+		int dropped = MixinClassMetadata.drop(replaced);
+
+		System.out.println("[OptiFabric] Dropped " + dropped + " of " + patchedClasses.size()
+				+ " Mixin class metadata entries that described the game's own members, so mixins see the patched"
+				+ " ones");
 
 		return added;
 	}
