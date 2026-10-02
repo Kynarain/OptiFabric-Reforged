@@ -53,8 +53,13 @@ SemVer §1 要求先定义公共 API。对这个模组来说,它是:
 > 只有"从未发行过的版本号"才可以自由处置。
 
 **先行版本号**(§9)在本项目里用于试发布,例如 `2.1.0-beta.1+mc26.1.2`:它的优先级低于 `2.1.0`,适合"先给几个人试"。
-tag 名可以带 `v` 前缀(§FAQ:「`v1.2.3` 并不是语义化版本号……但增加前缀 v 是常用做法」),本仓库的 tag 就是
-`v<版本号>`(已发的:`v1.2.0`、`v2.0.0`;MC 版本不进 tag,留在产物名与 release 标题里)。
+tag 名可以带 `v` 前缀(§FAQ:「`v1.2.3` 并不是语义化版本号……但增加前缀 v 是常用做法」),本仓库的 tag 一般是
+`v<版本号>`(已发:`v1.2.0`、`v2.0.0`、`v2.1.0`、`v2.1.1`、`v2.2.0`;**Latest 徽章归本线**)。
+**例外**:同一个版本号要出两个 jar 时,26.2 那一份用裸标签、26.1.2 那一份**加 `+mc26.1.2` 后缀**
+(`v2.2.0` / `v2.2.0+mc26.1.2`,`v2.2.1` / `v2.2.1+mc26.1.2`),否则两份抢同一个 tag 名。`release\publish.ps1`
+里 `$tag` 目前仍写死裸标签,所以 26.1.2 那个 tag 要手工打(见 [`release/MANUAL_RELEASE.md`](../release/MANUAL_RELEASE.md))。
+另外两条线(1.21.x、1.20.6)的 tag 一律带自己的 `+mc<MC版本>`,并且**每一条都用 `make_latest=false` 创建** ——
+Latest 只属于本线。
 
 ## 四、怎么改(一条命令)
 
@@ -103,8 +108,16 @@ tag 名可以带 `v` 前缀(§FAQ:「`v1.2.3` 并不是语义化版本号……�
 ## 六、发布前的检查
 
 - [ ] `.\release\version.ps1` 显示的版本是这次要发的那个;
-- [ ] `git status` 干净、该提交的都提交了(git tag 直接指向当前提交);
-- [ ] `.\gradlew build --offline` 通过;
+- [ ] `git status` 干净、该提交的都提交了(git tag 直接指向当前提交)。⚠️ 这个 worktree 里长期有 **9 个**未提交的
+      实验文件(两个改过的 `OptifineJarFixer.java` / `OptifineFixer.java`,七个未跟踪的 `Optifine*Probe` /
+      `OptiPerDrawState` / `*ProbeFix`):**不要** `git add -A` / `git add .`,提交时逐个点出路径,见
+      [`CONTRIBUTING.md`](../CONTRIBUTING.md) 第四节;
+- [ ] `.\gradlew build --offline` 通过;**要发布的 jar 在干净的临时 worktree 里构建**(脏构建会把实验类打进 jar,
+      178,300 对 196,235 字节,见 [`CONTRIBUTING.md`](../CONTRIBUTING.md) 第二节);
+- [ ] **升版跑完 `git diff` 复核 `CHANGELOG.md`** —— `version.ps1` 是全文件替换,历史小节的版本串会被一起改写
+      (已手工修过三次),见 [`release/MANUAL_RELEASE.md`](../release/MANUAL_RELEASE.md);
 - [ ] 离线校验数字写进 CHANGELOG / release notes(见 `release/MANUAL_RELEASE.md`);
 - [ ] `-RecordDigest` 跑过,文档里的尺寸与 SHA-256 与 `dist/` 里的 jar 一致;
+      **并且 `git diff release\MANUAL_RELEASE.md` 确认另一行(26.1.2)没有被写成这一版的数字** ——
+      那段表格整张是一个段落,脚本会把每一行都改掉;
 - [ ] 已发布过的版本号**没有**被复用(§3);要改内容就发新版本。

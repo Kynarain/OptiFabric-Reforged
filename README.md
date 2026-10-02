@@ -129,7 +129,7 @@ The development environment is not supported: `gradlew runClient` is refused out
 | Minecraft | jar | OptiFine build | Java | State |
 |---|---|---|---|---|
 | 26.2 | `OptiFabric-Reforged-2.2.1+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ verified in game (**no shaders** — see below) |
-| 26.1.2 | `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
+| 26.1.2 | `OptiFabric-Reforged-2.2.1+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
 
 `2.1.1` is a patch release, and it replaces `2.1.0+mc26.2`: that build forced OptiFine's cancelled shaderpack load back on, and with a shaderpack selected the world then drew **nothing but particles with the blocks see-through** (27 shader programs compiled, no error in any log). `2.1.1` leaves that bytecode shape exactly as OptiFine wrote it. The line is not narrowed by it: the same source still builds for 26.1.2 and goes through the whole offline pipeline there with the numbers 2.0.0 recorded (see *Verified State* below), so 26.1.2 was not dropped — its jar is simply unchanged, and `2.0.0+mc26.1.2` stays the build to use on that release.
 
@@ -222,6 +222,26 @@ Log lines that are normal and can be ignored:
 | `[Shaders] Unknown macro value: IRIS_VERSION` / `ANGELICA_VERSION` | the shader pack probing for Iris/Angelica |
 | `[Shaders] Invalid macro expression` / `ParseException: Model variable not found: …` | shader-pack vs OptiFine version mismatch |
 | `Skipping bad option: lastServer` | a leftover field in the options file |
+
+### Known issue: Litematica schematics + a shader pack floods the log with OpenGL 1282
+
+With a shader pack enabled and a Litematica schematic being rendered, OptiFine logs thousands of:
+
+```
+[Shaders] OpenGL error: 1282 (Invalid operation), program: gbuffers_terrain, at: pre-useProgram
+```
+
+What was actually shown:
+
+- The failing call is **Litematica's own** — `WorldRendererSchematic.renderBlockLayer` uploads the vanilla
+  `ShaderProgram.chunkOffset` uniform, which is invalid while OptiFine's own program is bound.
+- OptiFine only **reports** it: `Shaders.useProgram` starts with `checkGLError("pre-useProgram")`, so it attributes the
+  pending GL error to the program it is about to bind.
+- `litematica-printer`, Xaero's mods and OptiLithium were each checked and shown **not** to be involved.
+
+Workarounds: disable the shader pack, or stop rendering the schematic. Nothing in OptiFabric can fix it — the invalid
+call is not made by this mod, and OptiFine's error check is its own. (On 26.2 this is moot: the shaderpack load stays
+cancelled there, so no shader program is ever bound.)
 
 ## 🌟 Credits
 

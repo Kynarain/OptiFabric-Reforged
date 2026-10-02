@@ -129,7 +129,7 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 | Minecraft | 产物 | OptiFine 构建 | Java | 状态 |
 |---|---|---|---|---|
 | 26.2 | `OptiFabric-Reforged-2.2.1+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**没有光影**,见下) |
-| 26.1.2 | `OptiFabric-Reforged-2.0.0+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
+| 26.1.2 | `OptiFabric-Reforged-2.2.1+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
 
 `2.1.1` 是修订版,它**取代 `2.1.0+mc26.2`**:那一版把 OptiFine 取消掉的光影包加载强行打开,而选了光影包之后世界
 **只画粒子、方块透明**(编译了 27 个 shader program,任何日志里都没有报错)。`2.1.1` 把那段字节码**原样留成
@@ -228,6 +228,25 @@ OptiFabric-Reforged/
 | `[Shaders] Unknown macro value: IRIS_VERSION` / `ANGELICA_VERSION` | 光影包在探测 Iris / Angelica |
 | `[Shaders] Invalid macro expression` / `ParseException: Model variable not found: …` | 光影包与本版 OptiFine 不匹配 |
 | `Skipping bad option: lastServer` | 选项文件里的旧字段 |
+
+### 已知问题:Litematica 投影 + 光影包会让日志刷满 OpenGL 1282
+
+开着光影包、同时有 Litematica 投影在渲染时,OptiFine 会成千上万次地打:
+
+```
+[Shaders] OpenGL error: 1282 (Invalid operation), program: gbuffers_terrain, at: pre-useProgram
+```
+
+实际查到的:
+
+- 出错的那次调用是 **Litematica 自己的** —— `WorldRendererSchematic.renderBlockLayer` 上传了原版的
+  `ShaderProgram.chunkOffset` uniform,而此时绑定的是 OptiFine 自己的 program;
+- OptiFine 只是**报告**它:`Shaders.useProgram` 开头就是 `checkGLError("pre-useProgram")`,于是把之前挂着的
+  GL 错误算到了它即将绑定的那个 program 头上;
+- `litematica-printer`、Xaero's 系列与 OptiLithium 都逐个查过,**均已排除**。
+
+规避办法:**关掉光影包**,或者**停止渲染投影**。OptiFabric 这边改不了 —— 非法调用不是本模组发出的,那句错误检查
+也是 OptiFine 自己的。(26.2 上这条还用不上:那一版的光影包加载保持被取消,根本没有 program 会被绑定。)
 
 ## 🌟 致谢
 
