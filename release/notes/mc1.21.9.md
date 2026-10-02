@@ -1,8 +1,24 @@
-# OptiFabric 2.2.0+mc1.21.9
+# OptiFabric 2.2.1+mc1.21.9
 
 **Minecraft 1.21.9** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar`
 
 状态:**已实测正常(含抗锯齿)**
+
+## 2.2.1 的改动
+
+- **换过类之后不再让 Mixin 用替换之前的类元数据**:OptiFabric 把游戏类替换成 OptiFine 打补丁后的字节码时,Mixin 已经为这些类
+  缓存了一份 `ClassInfo`(按 Fabric 的启动顺序,缓存里存的可能是**游戏自己**那份)。两份字节只要在某个成员上不一致,`Locals`
+  (`@ModifyVariable` 与局部变量捕获)就查不到正在变换的方法,整个类变换失败并抛
+  `LVTGeneratorError: Could not locate method metadata for method_3196 generating LVT in net/minecraft/class_757`,
+  Fabric 侧只报一句笼统的 `Mixin transformation of net.minecraft.class_757 failed`。这个异常抛在 `preInject` 阶段,
+  **`require` / `expect` 都拦不住**,模组侧无法自行绕过 —— 已发布的 2.2.0 就是这样在加载期丢掉 ShoulderSurfing 的;
+- **做法**:`GameTransformerHook` 记住真正被替换过的类,装好后丢掉这些类的 Mixin 缓存条目(内部名形式、反射、每类至多一次、
+  失败不致命),让 Mixin 按它真正拿到的那份字节重建元数据;没有被替换的类不动;
+- **实测**(1.21.1,OptiFine HD U J1,ShoulderSurfing 5.2.0、ForgeConfigAPIPort 21.1.6 与 Fabric API):2.2.0 的 jar 6 秒
+  死在 `Mixin transformation of net.minecraft.class_757 failed`;本版日志出现 `Dropped 47 of 425 Mixin class metadata entries`,
+  进标题界面、进存档,光影包正常编译 27 个世界内程序,无注入错误、无崩溃报告。
+
+本版只改了这一处,2.2.0 的其余结论继续适用。
 
 ## 2.2.0 的改动
 
@@ -98,6 +114,6 @@
 
 ## 校验
 
-`OptiFabric-2.2.0+mc1.21.9.jar` — 897172 字节
+`OptiFabric-2.2.1+mc1.21.9.jar` — 899350 字节
 
-`SHA-256: 358CF595261E535FA60FD3F6FC125321DFEB43A9CDB4B5EBAC90DB20E2C47F6C`
+`SHA-256: 7E3605FDA710AD3AF62DEFB0D9D1443290DE45453B368C811C13745537DF155B`

@@ -1,5 +1,43 @@
 # 更新日志
 
+## 2.2.1+mc1.21 … 2.2.1+mc1.21.11 — 换过类之后丢掉 Mixin 的旧类元数据,局部变量捕获不再让整个类变换失败
+
+> **这一版覆盖全部 10 个产物**(1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11),
+> 全部是 2.2.1,行为一致。**修订号递增的原因是向下兼容的问题修正**:替换完游戏类之后丢掉 Mixin 为这些类缓存的旧元数据。
+> 没有新能力、也没有不兼容修改(mod id 仍是 `optifabric_reforged`),升级直接换 jar 即可。
+
+### 修复:在 OptiFine 改写过的类里解析局部变量的 mixin 不再在加载期失败
+
+OptiFabric 读走游戏类之后会把它替换成 OptiFine 打补丁后的字节码,而 Fabric 在 preLaunch 入口点跑起来之前就已经把 Mixin 的
+配置准备好了 —— 所以对**被替换的这些类**,Mixin 的 `ClassInfo` 缓存里存的可能是**游戏自己**的那份。之后 Mixin 拿到的是
+OptiFine 的那份:两份字节只要在某个成员上不一致,查表就会落空,而 `Locals`(`@ModifyVariable` 与局部变量捕获用的那套机制)
+对此没有退路 —— 它用
+
+    ClassInfo#findMethod(name, descriptor, method.access | INCLUDE_INITIALISERS)
+
+解析正在被变换的方法,而 `ClassInfo.Member#matchesFlags` 要求**缓存里记为 private 的成员必须以 `ACC_PRIVATE` 查询**。
+OptiFine 重编译 `GameRenderer.getFov` 时把它从 private 放宽成 public,于是对着缓存里那份"游戏自己的"元数据查不到,
+整个类变换失败:
+
+    LVTGeneratorError: Could not locate method metadata for method_3196 generating LVT in net/minecraft/class_757
+
+这个异常抛在 `ModifyVariableInjector.preInject` 里,此时 `require` / `expect` 都还没被看到,**受影响的模组无法从自己这一侧绕过**;
+Fabric 侧只留下一句笼统的 `Mixin transformation of net.minecraft.class_757 failed`。
+
+`GameTransformerHook` 现在记住它**真正替换过**的那些类,装好之后把这些类的缓存条目丢掉(内部名形式、反射删除、每个类至多
+一次、失败只记日志不致命),Mixin 于是按它真正拿到的那份字节重建元数据 —— 正在被变换的类是通过 `ClassInfo#fromClassNode`
+进入 Mixin 目标上下文的,而那个方法只要缓存里有就直接返回缓存实例。字节仍是 Loader 自己那份的类(没有被替换)不动它的缓存条目。
+
+实测(1.21.1,OptiFine HD U J1,ShoulderSurfing 5.2.0、ForgeConfigAPIPort 21.1.6 与 Fabric API):**已发布的 2.2.0 jar 6 秒就死在
+`Mixin transformation of net.minecraft.class_757 failed`**;本版日志里出现 `Dropped 47 of 425 Mixin class metadata entries`,
+进标题界面、进存档,光影包正常编译 27 个世界内程序,无注入错误、无崩溃报告。配 Architectury 13.0.11 时 `LocalSlotLayoutFix`
+报告的数字与 2.1.0 相同(槽位 7→15、10→16;OptiFine 那份 21 个局部变量,游戏那份 18 个),运行以 FIXED 结束。
+
+### 校验
+
+本版只改了这一处(替换类之后处理 Mixin 缓存的旧元数据),补丁管线与其余 fixer 未动,2.2.0 那套离线/真机校验结论继续适用;
+十个产物的尺寸与 SHA-256 见 `release\MANUAL_RELEASE.md`。
+
 ## 2.2.0+mc1.21 … 2.2.0+mc1.21.11 — 缺 OptiFine 时先说清楚,并可从官网下载
 
 > **这一版覆盖全部 10 个产物**(1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11),

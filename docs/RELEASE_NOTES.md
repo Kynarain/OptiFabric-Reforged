@@ -1,16 +1,30 @@
-# GitHub Release notes — tag `v2.2.0+mc1.21.11`(`OptiFabric-2.2.0+mc1.21.11.jar`)
+# GitHub Release notes — tag `v2.2.1+mc1.21.11`(`OptiFabric-2.2.1+mc1.21.11.jar`)
 
 > 复制下面 `---` 之间的内容到 GitHub Release 的说明框里(标题用第一行)。英文在前,末尾附中文摘要。
-> 标签是**版本号 + 该 MC 版本**(`v2.2.0+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
+> 标签是**版本号 + 该 MC 版本**(`v2.2.1+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
 > 其余版本号由 `release\version.ps1` 统一改写。
 
 ---
 
-## OptiFabric 2.2.0+mc1.21.11 — OptiFine on Fabric 1.21.11
+## OptiFabric 2.2.1+mc1.21.11 — OptiFine on Fabric 1.21.11
 
 Run **OptiFine** and **Fabric** in the same 1.21.11 client. Drop OptiFabric and your own OptiFine jar into `mods/`; at startup OptiFabric runs OptiFine's installer, remaps its patches into Fabric's namespace, repairs the structural conflicts with Fabric API, and hands the result to Fabric Loader's class transformer.
 
 **OptiFine is not bundled or redistributed** — bring your own `OptiFine_1.21.11_HD_U_J9.jar` (or another 1.21.11 build).
+
+### Fixed in 2.2.1 — a mixin that resolves locals in a class OptiFine rewrites no longer dies at class load
+
+OptiFabric replaces game classes with the bytes OptiFine's patches produce, but Mixin has already built and cached one `ClassInfo` per class — from the **game's own** copies, because Fabric prepares Mixin's configs before a `preLaunch` entrypoint runs. Where the cached entry and the bytes Mixin is actually handed disagree about a member, the lookup misses, and `Locals` — what `@ModifyVariable` and local-variable capture use — cannot recover from it: it resolves the method being transformed with `ClassInfo#findMethod(name, descriptor, method.access | INCLUDE_INITIALISERS)`, whose `ClassInfo.Member#matchesFlags` requires a member stored as private to be queried with `ACC_PRIVATE`. OptiFine recompiles `GameRenderer.getFov` and widens it from private to public, so against the cached game entry the lookup fails and the whole class is lost:
+
+```
+LVTGeneratorError: Could not locate method metadata for method_3196 generating LVT in net/minecraft/class_757
+```
+
+That is thrown from `ModifyVariableInjector.preInject`, **before `require` or `expect` are consulted** — the affected mod cannot work around it from its own side — and Fabric reports only the generic `Mixin transformation of net.minecraft.class_757 failed`.
+
+`GameTransformerHook` now remembers the classes it actually replaced and drops their cache entries right after they are installed (internal-name form, reflectively, at most once per class, non-fatal on failure), so Mixin rebuilds that metadata from the bytes it is really handed: the class being transformed enters Mixin's target context through `ClassInfo#fromClassNode`, which returns the cached instance whenever there is one. A class whose bytes are still Fabric Loader's own was never replaced and keeps its entry.
+
+Measured on 1.21.1 with OptiFine HD U J1, ShoulderSurfing 5.2.0, ForgeConfigAPIPort 21.1.6 and Fabric API: **the shipped 2.2.0 jar dies 6 s in with `Mixin transformation of net.minecraft.class_757 failed`**, while this build logs `Dropped 47 of 425 Mixin class metadata entries`, reaches the title screen, opens a world and compiles 27 in-world shader programs, with no injection error and no crash report. With Architectury 13.0.11 the slot fixer still reports the same moves (7→15, 10→16; 21 locals in OptiFine's copy against 18 in the game's) and the run ends FIXED.
 
 ### New in 2.2.0 — the game says what is missing, and fetches it from OptiFine's own site
 
@@ -81,7 +95,7 @@ This is versioned per artifact: 1.21.3 – 1.21.11 are 1.1.2, 1.21 and 1.21.1 ke
 ### Install
 
 1. Install a 1.21.11 Fabric client (Loader 0.19.5+).
-2. Put `OptiFabric-2.2.0+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
+2. Put `OptiFabric-2.2.1+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
 3. Start the game with the **Fabric** profile. The first launch spends a few seconds patching and remapping (cached afterwards under `<game dir>/.optifine/<version>/`).
 
 ### What it took for 1.21.11
@@ -114,7 +128,7 @@ OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recomp
 
 | File | SHA-256 |
 |---|---|
-| `OptiFabric-2.2.0+mc1.21.11.jar` (914733 bytes) | `7301EDD4B7634E8C8EE1B1845A0D1F73651396AF3A9E18E7E1F4988E298F2ACC` |
+| `OptiFabric-2.2.1+mc1.21.11.jar` (916911 bytes) | `BFE7F0328C4351CC545A3250022D55D492CABBA1340CC160E4F83D322131A2C1` |
 
 Other Minecraft releases OptiFine ships a build for — 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9 and 1.21.10 — come out of this same repository root (one Gradle project, no `v1.21.x` subproject) with `.\gradlew build "-Pmc=<version>"`, and each of them passes the same offline verification (see [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)).
 
@@ -130,6 +144,11 @@ A port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) by Mod
 
 把 OptiFine 接进 Minecraft **1.21.11** 的 Fabric。把本 jar 与自备的 `OptiFine_1.21.11_HD_U_J9.jar` 一起放进 `mods/`,用 Fabric 版本启动即可(**不需要**先运行 OptiFine 安装器);首次启动多花几秒做补丁+重映射,之后走缓存。
 
+- **2.2.1 的修复**:OptiFabric 换掉游戏类之后,不再让 Mixin 继续用**替换之前**缓存的类元数据 —— 缓存与 OptiFine 改写后的字节
+  不一致时,`@ModifyVariable` / 局部变量捕获会在加载期抛 `LVTGeneratorError` 让整个类变换失败(Fabric 只报
+  `Mixin transformation of net.minecraft.class_757 failed`),而这个异常抛在 `require` / `expect` 之前,模组侧无法绕过;
+  现在替换完类就丢掉这些类的缓存条目,让 Mixin 按真正拿到的字节重建(1.21.1 实测日志 `Dropped 47 of 425 Mixin class
+  metadata entries`;2.2.0 的 jar 6 秒崩溃,本版进标题界面、进存档,光影包编译 27 个世界内程序,无注入错误、无崩溃报告);
 - **2.2.0 的改动**:`mods/` 里没有 OptiFine(或装的是比支持表更旧的**预览版**)时不再默默启动 —— 标题界面打开前会弹出说明界面,
   写明该 MC 版本需要的构建与文件名,`下载 OptiFine` 从 OptiFine **官网**的两步流程取回它(不带、也不回退任何第三方镜像;
   失败就如实报原因并换成 `打开官网下载页` + `重新检查`,你放好 jar 再点重新检查);地址栏可以换成你自己的地址;
