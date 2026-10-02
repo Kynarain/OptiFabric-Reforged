@@ -15,7 +15,7 @@
 
 在 **Fabric Loader** 下加载 **OptiFine**。把 OptiFine 的 jar 和本模组一起放进 `mods/`,启动时会用 OptiFine 自带的补丁器给原版客户端打补丁、重建被搬走的 lambda、把 OptiFine 从官方混淆名重映射到 intermediary,并把打过补丁的 Minecraft 类交给 Fabric Loader 的类转换器接管,从而让两者共存。**不包含、也不分发 OptiFine 本体。**
 
-本分支是 **1.21.x 线**,覆盖 Minecraft **1.21 – 1.21.11**(OptiFine 出过构建的全部十个版本)。26.x 线(Minecraft 26.1.2)在 [`26.x` 分支](../../tree/26.x)上独立开发,两条线的 jar **不能互相替代**。
+本分支是 **1.21.x 线**,覆盖 Minecraft **1.21 – 1.21.11**(OptiFine 出过构建的全部十个版本)。26.x 线(Minecraft 26.2 与 26.1.2)在自己的分支/worktree 上独立开发,两条线的 jar **不能互相替代**。
 
 ## 📖 概览
 
@@ -24,7 +24,7 @@ OptiFine 不是 Fabric 模组:它的 jar 里是针对原版**混淆**客户端�
 **一个 Minecraft 版本一个 jar** —— 每个 jar 里都打包着该版本的 `official → intermediary` 映射表(官方混淆名每版不同,用错版本会把 OptiFine 重映射成乱码),`fabric.mod.json` 里的 `minecraft` 依赖也精确到该版本。
 
 **作者:** kynarain · 上游:Modmuss50、Chocohead
-**版本:** 十个产物都是 `2.1.0`(1.21 – 1.21.11)
+**版本:** 十个产物都是 `2.2.1`(1.21 – 1.21.11)
 **许可:** MPL-2.0
 
 ## ✨ 主要特性
@@ -259,6 +259,25 @@ OptiFabric/
 | `[Shaders] Unknown macro value: IRIS_VERSION` / `ANGELICA_VERSION` | 光影包在探测 Iris / Angelica,OptiFine 不认这两个宏 |
 | `[Shaders] Invalid macro expression` / `ParseException: Model variable not found: …` | 光影包与本版 OptiFine 不匹配 |
 | `Skipping bad option: lastServer` | 选项文件里的旧字段 |
+
+### 已知问题:Litematica 投影 + 光影包会让日志刷满 OpenGL 1282
+
+开着光影包、同时有 Litematica 投影在渲染时,OptiFine 会成千上万次地打:
+
+```
+[Shaders] OpenGL error: 1282 (Invalid operation), program: gbuffers_terrain, at: pre-useProgram
+```
+
+实际查到的:
+
+- 出错的那次调用是 **Litematica 自己的** —— `WorldRendererSchematic.renderBlockLayer` 上传了原版的
+  `ShaderProgram.chunkOffset` uniform,而此时绑定的是 OptiFine 自己的 program;
+- OptiFine 只是**报告**它:`Shaders.useProgram` 开头就是 `checkGLError("pre-useProgram")`,于是把之前挂着的
+  GL 错误算到了它即将绑定的那个 program 头上;
+- `litematica-printer`、Xaero's 系列与 OptiLithium 都逐个查过,**均已排除**。
+
+规避办法:**关掉光影包**,或者**停止渲染投影**。OptiFabric 这边改不了 —— 非法调用不是本模组发出的,那句错误检查也是
+OptiFine 自己的。
 
 ## 🌟 致谢
 

@@ -136,12 +136,23 @@ git push origin "v2.2.1+mc1.21.11"
 
 ## 六、后续版本怎么发
 
-1. 改 `gradle.properties` 里的 `mod_version_base`(例如 `1.0.1`);
+1. **只升一个 jar** 就 `powershell -NoProfile -ExecutionPolicy Bypass -File release\version.ps1 -Line 1.21.x -Mc <MC版本> -Kind patch`
+   (**先加 `-DryRun`**;整条线一起升版时去掉 `-Mc`,见 [`VERSIONING.md`](VERSIONING.md) 第五节)。
+   ⚠️ 它会全文件替换 `<旧版本>+mc`,**跑完必须 `git diff` 复核 `CHANGELOG.md`** —— 历史小节被改写是已知坑,
+   见 [`release/MANUAL_RELEASE.md`](../release/MANUAL_RELEASE.md) 里那条警告;
 2. 在 `CHANGELOG.md` 顶部加一节(写清新的版本号,例如 `1.0.1+mc1.21.11`);
-3. 构建(带 `-Pmc=` 指定 MC 版本):
+3. 构建(带 `-Pmc=` 指定 MC 版本;逐版本升版时再加 `"-Pmod_version_base=<该版本>"`):
    ```powershell
    .\gradlew build "-Pmc=1.21.11" --offline
    ```
 4. 跑离线校验(`verify-version.ps1 -Version <版本>`);
-5. 复制到 `dist\`,同步 `release/notes/mc<版本>.md` 与 `release/MANUAL_RELEASE.md` 里的字节数 / SHA-256;
-6. `.\release\publish.ps1 -DryRun` 先看一眼要发什么,再打 tag、发 Release、上传三个平台。
+5. 复制到 `dist\`,用 `-RecordDigest` 把字节数 / SHA-256 同步进 `release/notes/mc<版本>.md`、
+   `docs/RELEASE_NOTES.md` 与 `release/MANUAL_RELEASE.md`(逐版本升版加 `-Mc <MC版本>`):
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File release\version.ps1 -Line 1.21.x -Mc 1.21.11 -RecordDigest
+   ```
+   它按**段落**改:发布清单里那种 Markdown 表格整张表是**一个段落**,所以一次会给表里每一行都写上同一个尺寸与
+   SHA-256 —— 脚本对"一段里出现多个 MC 版本"的情形会逐行处理,但**跑完仍要 `git diff release\MANUAL_RELEASE.md`
+   确认十行的数字各自没串**;
+6. `.\release\publish.ps1 -DryRun` 重新生成 `release\tmp\` 草稿(那里面是上一版的快照,升版后必须重跑),
+   再打 tag、发 Release、上传三个平台;顺便刷新 `release-upload\<线>-<版本>\`。

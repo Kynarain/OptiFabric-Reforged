@@ -15,7 +15,7 @@
 
 Load **OptiFine** under **Fabric Loader**. Put OptiFine's jar next to this mod and it patches the vanilla client with OptiFine's own patcher, rebuilds the lambdas whose targets moved, remaps OptiFine from its obfuscated names into Fabric's namespace, and hands the patched Minecraft classes to Fabric Loader's class transformer — so both can live in one client. **OptiFine itself is not bundled or redistributed.**
 
-This branch is the **1.21.x line** and covers Minecraft **1.21 – 1.21.11** (all ten releases OptiFine ever shipped a build for). The 26.x line (Minecraft 26.1.2) lives on the [`26.x` branch](../../tree/26.x) and is developed separately; jars from the two lines are **not interchangeable**.
+This branch is the **1.21.x line** and covers Minecraft **1.21 – 1.21.11** (all ten releases OptiFine ever shipped a build for). The 26.x line (Minecraft 26.2 and 26.1.2) lives on its own branch/worktree and is developed separately; jars from the two lines are **not interchangeable**.
 
 ## 📖 Overview
 
@@ -24,7 +24,7 @@ OptiFine is not a Fabric mod: its jar holds bytecode patches against *obfuscated
 **One jar per Minecraft release** — every jar carries that release's `official → intermediary` mapping table (the obfuscated names differ per release, and the wrong table turns OptiFine into garbage) and pins its `minecraft` dependency to that exact version.
 
 **Author:** kynarain · upstream: Modmuss50, Chocohead
-**Version:** `2.1.0` for all ten releases (1.21 – 1.21.11)
+**Version:** `2.2.1` for all ten releases (1.21 – 1.21.11)
 **License:** MPL-2.0
 
 ## ✨ Key Features
@@ -261,6 +261,25 @@ Log lines that are normal and can be ignored:
 | `[Shaders] Unknown macro value: IRIS_VERSION` / `ANGELICA_VERSION` | the shader pack probing for Iris/Angelica |
 | `[Shaders] Invalid macro expression` / `ParseException: Model variable not found: …` | shader-pack vs OptiFine version mismatch |
 | `Skipping bad option: lastServer` | a leftover field in the options file |
+
+### Known issue: Litematica schematics + a shader pack floods the log with OpenGL 1282
+
+With a shader pack enabled and a Litematica schematic being rendered, OptiFine logs thousands of:
+
+```
+[Shaders] OpenGL error: 1282 (Invalid operation), program: gbuffers_terrain, at: pre-useProgram
+```
+
+What was actually shown:
+
+- The failing call is **Litematica's own** — `WorldRendererSchematic.renderBlockLayer` uploads the vanilla
+  `ShaderProgram.chunkOffset` uniform, which is invalid while OptiFine's own program is bound.
+- OptiFine only **reports** it: `Shaders.useProgram` starts with `checkGLError("pre-useProgram")`, so it attributes the
+  pending GL error to the program it is about to bind.
+- `litematica-printer`, Xaero's mods and OptiLithium were each checked and shown **not** to be involved.
+
+Workarounds: disable the shader pack, or stop rendering the schematic. Nothing in OptiFabric can fix it — the invalid
+call is not made by this mod, and OptiFine's error check is its own.
 
 ## 🌟 Credits
 
