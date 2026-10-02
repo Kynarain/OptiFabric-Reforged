@@ -2,6 +2,23 @@
 
 本文档记录"把本项目发出去"需要做的步骤。仓库里已经准备好的东西、以及**你还需要自己做的部分**都写在下面。
 
+> 本分支是 **1.20.6 线**(`main`),只出一个 jar:`OptiFabric-1.1.1+mc1.20.6.jar`。
+> 更新的两条线(1.21.x、26.x)在各自的 worktree/分支上独立开发,各线的 jar **不能互相替代**。
+>
+> **发布标签是 `v<版本>+mc<MC版本>`**(已发:`v1.1.0+mc1.20.6`、`v1.1.1+mc1.20.6`)。
+> tag 是**仓库级**的,仓库里同时承载 1.21.x 与 26.x 两条线(它们也各自占用 `v<版本>` 与 `v<版本>+mc<MC版本>`),
+> 所以这一线的 tag 一律带上自己的 MC 版本。
+> ⚠️ **GitHub 的 Latest 徽章归 26.x 线** —— 本线每建一个 Release 都要用 **`make_latest=false`**
+> (网页上就是"Set as the latest release"不勾)。
+>
+> **发布正文就是 [`CHANGELOG.md`](../CHANGELOG.md) 里对应那一节**(这一线没有别的 release notes 文件);
+> 商店页文案在 [`DESCRIPTION.md`](DESCRIPTION.md)。
+
+> **版本号**:这一线**没有** `release/version.ps1` 这类脚本,版本号手改 `gradle.properties` 的 `mod_version`
+> (注意:不是另两条线的 `mod_version_base`),然后**同步下面几处**(漏一处就是文档与产物对不上):
+> `README.md`(产物名与「支持的版本」表)、`CHANGELOG.md`(顶部新增一节)、本文件第二节的产物名。
+> 参与开发的完整检查清单见 [`../CONTRIBUTING.md`](../CONTRIBUTING.md) 第四节。
+
 ## 一、已经准备好的东西
 
 | 项目 | 位置 | 说明 |
@@ -18,7 +35,7 @@
 ## 二、构建发布包
 
 ```powershell
-cd I:\mods\OptiFabric
+cd I:\mods\OptiFabric-1.20.6     # 1.20.6 线自己的 worktree(父仓库 I:\mods\OptiFabric 停在 26.x 的 wip/26.2,别在那里 checkout)
 .\gradlew build --offline
 ```
 
@@ -32,22 +49,22 @@ cd I:\mods\OptiFabric
 ## 三、发到 GitHub
 
 ```powershell
-cd I:\mods\OptiFabric
-git add -A
+cd I:\mods\OptiFabric-1.20.6
+git add <你改的文件>       # 别用 -A,看清楚再提交
 git commit -m "OptiFabric 1.1.1+mc1.20.6: OptiFine on Fabric for 1.20.6"
-git branch -M main
 git remote add origin https://github.com/<你的用户名>/<仓库名>.git
 git push -u origin main
 ```
 
-发 Release(可选,但推荐,方便别人直接下载):
+发 Release —— 标签是 `v<版本>+mc<MC版本>`:
 
 ```powershell
-git tag v1.1.1+mc1.20.6
-git push origin v1.1.1+mc1.20.6
+git tag "v1.1.1+mc1.20.6"
+git push origin "v1.1.1+mc1.20.6"
 ```
 
-然后在 GitHub 网页上基于该 tag 建 Release,把 `OptiFabric-1.1.1+mc1.20.6.jar` 作为附件上传。
+然后在 GitHub 网页上基于该 tag 建 Release,把 `OptiFabric-1.1.1+mc1.20.6.jar` 作为附件上传,
+**正文粘贴 `CHANGELOG.md` 里 1.1.1 那一节**,并且**用 `make_latest=false` 创建**(Latest 归 26.x 线,见文首)。
 
 **仓库里不该出现的东西**(`.gitignore` 已经排除,提交前可再确认一次):
 
@@ -64,7 +81,7 @@ git push origin v1.1.1+mc1.20.6
    - 分类建议:Optimization / Miscellaneous
 2. **上传文件**:把 `OptiFabric-1.1.1+mc1.20.6.jar` 作为 release 上传,版本名填 `1.1.1+mc1.20.6`。
 3. **项目描述**:`docs/DESCRIPTION.md` 里给了成套文案 —— "简介"栏粘贴**简要描述**(中文或英文),项目正文粘贴**详细描述**(有中文和英文两版,CF 支持 Markdown)。
-   GitHub 仓库的 About 也可以直接用那句简要描述;如果以后加了英文 README,再补一版英文详细描述即可。
+   GitHub 仓库的 About 也可以直接用那句简要描述。
 4. **项目图标**:CurseForge 的图标要在网页上单独上传(`src/main/resources/assets/optifabric/icon.png` 是给游戏内模组列表用的,两者可以同图)。图标建议 400×400 或以上。
 5. **依赖关系设置**:把 **Fabric API** 标为可选依赖(Optional dependency);**不要**把 OptiFine 列为依赖项 —— CurseForge 不允许分发 OptiFine,依赖项里也不要指向它的下载。
 6. 提交后等审核。
@@ -74,13 +91,15 @@ git push origin v1.1.1+mc1.20.6
 - [ ] jar 里**没有**包含 OptiFine 的任何类或资源(本项目的构建脚本不会打包它,但换过构建配置的话要复查)。
 - [ ] `LICENSE.txt` 还在,`fabric.mod.json` 里的 `license` 仍是 `MPL-2.0`,README 里保留了对上游项目的署名。
 - [ ] 项目描述里写明"需要自行获取 OptiFine 1.20.6"。
-- [ ] 用**干净的实例**实测一次:只放 Fabric API + OptiFabric + OptiFine,能进主界面、能进存档。
+- [ ] 用**干净的实例**实测一次:只放 Fabric API + OptiFabric + OptiFine,能进主界面、能进存档
+      (Java 必须是 21,`build.gradle` 的 `targetJavaVersion` 就是 21)。
    - 提示:`<游戏目录>/.optifine/` 是缓存目录,删掉它可强制重新生成,适合用来测"首次安装"的路径。
+- [ ] 改过文档的话,顺手核对**编码**:`.md` / `.java` = UTF-8 **无 BOM** + CRLF;`.ps1` = UTF-8 **带 BOM** + CRLF。
 - [ ] 不要把开发时产生的日志、映射文件、OptiFine 安装器提交进仓库。
 
 ## 六、后续版本怎么发
 
-1. 改 `gradle.properties` 里的 `mod_version`(例如 `1.0.1+mc1.20.6`);
-2. 在 `CHANGELOG.md` 顶部加一节;
+1. 改 `gradle.properties` 里的 `mod_version`(例如 `1.1.2+mc1.20.6`),并同步 `README.md` 的产物名与「支持的版本」表;
+2. 在 `CHANGELOG.md` 顶部加一节(**这一节就是 GitHub Release 的正文**);
 3. `.\gradlew build --offline`;
-4. 打 tag、发 Release、在 CurseForge 上传新文件。
+4. 打 tag `v<版本>+mc1.20.6`、发 Release(正文用 CHANGELOG 里那一节,`make_latest=false`)、在 CurseForge 上传新文件。

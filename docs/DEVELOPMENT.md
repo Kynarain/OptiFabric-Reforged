@@ -376,6 +376,89 @@ Unable to bake model: 0       Mixin transformation: 0      InjectionError: 0
 | **开存档报"网络协议错误"** | OptiFine 用 `net.optifine.ChunkOF` 取代 `WorldChunk`,Fabric 的 `@At(value="NEW", target="WorldChunk")` 精确匹配不到 → `class_631` 整个类变换失败 | `ObjectCreationPointFix`:在 OptiFine 创建子类处**前面**插入惰性 `NEW class_2818; POP` 标记(`NEW;POP` 的合法性由 `NewPopTest` 用 ASM 与真实 JVM 双向验证) |
 | 区块构建时崩(隐患,提前拦住) | indigo 注入 `BlockPos.iterate`,而 OptiFine 重写了那段循环 | 声明 `fabric-renderer-api-v1:contains_renderer`,让 indigo 按 Fabric 的机制让位(OptiFine 本身就是渲染器) |
 
+## 1.1.1:替换过的类必须丢掉 Mixin 缓存的类元数据
+
+> 1.1.1 那一版唯一的改动就在这里。它**不动任何字节码 fixer、也不动补丁管线**,只改加载期"装完之后"的一步,
+> 所以 1.0.0 记下的离线数字(**425 / 425**、ASM 数据流验证器 0 问题)仍然对应那一份产物。
+
+### 症状:mixin 自己在 `require` / `expect` 之前就失败了
+
+用户侧只会看到 Fabric 那句笼统的话,以及**某个模组的 mixin 让整个类变换失败**:
+
+```
+Mixin transformation of net.minecraft.class_757 failed
+```
+
+真正的异常在它里层:
+
+```
+org.spongepowered.asm.mixin.injection.throwables.LVTGeneratorError:
+    Could not locate method metadata for method_3196 generating LVT in net/minecraft/class_757
+```
+
+它抛在 `ModifyVariableInjector.preInject` 里 —— **`require` / `expect` 都还没被看到**,所以受影响的模组无法从
+自己这一侧绕过(`require = 0` 之类都没用),只能等本模组这边修。
+
+### 根因:安装顺序 —— OptiFabric 在 Mixin 之后才替换类
+
+Mixin 为每个类建一份元数据(`org.spongepowered.asm.mixin.transformer.ClassInfo`),缓存在 `ClassInfo#cache` 里,
+内容取自**它的字节码提供者**(bytecode provider)。Fabric 上那个提供者就是 Knot,也就是本模组注入
+`GameTransformer.patchedClasses` 的那一层。关键在于**顺序**:
+
+1. Fabric **先**准备 Mixin 的配置(preLaunch 入口点跑起来**之前**),此时 `ClassInfo` 已经按提供者当时给出的
+   **游戏自己的**那份字节建好并缓存了;
+2. OptiFabric **后**才在 preLaunch 里把 `net/minecraft/**` 换成 OptiFine 打补丁后的字节。
+
+1.21.x 线上实测过时序:`net/minecraft/class_757` 的缓存条目在"接管"之后 5 ms 就存在,而提供者此时已经回答
+OptiFine 的那份类。也就是说**缓存描述的是游戏那份,提供者给的是 OptiFine 那份**。
+
+两份字节只要在某个成员上不一致,查表就落空。`Locals`(`@ModifyVariable` 与局部变量捕获用的那套机制)解析它正在
+变换的方法时用:
+
+```
+ClassInfo#findMethod(name, descriptor, method.access | INCLUDE_INITIALISERS)
+```
+
+而 `ClassInfo.Member#matchesFlags` 要求**缓存里记为 private 的成员必须以 `ACC_PRIVATE` 查询**。OptiFine 重编译
+`GameRenderer.getFov` 时把它从 private 放宽成 public,于是对着缓存里那份"游戏自己的"记录查不到 —— 整个类变换失败。
+
+> 这也解释了为什么不是所有 mixin 都中招:**只有需要解析类元数据的那些**(`Locals`,以及依赖它的 `@ModifyVariable`
+> 与 locals 捕获)会踩到;其它注入类型照着字节走,两份字节的差异碰不到它们。
+
+### 修复:装完之后把这些类在 Mixin 缓存里的条目丢掉
+
+`GameTransformerHook.inject(...)` 现在记住它**真正替换过**的那些类(Loader 自己打过补丁的类不在此列 —— 那些类的
+字节仍是 Loader 那份,缓存条目照旧),装好之后立刻调用 `MixinClassMetadata.drop(replaced)`:
+
+- 键是 `ClassInfo.forName` 用的**内部名**(斜杠形式),不是别处用的点号名;
+- 每个类**至多丢一次**(第二次丢不到任何比"Mixin 按我们装的字节重建的那份"更旧的东西,而那正是必须留下的);
+- 缓存够不到时**只报告一次、然后什么也不做**:过期元数据仍然能跑,只是那些解析类元数据的 mixin 照旧失败 ——
+  也就是说这个修复是尽力而为,不会因为它自己出问题把启动搞挂。
+
+Mixin 于是**按它实际拿到的字节**重建元数据。为什么重建一定发生:正在被变换的类是通过 `ClassInfo#fromClassNode`
+进入 Mixin 目标上下文的,而那个方法**只要缓存里有就直接返回缓存实例** —— 清掉缓存是让它重建的唯一入口。
+
+日志里因此多出一行:
+
+```
+[OptiFabric] Dropped 47 of 425 Mixin class metadata entries that described the game's own members, so mixins see the patched ones
+```
+
+**验证状态(如实说明)**:这个修复在 **1.21.x 线**上做过真机端到端实测 —— 已发布的 2.2.0 jar 在 1.21.1 + OptiFine
+HD U J1 + ShoulderSurfing 5.2.0 下 **6 秒就死在 `Mixin transformation of net.minecraft.class_757 failed`**,而带这个
+修复的构建打出上面那行 `Dropped 47 of 425`、进标题界面、进存档、光影包正常编译 27 个世界内程序,无注入错误、无崩溃报告。
+**1.20.6 这一份没有在真机上重跑,也没有重跑离线校验** —— 它的字节码修复(fixer 表与补丁管线)一个字节没动,
+这个改动发生在**补丁安装之后**;1.0.0 记下的 **425 / 425** 与 ASM 0 问题仍然对应那一份产物。
+
+### 遗留的边界(没有证明的部分)
+
+**已经在别处持有旧 `ClassInfo` 对象的代码不会被这次清理刷新。** 清缓存只影响"之后按名字去查"的人;如果某个对象早在
+清缓存之前就把那份 `ClassInfo` 存起来了,它手里仍是旧的。这在本项目已知的路径上没有观察到,但也没有被证伪。
+
+仍然**没有被证明**的情形是:**一个类本身没有被替换,但它继承的父类被替换了** —— 这类父类成员的解析是否也依赖缓存
+元数据,还没有单独测过。要测的话有现成判据:`-Dmixin.debug=true` 下在 1.21.1 上装 ShoulderSurfing 5.2.0 复现
+`class_757`,同时准备一个只替换父类、子类不被替换的组合对照。
+
 ## 离线校验工具链(全部只读,可重复运行)
 
 | 工具 | 查什么 | 当前结果 |

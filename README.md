@@ -102,6 +102,14 @@ mods/<OptiFine>.jar
 - **光影包与 OptiFine 版本不匹配时会报 `[Shaders] Invalid program name: ...`**(例如 Photon 的 `dh_water`、`gbuffers_particles*`),属于光影包自身问题。
 - OptiFine 各项功能的具体效果(连接纹理、缩放、动态光源、FPS 优化幅度)尚未逐项验证;启动、进世界、模型与区块渲染、光影子系统已确认工作。
 
+完整清单与复现结论见 [`docs/FAQ.md`](docs/FAQ.md);下面这条是最近一次查清的:
+
+**Litematica 投影 + 光影包会让日志刷满 `[Shaders] OpenGL error: 1282 (Invalid operation), program: gbuffers_terrain, at: pre-useProgram`**
+—— 出错的那次调用是 **Litematica 自己的**(`WorldRendererSchematic.renderBlockLayer` 上传原版的
+`ShaderProgram.chunkOffset` uniform,而当时绑定的是 OptiFine 的 program),OptiFine 只是**报告**它
+(`Shaders.useProgram` 开头就是 `checkGLError("pre-useProgram")`)。`litematica-printer`、Xaero's 系列与 OptiLithium
+都逐个查过、**均已排除**。规避:关掉光影包,或停止渲染投影。
+
 ### 与 indigo 的关系
 
 `fabric-renderer-indigo`(Fabric API 自带的地形渲染器)与 OptiFine 只能有一个在场,本模组用 Fabric 自己的机制让 indigo 让位:`fabric.mod.json` 里声明 `"custom": {"fabric-renderer-api-v1:contains_renderer": true}`。这个键本来就是给"另一个渲染器"用的(Sodium 用同一个键),而 OptiFine 本身就是地形渲染器。indigo 会打印 `[Indigo] Different rendering plugin detected; not applying Indigo.`,F3 调试界面显示 `[Fabric] Active renderer: none (vanilla)`。
