@@ -7,7 +7,7 @@
 | 项目 | 位置 | 说明 |
 |---|---|---|
 | 源码仓库 | 仓库根目录 | 已配好 `.gitignore`(不含 OptiFine、测试工件、构建产物) |
-| 构建配置 | `build.gradle` / `gradle.properties` | 版本号 `1.1.0+mc1.20.6`,产物名 `OptiFabric-1.1.0+mc1.20.6.jar` |
+| 构建配置 | `build.gradle` / `gradle.properties` | 版本号 `1.1.1+mc1.20.6`,产物名 `OptiFabric-1.1.1+mc1.20.6.jar` |
 | 许可 | `LICENSE.txt` | MPL-2.0(上游 OptiFabric 的许可,移植必须保留) |
 | 使用者文档 | `README.md` | 原理、安装、已知问题、排查 |
 | 开发记录 | `docs/DEVELOPMENT.md` | 逐轮排查与可复现的离线校验工具 |
@@ -24,8 +24,8 @@ cd I:\mods\OptiFabric
 
 产物在 `build\libs\`:
 
-- `OptiFabric-1.1.0+mc1.20.6.jar` ← **上传这个**
-- `OptiFabric-1.1.0+mc1.20.6-sources.jar`(可选,一般不用发)
+- `OptiFabric-1.1.1+mc1.20.6.jar` ← **上传这个**
+- `OptiFabric-1.1.1+mc1.20.6-sources.jar`(可选,一般不用发)
 
 > 首次构建若离线失败,去掉 `--offline` 让它联网补齐依赖即可。
 
@@ -34,7 +34,7 @@ cd I:\mods\OptiFabric
 ```powershell
 cd I:\mods\OptiFabric
 git add -A
-git commit -m "OptiFabric 1.1.0+mc1.20.6: OptiFine on Fabric for 1.20.6"
+git commit -m "OptiFabric 1.1.1+mc1.20.6: OptiFine on Fabric for 1.20.6"
 git branch -M main
 git remote add origin https://github.com/<你的用户名>/<仓库名>.git
 git push -u origin main
@@ -43,11 +43,11 @@ git push -u origin main
 发 Release(可选,但推荐,方便别人直接下载):
 
 ```powershell
-git tag v1.1.0+mc1.20.6
-git push origin v1.1.0+mc1.20.6
+git tag v1.1.1+mc1.20.6
+git push origin v1.1.1+mc1.20.6
 ```
 
-然后在 GitHub 网页上基于该 tag 建 Release,把 `OptiFabric-1.1.0+mc1.20.6.jar` 作为附件上传。
+然后在 GitHub 网页上基于该 tag 建 Release,把 `OptiFabric-1.1.1+mc1.20.6.jar` 作为附件上传。
 
 **仓库里不该出现的东西**(`.gitignore` 已经排除,提交前可再确认一次):
 
@@ -62,7 +62,7 @@ git push origin v1.1.0+mc1.20.6
    - 模组加载器:**Fabric**
    - 许可:**MPL-2.0**(与上游一致,必须一致)
    - 分类建议:Optimization / Miscellaneous
-2. **上传文件**:把 `OptiFabric-1.1.0+mc1.20.6.jar` 作为 release 上传,版本名填 `1.1.0+mc1.20.6`。
+2. **上传文件**:把 `OptiFabric-1.1.1+mc1.20.6.jar` 作为 release 上传,版本名填 `1.1.1+mc1.20.6`。
 3. **项目描述**:`docs/DESCRIPTION.md` 里给了成套文案 —— "简介"栏粘贴**简要描述**(中文或英文),项目正文粘贴**详细描述**(有中文和英文两版,CF 支持 Markdown)。
    GitHub 仓库的 About 也可以直接用那句简要描述;如果以后加了英文 README,再补一版英文详细描述即可。
 4. **项目图标**:CurseForge 的图标要在网页上单独上传(`src/main/resources/assets/optifabric/icon.png` 是给游戏内模组列表用的,两者可以同图)。图标建议 400×400 或以上。

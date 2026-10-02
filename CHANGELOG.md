@@ -1,5 +1,16 @@
 # 更新日志
 
+## 1.1.1+mc1.20.6 — 丢掉 Mixin 为被替换的类缓存的 ClassInfo(修 @ModifyVariable 的 LVTGeneratorError)
+
+### 修复
+
+- **症状**:某些 mixin 让**整个类**的变换失败,日志里只有 Fabric 那句 `Mixin transformation of <类名> failed`;真正的异常是 Mixin 抛的 `LVTGeneratorError: Could not locate method metadata for ...`,也就是**需要解析局部变量的注入(`@ModifyVariable` 与 locals 捕获)在 OptiFine 改过的类上必然失效**。它在 `require` / `expect` 之前抛出,受影响的模组自己无法绕开。
+- **根因**:Mixin 为每个类建一份元数据(`ClassInfo`)并缓存,内容取自**它的字节码提供者** —— 在 Fabric 上就是 Knot,也就是本模组替换游戏类的那一层。Fabric 在 `preLaunch` 入口点**之前**就准备好了 Mixin 的配置,所以对本模组替换掉的那些类,缓存里可能已经存着**游戏自己的**那一份,而稍后交给 Mixin 变换的是 **OptiFine 的**那一份。两者对某个成员的记录一旦不一致,查找就落空:Locals(局部变量机制)用 `ClassInfo#findMethod(name, descriptor, access | INCLUDE_INITIALISERS)` 找正在变换的方法,而 `ClassInfo.Member#matchesFlags` 要求**存成 private 的成员必须用 ACC_PRIVATE 查**;OptiFine 重编译方法时把它从 private 放宽成 public,对着缓存里那份**游戏**记录就查不到。
+- **修复**:`GameTransformerHook` 记住**它实际替换掉**的类(Loader 自己打过补丁的类不在此列),安装完这些类之后按**内部名**(斜杠形式)丢掉它们在 Mixin 缓存里的条目 —— 新文件 `MixinClassMetadata`,每个类最多丢一次,取不到缓存时只报告一次、不影响其它逻辑(过期元数据仍然能跑,只是那些解析类元数据的 mixin 照旧失败)。Mixin 于是按**它实际拿到**的字节重建元数据;字节仍是 Loader 自己那份的类没有被替换,条目照旧保留。
+- **验证**:同一个修复在 **1.21.x 线**上真机端到端实测过(主界面、进世界,以及**光影包在世界里编译**)。1.20.6 这一份**没有**在真机上重跑,也没有重跑离线校验 —— 它的字节码修复(fixer 表与补丁管线)一个字节没动,这个改动发生在**补丁安装之后**;1.0.0 记下的离线数字(**425 / 425**、ASM 数据流验证器 0 问题)仍然对应那一份产物。
+
+细节见 `README.md`;1.1.0 的提示与官方下载见下一节。
+
 ## 1.1.0+mc1.20.6 — 缺 OptiFine、或装的预览版过旧时的提示与官方下载
 
 ### 新功能
