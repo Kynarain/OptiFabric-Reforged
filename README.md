@@ -131,7 +131,7 @@ The development environment is not supported: `gradlew runClient` is refused out
 | 26.2 | `OptiFabric-Reforged-2.2.1+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ verified in game (**no shaders** — see below) |
 | 26.1.2 | `OptiFabric-Reforged-2.2.1+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
 
-`2.1.1` is a patch release, and it replaces `2.1.0+mc26.2`: that build forced OptiFine's cancelled shaderpack load back on, and with a shaderpack selected the world then drew **nothing but particles with the blocks see-through** (27 shader programs compiled, no error in any log). `2.1.1` leaves that bytecode shape exactly as OptiFine wrote it. The line is not narrowed by it: the same source still builds for 26.1.2 and goes through the whole offline pipeline there with the numbers 2.0.0 recorded (see *Verified State* below), so 26.1.2 was not dropped — its jar is simply unchanged, and `2.0.0+mc26.1.2` stays the build to use on that release.
+`2.1.1` is a patch release, and it replaces `2.1.0+mc26.2`: that build forced OptiFine's cancelled shaderpack load back on, and with a shaderpack selected the world then drew **nothing but particles with the blocks see-through** (27 shader programs compiled, no error in any log). `2.1.1` leaves that bytecode shape exactly as OptiFine wrote it. The line is not narrowed by it: the same source still builds for 26.1.2 and goes through the whole offline pipeline there with the numbers 2.0.0 recorded (see *Verified State* below), so 26.1.2 was not dropped — and since `2.2.1` that release is rebuilt too and ships as `2.2.1+mc26.1.2` (the `2.0.0+mc26.1.2` jar stays published, frozen on its own release page).
 
 OptiFine has a build for these two releases and for no other: 26.1, 26.1.1, 26.1.3, 26.2.1 and 26.3 have **no build at all** on OptiFine's download page — check for yourself at <https://optifine.net/downloads>, where a release with no build has an empty table under its heading.
 
@@ -144,7 +144,7 @@ This is the same list the mod itself carries (`OptifineSupport.BUILDS`), and the
 | OptiFabric version | Minecraft version | Recommended OptiFine build | Build kind |
 |---|---|---|---|
 | `2.2.1+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview (no final exists) |
-| `2.0.0+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) |
+| `2.2.1+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) |
 
 Any other build of the same Minecraft version still works; the prompt only appears when the jar in `mods/` is a **preview** older than the one listed here. A final build you already have is left alone, even when a newer final exists.
 
