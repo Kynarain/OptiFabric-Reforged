@@ -55,6 +55,21 @@ public class OptifineFixer {
 		registerFix("class_5619", new RestoreVanillaMethodsFix("method_32174", "method_32175"));
 
 		//net/minecraft/server/world/ThreadedAnvilChunkStorage (fabric-lifecycle-events-v1)
+		//This one runs first on purpose: OptiFine's recompile emitted the game's own lambda bodies under
+		//javac's names (method_17252 became lambda$protoChunkToFullChunk$36, method_17227 became
+		//lambda$protoChunkToFullChunk$35, and 57 more). Giving them the game's names back occupies them, so
+		//the RestoreVanillaMethodsFix below finds them present and leaves them alone - which keeps the
+		//class's own bootstrap method handles pointing at a method that exists, and keeps OptiFine's body on
+		//the path that actually runs. Registering the restore first would add a second method beside each
+		//lambda and leave every handle pointing at the lambda.
+		//
+		//c2me is why this matters: c2me-opts-scheduling @Overwrites method_17252, method_19487 and
+		//method_20579, so with the lambdas still under javac's names the world-load transform fails the whole
+		//class ("Mixin transformation of net.minecraft.class_3898 failed") on the integrated server thread.
+		//c2me-threading-worldgen also injects into method_17224, which this does not repair - see the note on
+		//LambdaMethodRefFix, that registration's argument list, descriptor and body disagree in OptiFine's own
+		//bytes, so no reordering can both make them consistent and present the game's signature.
+		registerFix("class_3898", new LambdaMethodRefFix());
 		registerFix("class_3898", new RestoreVanillaMethodsFix("method_17227", "method_18843"));
 
 		//net/minecraft/client/render/chunk/ChunkRendererRegionBuilder (fabric-block-view-api-v2)

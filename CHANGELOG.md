@@ -1,5 +1,33 @@
 # 更新日志
 
+## 未发布 — `class_3898` 的 lambda 名字还回去(c2me 进世界那一步)
+
+### 修了什么
+
+- **症状**:装上 c2me(`0.2.0+alpha.11.100+1.20.6`)之后能到主界面,**一进世界就崩**:`InvalidMixinException: @Overwrite method method_17252(Lnet/minecraft/class_3193;Ljava/lang/Runnable;)V … was not located in the target class net.minecraft.class_3898` → `Mixin transformation of net.minecraft.class_3898 failed` → 集成服务器崩溃报告。去掉 OptiFabric、同样那几个 jar 时,同一个世界 0 错误加载。
+- **根因**(逐字节确认):OptiFine 重编译 `net/minecraft/class_3898` 时,javac 给**游戏自己的 lambda 体**取了 javac 的名字,而游戏本体是用混淆名声明它们的。`method_17252(Lclass_3193;Ljava/lang/Runnable;)V` 就是 `lambda$protoChunkToFullChunk$36`,**描述符、访问标志、注册它的 bootstrap 方法句柄的 owner 与 tag 全都一样**,只是名字变了 —— 是**改名**,不是删除。c2me 按名字+描述符找它,自然找不到。这个类里这样的成员一共 **59 个**,`method_19487` 与 `method_20579`(c2me-opts-scheduling 另外两个 `@Overwrite`)也在其中。
+- **修法**:新增 `LambdaMethodRefFix`,把 lambda 改回游戏给它的名字,并把注册它的方法句柄一起改指过去。它排在 `RestoreVanillaMethodsFix("method_17227", "method_18843")` **之前**注册,于是后者发现名字已被占,不再往旁边塞一份 vanilla 拷贝 —— 这样类自己的 bootstrap 句柄仍然指向一个存在的成员,而且跑的是 OptiFine 那份代码(模组 `@Overwrite` 覆盖的才是真正执行的那份)。
+- **两种对齐方式**:先按「同一个宿主方法内,两边 LambdaMetafactory 的 invokedynamic 逐位对齐」;够不到的再按「两张 BootstrapMethods 表逐位对齐,且调用点形状必须一致」。两者都只从两个 class 文件自己的字节里取证据。
+
+### 没修的那一个,以及为什么
+
+`method_17224` **没有**被放回游戏的签名,c2me-threading-worldgen 的 `@ModifyReturnValue` 仍然找不到它,所以 `1.20.6 + c2me` 依然**进不了世界**(崩溃点从 `method_17252` 变成 `method_17224`)。原因是 OptiFine 这份字节自己就不自洽,三样东西互相对不上:
+
+| | |
+|---|---|
+| 注册点压栈的值 | `class_9259`, `class_3898`(接收者), `class_1923`, `class_2806`, `class_3193`, `Executor` |
+| lambda 自己的描述符 | `(class_1923, class_2806, class_3193, Executor, class_9259)` |
+| lambda 体的读法 | 槽 2 当状态(status)、槽 3 当 chunk holder |
+| 游戏声明 | `(class_1923, class_3193, class_2806, Executor, class_9259)` |
+
+按描述符「槽 2 = status、槽 3 = chunk holder」,注册点压进去的却是「槽 2 = chunk holder、槽 3 = status」。**体、描述符、实参表三者本来就互相矛盾**,因此不存在任何重排能同时做到「三者自洽」与「交出游戏签名」:改体的槽位会改变它实际操作的参数;只改描述符不改体,就是一个**存在但说谎**的成员 —— 对 c2me 来说,`@ModifyReturnValue` 会读到错的实参,比找不到更糟。所以这个 fixer 只改名、不重排,并在日志里说明。
+
+要把这一格也做掉,只能换一层动手:让 c2me 的 `@ModifyReturnValue` 去匹配 OptiFine 实际交出来的签名,或者对这一个注册点做一次知道真实实参顺序的专门重建(需要把体、描述符、实参表三者一起重写并按真实顺序验证,而不是只把描述符改个顺序)。这一条留给下一步,不在本次改动里。
+
+### 验证
+
+pristine 缓存 + 新 jar:主界面 → 世界开始加载,`c2me-opts-scheduling` 的三个 `@Overwrite`(`method_17252`/`method_19487`/`method_20579`)全部应用 —— **本次修的就是这一个崩溃**;随后停在 `c2me-threading-worldgen` 的 `method_17224` 上,与上表一致。不带 c2me 的 OptiFabric + OptiFine 照常进世界。`1.21.x` 线上早有同类 fixer(`LambdaMethodRefFix`),这里是它在 1.20.6 线上的对应物。
+
 ## 1.1.2+mc1.20.6 — 把 sodium 同时声明进 conflicts 与 breaks(声明,不是闸门)
 
 ### 改了什么
