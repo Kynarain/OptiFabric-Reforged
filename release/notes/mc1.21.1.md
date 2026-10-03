@@ -1,12 +1,68 @@
-# OptiFabric 2.2.2+mc1.21.1
+# OptiFabric 2.2.3+mc1.21.1
 
 **Minecraft 1.21.1** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `OptiFine_1.21.1_HD_U_J1.jar`
 
 状态:**已实测正常**
 
+## 2.2.3 的改动
+
+**七处修复**:OptiFine 重编译改掉了四个类里的调用点、lambda 名与合成字段名,以及 FRAPI 的渲染器注册方式。
+每一条都是对着补丁前后两份字节逐处比对定下来的,不是猜的。
+
+- **`class_156`**(`net.minecraft.Util`)→ `RestoreVanillaMethodsFix(true, "method_29191")`。OptiFine 重编译时把同一个
+  catch 块里的日志调用从 `Logger.error(String,Object)` 降成了 `Logger.debug(String,Object)` —— 整个方法只有一个操作码
+  不同(异常表与其余部分逐字节相同)。而这个调用点正是 The Twilight Forest 的 `UtilMixin` 要重定向的那一个:重定向扫不到东西,
+  注入以 `Scanned 0 target(s)` 失败,`Mixin transformation of net.minecraft.class_156 failed` —— 连标题界面都到不了,
+  而且死在 OptiFine 的 `Reflector` 引导阶段。把原版方法体放回去才能修;
+- **`class_638`**(`net.minecraft.client.world.ClientLevel`)→ `LambdaMethodRefFix()`。OptiFine 把游戏**自己注册**的那个
+  colour resolver 方法记成了 `lambda$new$3`:描述符与 `BootstrapMethods` 槽位都没变,只有名字从 `method_23778` 换了。
+  porting_lib 的 `ClientLevelMixin` 按名字找 `method_23778`,找不到目标,整个类变换失败。把 lambda 改回游戏的名字就行
+  —— 因为它本来就**是**游戏注册的那个方法;
+- **`class_761`**(`net.minecraft.client.render.LevelRenderer`)→ 两条。`LambdaMethodRefFix()`:游戏声明为
+  `method_37365` 的 Runnable 体被重编译成了 `lambda$updateCameraAndRender$1`(描述符、访问标志、注册位置,
+  以及混入用 `@ModifyArg` 包住的那个 `class_758.method_3211` 调用,全都没变,只有名字变了),C2ME 的视距修改因此失效。
+  这里**故意不用** `RestoreVanillaMethodsFix("method_37365")`:那会把原版方法体放在 OptiFine 的 lambda 旁边,
+  实际跑的仍是 OptiFine 那份,混入也就永远不会生效。另一个是 `LocalSlotLayoutFix(null, "method_22710")`,
+  与 `class_757.method_3192` 同一个局部变量槽位错位的原因;
+- **`class_3898$class_3216` 与 `class_3204$class_4077`** → `SyntheticFieldFix()`。OptiFine 把合成外层实例字段
+  `field_17443` / `field_18255` 改名成了 `this$0`,而 C2ME 的 `@Accessor` 与 `@Shadow` 是按游戏的名字找的:
+  找不到就会在**进世界**时让整个目标类变换失败(`…class_3898$class_3216 failed` / `…class_3204$class_4077 failed`),
+  不是少画一笔那么轻;
+- **FRAPI 的渲染器注册**:`RendererApiFallback` 原先用静态的 `Renderer.register(Renderer)` 注册占位渲染器,
+  而本线的 Fabric API 里已经没有这个方法(用 `javap` 对着 `fabric-api-0.116.17+1.21.1` 里嵌的
+  `fabric-renderer-api-v1-0.116.17.jar` 核过:`RendererAccess` 只剩 `registerRenderer` / `getRenderer` / `hasRenderer`)。
+  查找抛 `NoSuchMethodException`,占位渲染器**从未注册**,于是每个用 FRAPI 的模组拿到的 `getRenderer()` 都是 null,
+  The Twilight Forest 的 `ForceFieldModel` 在静态初始化时就死在上面。现在走
+  `RendererAccess.INSTANCE.registerRenderer(Renderer)`(旧写法保留为第一次尝试,失败路径仍不致命并照旧打日志)。
+
+### 实测结果
+
+- **C2ME**:能到标题界面,进世界连续跑 **113 秒,零条 `[ERROR]`**;
+- **The Twilight Forest**:不带 OptiFine 时,它现在能加载了(此前连标题界面都到不了)。**但它仍未被完整支持** ——
+  它在本版剩下的那个 OptiFine 侧阻塞点是 `LocalSlotLayoutFix` 的一个已知局限:这个修复器是**按作用域**而不是
+  **按槽位**重映射的,`class_761.method_22710` 的 19 个候选槽位超过它的 `MAX_MOVES`(8),于是它直接放弃该方法,
+  porting_lib_base 的 `LevelRendererMixin` 仍然失败。**本版没有修这一条**,别把它读成"The Twilight Forest 已受支持"。
+
+### 已知限制(本版没有修的部分)
+
+- `LocalSlotLayoutFix` 对上面那个方法放弃处理,原因与后果见上一条;
+- 约 **36 个**被补丁的类里仍带着**未注册**的 `vtN` / `this$N` 合成字段。它们现在拦不到本模组自己,但对**别的模组**
+  是敞开的:任何按名字找这些字段的 `@Accessor` / `@Shadow` 都会在进世界时让目标类变换失败 —— 上面那两条合成字段的问题
+  就是同一种,只是它们已经被注册进修复器了。
+
+### 更正:`conflicts` 与 `breaks` 的实际行为(2.2.2 那条说明写反了)
+
+2.2.2 的小节里曾断言"两个字段都只产生警告、不阻止游戏启动"。**实测不是这样**:
+**`conflicts` 条目只警告**(Fabric Loader 0.19.5 的 `ModSolver` 里,`CONFLICTS` 分支连约束都不加,只有一句
+`// TODO: soft negative dep?`),而 **`breaks` 条目是被执行的**:当它点到**已存在**的模组时,依赖求解器给出
+`NEG_HARD_DEP`,加载器**拒绝**这个组合,而不是放行。一次记录到的运行里就写着
+`NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`。所以把 sodium 写进 `breaks` 是**闸门**,不是声明;
+只写在 `conflicts` 里才是"只警告"。
+
 ## 2.2.2 的改动
 
-- **`sodium` is now declared in both `conflicts` and `breaks`** in `fabric.mod.json`: on Fabric Loader 0.19.5 measured here, **neither field prevents the game from starting** -- both are warnings, so this is a declaration, not a gate.
+- **`sodium` is now declared in both `conflicts` and `breaks`** in `fabric.mod.json`.
+  **更正**:本行原来说"两个字段都只产生警告、不阻止游戏启动" —— 那句话是错的,按加载器实际行为与源码复核后的结论见上面 2.2.3 一节。
 
 ## 2.2.1 的改动
 
@@ -101,6 +157,6 @@
 
 ## 校验
 
-`OptiFabric-2.2.2+mc1.21.1.jar` — 791848 字节
+`OptiFabric-2.2.3+mc1.21.1.jar` — 792303 字节
 
-`SHA-256: 2BE78C963461835366A59BCF18CF0C4B4D657A739CBDC48291AFF6CCE5E80310`
+`SHA-256: 280196D92E74B269A98E39D45301C573B763F2BE37ACC9D2ED1D3DB39363B62A`

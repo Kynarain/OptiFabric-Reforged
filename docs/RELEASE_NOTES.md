@@ -1,16 +1,30 @@
-# GitHub Release notes — tag `v2.2.2+mc1.21.11`(`OptiFabric-2.2.2+mc1.21.11.jar`)
+# GitHub Release notes — tag `v2.2.3+mc1.21.11`(`OptiFabric-2.2.3+mc1.21.11.jar`)
 
 > 复制下面 `---` 之间的内容到 GitHub Release 的说明框里(标题用第一行)。英文在前,末尾附中文摘要。
-> 标签是**版本号 + 该 MC 版本**(`v2.2.2+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
+> 标签是**版本号 + 该 MC 版本**(`v2.2.3+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
 > 其余版本号由 `release\version.ps1` 统一改写。
 
 ---
 
-## OptiFabric 2.2.2+mc1.21.11 — OptiFine on Fabric 1.21.11
+## OptiFabric 2.2.3+mc1.21.11 — OptiFine on Fabric 1.21.11
 
 Run **OptiFine** and **Fabric** in the same 1.21.11 client. Drop OptiFabric and your own OptiFine jar into `mods/`; at startup OptiFabric runs OptiFine's installer, remaps its patches into Fabric's namespace, repairs the structural conflicts with Fabric API, and hands the result to Fabric Loader's class transformer.
 
 **OptiFine is not bundled or redistributed** — bring your own `OptiFine_1.21.11_HD_U_J9.jar` (or another 1.21.11 build).
+
+### Fixed in 2.2.3 — four of OptiFine's rewrite collisions and the FRAPI renderer registration
+
+Seven `registerFix` entries and one registry lookup, each read off byte-level evidence rather than guessed:
+
+- **`class_156`** → `RestoreVanillaMethodsFix(true, "method_29191")`. OptiFine's recompile downgraded one logging call inside `method_29191` from `Logger.error(String,Object)` to `Logger.debug(String,Object)` — a single opcode, the exception table and everything else identical. That call site is exactly what The Twilight Forest's `UtilMixin` redirects, so the redirect scanned nothing and `Mixin transformation of net.minecraft.class_156 failed` killed the client before the title screen, during OptiFine's `Reflector` bootstrap. Putting the vanilla body back is the only repair: the call sits inside a `catch`, so no fixer can reach it by name.
+- **`class_638`** → `LambdaMethodRefFix()`. OptiFine renamed the method the game registers for its own colour resolvers to `lambda$new$3` — same descriptor, same `BootstrapMethods` slot — so porting_lib's `ClientLevelMixin` found no target and the whole class failed.
+- **`class_761`** → `LambdaMethodRefFix()` for the Runnable body the game declares as `method_37365`, emitted as `lambda$updateCameraAndRender$1` with the class's own bootstrap handle re-pointed at it; that is what C2ME's `@ModifyArg` on view distance asks for by name. Deliberately *not* `RestoreVanillaMethodsFix("method_37365")`, which would leave OptiFine's lambda in use and the clamp never applied. The same class also gets `LocalSlotLayoutFix(null, "method_22710")` for the same `@Local` slot-layout reason `class_757.method_3192` has one.
+- **`class_3898$class_3216`, `class_3204$class_4077`** → `SyntheticFieldFix()`. OptiFine renamed the synthetic outer-instance fields `field_17443` / `field_18255` to `this$0`, and an unresolvable `@Accessor` / `@Shadow` fails the whole target class the moment a world loads.
+- **FRAPI registration** now goes through `RendererAccess.INSTANCE.registerRenderer(Renderer)` — verified with `javap` against the real `fabric-renderer-api-v1-0.116.17.jar` — instead of the removed static `Renderer.register(Renderer)`. The old lookup threw `NoSuchMethodException`, so no placeholder renderer was ever registered and every FRAPI mod saw a null `getRenderer()`; The Twilight Forest's `ForceFieldModel` died in its static initialiser on it.
+
+**Verified:** C2ME now reaches the title screen and runs **113 s in a world with zero `[ERROR]` lines**. **The Twilight Forest now loads without OptiFine** (it previously could not reach the title screen at all). Its remaining OptiFine-side blocker is a known `LocalSlotLayoutFix` limitation — that fixer remaps per scope rather than per slot, and `class_761.method_22710` has 19 candidate slots against its `MAX_MOVES` of 8, so it declines the method — and that is **not fixed in this release**: The Twilight Forest is **not** fully supported. Still open as exposure for other mods: about **36** patched classes carry unregistered `vtN` / `this$N` synthetic fields.
+
+**Corrected:** an earlier note here and in the READMEs said `conflicts` and `breaks` both merely warn. Measured behaviour is the opposite way round: a **`conflicts`** entry only warns (Fabric Loader 0.19.5's `ModSolver` adds no constraint for it at all), while a **`breaks`** entry is **enforced** — a run recorded `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`, i.e. the loader refuses the combination when `breaks` names a present mod.
 
 ### Fixed in 2.2.1 — a mixin that resolves locals in a class OptiFine rewrites no longer dies at class load
 
@@ -95,7 +109,7 @@ This is versioned per artifact: 1.21.3 – 1.21.11 are 1.1.2, 1.21 and 1.21.1 ke
 ### Install
 
 1. Install a 1.21.11 Fabric client (Loader 0.19.5+).
-2. Put `OptiFabric-2.2.2+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
+2. Put `OptiFabric-2.2.3+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
 3. Start the game with the **Fabric** profile. The first launch spends a few seconds patching and remapping (cached afterwards under `<game dir>/.optifine/<version>/`).
 
 ### What it took for 1.21.11
@@ -128,7 +142,7 @@ OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recomp
 
 | File | SHA-256 |
 |---|---|
-| `OptiFabric-2.2.2+mc1.21.11.jar` (916913 bytes) | `3C95F82849293CB47163850BD4A9516DA6BAD315975B82F9F6684B64E875CDA2` |
+| `OptiFabric-2.2.3+mc1.21.11.jar` (917368 bytes) | `3914F1233302F0B26C062BC4FC14B819523636374595682C3C9D357A3F15A184` |
 
 Other Minecraft releases OptiFine ships a build for — 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9 and 1.21.10 — come out of this same repository root (one Gradle project, no `v1.21.x` subproject) with `.\gradlew build "-Pmc=<version>"`, and each of them passes the same offline verification (see [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)).
 

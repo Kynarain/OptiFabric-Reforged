@@ -1,12 +1,74 @@
 # 更新日志
 
+## 2.2.3+mc1.21 … 2.2.3+mc1.21.11 — 七处修复:OptiFine 重编译改掉的调用点、lambda 名与合成字段,以及 FRAPI 的渲染器注册
+
+> 这一版覆盖全部 10 个产物（1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11）,
+> 行为一致。**修订号递增的原因是向下兼容的问题修正**:七条 `registerFix` 与一处注册方式改写,没有新能力、也没有不兼容修改。
+
+### 修复:四个被 OptiFine 重编译改写的类,现在在补丁期修回去
+
+不是猜的:每一条都对着补丁前后两份字节逐个比对(`compat-recheck\RECHECK.md` 与 `c2me-check\REPORT.md`)。
+
+- **`class_156`**(`net.minecraft.Util`)→ `RestoreVanillaMethodsFix(true, "method_29191")`。OptiFine 重编译时把同一个
+  catch 块里的日志调用从 `Logger.error(String,Object)` 降成了 `Logger.debug(String,Object)`(只有一个操作码不同,
+  异常表与其余部分逐字节相同),而这个调用点正是 The Twilight Forest 的 `UtilMixin` 要重定向的那一个:重定向扫不到东西,
+  注入失败把整个类带下去,`Mixin transformation of net.minecraft.class_156 failed`,标题界面都到不了。把原版方法体放回去
+  才能修 —— 不能靠"在方法前面补一个调用",那个参数是被捕获的异常,而且补在最前面就会变成每次查表都打日志;
+- **`class_638`**(`net.minecraft.client.world.ClientLevel`)→ `LambdaMethodRefFix()`。OptiFine 把游戏**自己注册**的那个
+  colour resolver 方法记成了 `lambda$new$3`,描述符与 `BootstrapMethods` 槽位都没变,只是名字从 `method_23778` 换了。
+  porting_lib 的 `ClientLevelMixin` 按名字找 `method_23778`,找不到目标,整个类变换失败。把 lambda 改回游戏的名字即可
+  —— 因为它本来就**是**游戏注册的那个方法;
+- **`class_761`**(`net.minecraft.client.render.LevelRenderer`)→ 两条。`LambdaMethodRefFix()`:游戏声明为
+  `method_37365` 的 Runnable 体被重编译成了 `lambda$updateCameraAndRender$1`(描述符、访问标志、注册位置、
+  混入用 `@ModifyArg` 包住的那个 `class_758.method_3211` 调用全都没变,只有名字变了),C2ME 的视距修改因此失效；
+  这里**故意不用** `RestoreVanillaMethodsFix("method_37365")` —— 那会把原版方法体放在 OptiFine 的 lambda 旁边,
+  实际跑的仍是 OptiFine 那份,混入也就永远不生效。另一个是 `LocalSlotLayoutFix(null, "method_22710")`,
+  与 `class_757.method_3192` 同一个局部变量槽位错位的原因;
+- **`class_3898$class_3216` 与 `class_3204$class_4077`** → `SyntheticFieldFix()`。OptiFine 把合成外层实例字段
+  `field_17443` / `field_18255` 改名成 `this$0`**,而 C2ME 的 `@Accessor` 与 `@Shadow` 是按游戏的名字找的:
+  找不到就会在**进世界**时让整个目标类变换失败(`…class_3898$class_3216 failed` / `…class_3204$class_4077 failed`)。
+
+### 修复:FRAPI 的渲染器注册
+
+`RendererApiFallback` 原先用静态的 `Renderer.register(Renderer)` 注册占位渲染器 —— 本线的 Fabric API 里已经没有这个方法了
+(用 `javap` 对着 `fabric-api-0.116.17+1.21.1` 里嵌的 `fabric-renderer-api-v1-0.116.17.jar` 核过:`RendererAccess` 只剩
+`registerRenderer` / `getRenderer` / `hasRenderer`)。查找抛 `NoSuchMethodException`,占位渲染器**从未注册**,于是每个用 FRAPI
+的模组拿到的 `getRenderer()` 都是 null,The Twilight Forest 的 `ForceFieldModel` 在静态初始化时就死在上面。现在走
+`RendererAccess.INSTANCE.registerRenderer(Renderer)`(旧写法保留为第一次尝试,失败路径仍不致命并照旧打日志)。
+
+### 实测结果
+
+- **C2ME**:能到标题界面,进世界连续跑 **113 秒,零条 `[ERROR]`**;
+- **The Twilight Forest**:**不带 OptiFine 时已经能加载**(此前连标题界面都到不了);但它在本版**仍未被完整支持** ——
+  关掉 OptiFine 才会遇到的那个 OptiFine 侧阻塞点还在:`LocalSlotLayoutFix` 是**按作用域**而不是**按槽位**重映射,
+  `class_761.method_22710` 的 19 个候选槽位超过它的 `MAX_MOVES`(8),这个修复器**直接放弃该方法**,
+  porting_lib_base 的 `LevelRendererMixin` 因此仍然失败。**本版没有修这一条**,别把它读成"The Twilight Forest 已受支持"。
+
+### 已知限制(本版没有修的部分)
+
+- `LocalSlotLayoutFix` 对上面那个方法放弃处理,原因与后果见上一条;
+- 约 **36 个**被补丁的类里仍带着**未注册**的 `vtN` / `this$N` 合成字段(见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md))。
+  它们现在不会拦到本模组自己,但对**别的模组**是敞开的:任何按名字找这些字段的 `@Accessor` / `@Shadow`
+  都会在进世界时让目标类变换失败,和上面那两条合成字段的问题同一种。
+
+### 更正:`conflicts` 与 `breaks` 在加载器上的实际行为(2.2.2 的说明写反了)
+
+2.2.2 的小节里曾写过"两个字段都只产生警告、不阻止游戏启动"。**实测不是这样**:
+**`conflicts` 条目只警告**(Fabric Loader 0.19.5 的 `ModSolver` 里对 `CONFLICTS` 连约束都不加,只有一条
+`// TODO: soft negative dep?`),而 **`breaks` 条目是被执行的** —— 加载器拒绝这个组合,而不是放行。
+一次记录到的运行里写着 `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`:当 `breaks` 点到**已存在**的模组时,
+加载器的依赖求解器给出 `NEG_HARD_DEP` 并拒绝加载。所以把 sodium 同时写进 `breaks`,是**闸门**,不是声明;
+只写在 `conflicts` 里才是"只警告"。
+
 ## 2.2.2+mc1.21 … 2.2.2+mc1.21.11 — 声明 sodium 不兼容（conflicts 与 breaks 同时列出）
 
 > 这一版覆盖全部 10 个产物（1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11）,
 > 行为一致。**修订号递增的原因是元数据修正(声明不兼容而不是门槛)**：
-> sodium 现在 `conflicts` 和 `breaks` 两处都列出（Fabric Loader 0.19.5 上两个字段都只产生警告、不阻止游戏启动）。
+> sodium 现在 `conflicts` 和 `breaks` 两处都列出。
 
-- **`sodium` is now declared in both `conflicts` and `breaks`** in `fabric.mod.json`: on Fabric Loader 0.19.5 measured here, **neither field prevents the game from starting** -- both are warnings, so this is a declaration, not a gate.
+- **`sodium` is now declared in both `conflicts` and `breaks`** in `fabric.mod.json`.
+  **更正**:本行原先断言"两个字段都只产生警告、不阻止游戏启动" —— 那句话是错的,
+  按加载器与源码复核后的结论见上面 2.2.3 一节。
 
 ## 2.2.1+mc1.21 … 2.2.1+mc1.21.11 — 换过类之后丢掉 Mixin 的旧类元数据,局部变量捕获不再让整个类变换失败
 

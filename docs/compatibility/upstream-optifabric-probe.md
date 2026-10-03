@@ -43,17 +43,31 @@ are the three range-limited entries this fork dropped (they only apply to 1.16/1
 
 ## 3. What the loader actually does with `conflicts` / `breaks`
 
-**The loader warns; it does not refuse.** Evidence from the sweep's own run:
+**The two fields do different things: `conflicts` warns, `breaks` is enforced. This section was wrong before
+and is corrected here.**
 
-`compat-matrix\logs\sodium\latest.log` — line 2 `Warnings were found!`, line 5 `Loading 56 mods:`,
-with **zero** occurrences of `Incompatible mods found`, `Incompatible mod set` or `HARD_DEP`.
-Corroborated by the comment in `compat-matrix\tools\analyze-failures.mjs` (lines 24-34).
+What the earlier sweep run actually proves: `compat-matrix\logs\sodium\latest.log` — line 2 `Warnings were
+found!`, line 5 `Loading 56 mods:`, with **zero** occurrences of `Incompatible mods found`, `Incompatible mod
+set` or `HARD_DEP`. That run predates the `breaks` entry, so it measures **`conflicts` only**:
 
-Consequence for wording: `conflicts: {sodium: "*"}` is a **declared/known incompatibility**, not a refusal —
-the game starts, and sodium then fails during Mixin application. This corrects the following claim:
+- **`conflicts` → warning, no refusal.** In Fabric Loader 0.19.5's `ModSolver`, the `CONFLICTS` case in both
+  `generatePreselectConstraints` and `generateMainConstraints` still carries only a
+  `// TODO: soft negative dep?` comment and adds **no constraint at all**. The combination is therefore never
+  refused; `conflicts` is a **declared/known incompatibility**, the game starts, and sodium then fails during
+  Mixin application.
+- **`breaks` → enforced, hard refusal.** The `BREAKS` case in the same methods is a strong negative dep
+  (`dependencyHelper.implication(mod).impliesNot(match)`, explanation kind `NEG_HARD_DEP`), and
+  `hasAllDepsSatisfied` rejects a mod whose `breaks` matches a present one. A recorded run logged
+  `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}` — when `breaks` names a mod that is present, the
+  loader **refuses** the combination.
+
+This corrects the following claim, and it was the wrong correction in the opposite direction:
 
 > `compat-matrix\declared-incompat.json` → its `note` field says "conflicts is a hard refusal by the loader;
-> breaks is a warning". **That is wrong** as measured above, and it was not propagated into the repository docs.
+> breaks is a warning". **That is backwards.** The fields are the other way round, as measured above and read
+> off Loader 0.19.5's `ModSolver`. (That claim was, however, correctly *not* propagated into the repository
+> docs when it was first identified; what those docs then asserted instead — that both fields merely warn — is
+> what this section now fixes.)
 
 That file's `upstream` block is also stale: it was probed against `ref: master`, which (see §2) declares
 neither `conflicts` nor `breaks`, so it records empty lists and contradicts §2. The `llama` branch is the one

@@ -126,16 +126,16 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 
 | Minecraft | 产物 | OptiFine 构建 | 状态 |
 |---|---|---|---|
-| 1.21 | `OptiFabric-2.2.2+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
-| 1.21.1 | `OptiFabric-2.2.2+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
-| 1.21.3 | `OptiFabric-2.2.2+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
-| 1.21.4 | `OptiFabric-2.2.2+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
-| 1.21.6 | `OptiFabric-2.2.2+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
-| 1.21.7 | `OptiFabric-2.2.2+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
-| 1.21.8 | `OptiFabric-2.2.2+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
-| 1.21.9 | `OptiFabric-2.2.2+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
-| 1.21.10 | `OptiFabric-2.2.2+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
-| 1.21.11 | `OptiFabric-2.2.2+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
+| 1.21 | `OptiFabric-2.2.3+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
+| 1.21.1 | `OptiFabric-2.2.3+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
+| 1.21.3 | `OptiFabric-2.2.3+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
+| 1.21.4 | `OptiFabric-2.2.3+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
+| 1.21.6 | `OptiFabric-2.2.3+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
+| 1.21.7 | `OptiFabric-2.2.3+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
+| 1.21.8 | `OptiFabric-2.2.3+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
+| 1.21.9 | `OptiFabric-2.2.3+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
+| 1.21.10 | `OptiFabric-2.2.3+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
+| 1.21.11 | `OptiFabric-2.2.3+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
 
 表里这一列是该 MC 版本**最新的正式版** OptiFine;若该版本官方还没有正式版,则用**最新的预览版**代替
 (所以 1.21.4 写的是 J3,而不是更新的预览 J4_pre2)。同一 MC 版本的其它构建同样可用 —— 游戏内提示只在你 mods/ 里的
@@ -149,16 +149,16 @@ OptiFine 没出过 **1.21.2 / 1.21.5** 的构建,所以这两版没有对应 jar
 
 | OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 |
 |---|---|---|
-| `2.2.2+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
-| `2.2.2+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
-| `2.2.2+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
-| `2.2.2+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
-| `2.2.2+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
-| `2.2.2+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
-| `2.2.2+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
-| `2.2.2+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
-| `2.2.2+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
-| `2.2.2+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
+| `2.2.3+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
+| `2.2.3+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
+| `2.2.3+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
+| `2.2.3+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
+| `2.2.3+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
+| `2.2.3+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
+| `2.2.3+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
+| `2.2.3+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
+| `2.2.3+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
+| `2.2.3+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
 
 当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是弹出一个界面告诉你缺哪个文件:上面有 `下载 OptiFine` 按钮,从 OptiFine **官网**(`optifine.net`,也是本模组唯一会去下载的地方)取回它,旁边就是打开 mods 文件夹;按钮上方的地址栏可以换成你自己的地址,那样就只从你填的地方取。
 
@@ -185,7 +185,7 @@ java.lang.NullPointerException: Cannot read field "norm" because "multiTex" is n
 
 ### 声明的不兼容,以及加载器实际会怎么做
 
-本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。`2.2.1` 产物声明的是:
+本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。`2.2.3` 产物声明的是:
 
 | 声明 | 条目 |
 |---|---|
@@ -202,7 +202,13 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 
 `ryoamiclights` 是本移植自己加的,原因见上面那张表。把 `sodium` 也列进 `breaks` 同样是本移植自己加的:上游只在 `conflicts` 里声明它,而有些启动器与平台只读 `breaks`。
 
-**加载器在两个字段上都不会拦住这个组合。** Sodium 现在同时写在 `conflicts` 与 `breaks` 里,而在下面实测的加载器版本上,**两个字段都不会阻止游戏启动** —— 它们只是警告,这条不兼容是声明,不是闸门。在 **Fabric Loader 0.19.5** 上实测,`mods/` 里同时有 `sodium` `0.8.13+mc1.21.1` 时,日志开头是 `Warnings were found!`、点名这条冲突,然后照常进入 `Loading 56 mods:` —— **没有** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。所以这些属于**已声明的、已知的不兼容**:加载器用它自己的措辞警告你,然后照常把游戏载起来。请把这张表读成"作者已知这个组合会坏",而不是"装了会被拦住"。
+**两个字段不是一回事:`conflicts` 只警告,`breaks` 会被执行。** Sodium 两处都写了。在 **Fabric Loader 0.19.5** 上实测:
+`conflicts` 条目根本不会给加载器的依赖求解器添加任何约束 —— `ModSolver` 里 `CONFLICTS` 分支至今还是一句
+`// TODO: soft negative dep?` —— 所以日志开头是 `Warnings were found!`,然后照常进入 `Loading 56 mods:`。
+而 `breaks` 点到**已存在**的模组时是另一回事:求解器给出 `NEG_HARD_DEP`,加载器**拒绝这个组合**,不是放行。
+本仓库记录到的一次运行里写着 `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`。所以把 sodium 写进 `breaks`
+是**闸门**,不是声明 —— 装了 sodium 就起不来;只写 `conflicts` 的条目才只是警告。请把这张表读成
+"作者已知这个组合会坏",其中 `breaks` 那一半加载器会真的拦,`conflicts` 那一半不会。
 
 **Sodium 这一对只有一侧还在声明。** Sodium 只在 `breaks` 里声明这一对 —— 我们手上的 sodium 构建都没有 `conflicts`(`sodium-fabric` `0.5.11+mc1.21`、`0.6.13+mc1.21.1`、`0.8.13+mc1.21.1` 都是 `"breaks": {"optifabric": "*"}`)—— 而它点名的是**旧 mod id `optifabric`**;本线从 2.0.0 起以 `optifabric_reforged`(显示名 *OptiFabric Reforged*)发布,那条规则根本不会命中,所以你在 sodium 上看到的那条警告来自**本模组这一侧**。把 sodium 写进我们自己的 `breaks`,正是把改名弄丢的那条声明补回来:在本线上,它是加载器唯一会理会的 sodium 声明。
 

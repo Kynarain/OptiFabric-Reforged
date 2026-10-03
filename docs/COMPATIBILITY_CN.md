@@ -126,8 +126,10 @@ unexplained,而它的逐行数据只给出 **3** 条(第 4 条是 `carpet-fixes`
 `sodium-shadowy-path-blocks` 等在矩阵里都标着"渲染器重构"。典型证据是
 `Mixin transformation of net.minecraft.class_<n> failed`,而那个类正是 OptiFine 改写过的。
 
-- **`sodium` 是事先声明的不兼容**,不是这次新发现的:本模组 `fabric.mod.json` 在 `conflicts` 与 `breaks` 两处都写了它;
-  在那一节实测的加载器版本上,两个字段都不会阻止游戏启动 —— 它们只是警告,所以这是声明,不是闸门。
+- **`sodium` 是事先声明的不兼容**,不是这次新发现的:本模组 `fabric.mod.json` 在 `conflicts` 与 `breaks` 两处都写了它,
+  而这两个字段在实测的那版加载器上做的事完全不同:`conflicts` 条目**只警告**(`ModSolver` 的 `CONFLICTS` 分支连约束都不加),
+  点到**已存在**模组的 `breaks` 条目**会被执行** —— 求解器给出 `NEG_HARD_DEP`,加载器**拒绝**这个组合
+  (记录到的一次运行里写着 `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`)。所以 `breaks` 那一条是闸门,不只是声明。
   Sodium 自己的元数据只在 `breaks` 里声明这一对(没有 `conflicts`),点名的又是旧 id `optifabric`,所以那条声明在本线上根本不会命中:加载器唯一会理会的只有我们这一条。它的对照是能启动的,见
   [`README_CN.md`](../README_CN.md#声明的不兼容以及加载器实际会怎么做)。
 - **The Twilight Forest**(`twilightforest-fabric-1.21.1-4.8.734.jar`,CurseForge file id 9003337)是 FAIL
@@ -161,6 +163,7 @@ unexplained,而它的逐行数据只给出 **3** 条(第 4 条是 `carpet-fixes`
 [`README.md`](compatibility/README.md)(方法、坑、逐阶段覆盖、装置自身被查出并修掉的缺陷)、
 [`LIST.md`](compatibility/LIST.md)(同样这些行的中文清单,来自更早一次的报表构建)以及
 [`upstream-optifabric-probe.md`](compatibility/upstream-optifabric-probe.md)(本文件与各 README 里那些上游说法的
-证据记录:上游各分支的 `fabric.mod.json`,以及那次证明加载器在 `conflicts` 下**只警告、不拒绝**的运行)。
+证据记录:上游各分支的 `fabric.mod.json`,以及那次证明加载器对 `conflicts` **只警告、不拒绝**的运行 ——
+  两处更正:被执行的字段是 **`breaks`**,不是 `conflicts`,见该文件 §3)。
 [`INDEX.md`](compatibility/INDEX.md) 逐个给出每个文件的行数、源字节数、**LF 归一化后的 SHA-256**、快照日期,以及
 哪些扫描文件**有意没有**拷进仓库(原始日志、缓存、jar,以及说明如何继续那次运行的工作区状态文件)。

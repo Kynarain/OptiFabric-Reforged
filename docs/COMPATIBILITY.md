@@ -136,8 +136,11 @@ others are all tagged "renderer overhaul" in the matrix. The typical evidence is
 `Mixin transformation of net.minecraft.class_<n> failed`, where that class is one OptiFine rewrote.
 
 - **`sodium` is a declared incompatibility**, not a discovered one: this mod's `fabric.mod.json` lists it in both
-  `conflicts` and `breaks`, and on the loader version measured for that section neither field prevents the game
-  from starting — both are warnings, so the entry is a declaration rather than a gate. Sodium's own metadata
+  `conflicts` and `breaks`, and those two fields do different things on the loader measured for that section. A
+  `conflicts` entry only warns — `ModSolver`'s `CONFLICTS` case adds no constraint at all. A `breaks` entry
+  against a mod that is present **is enforced**: the solver reports `NEG_HARD_DEP` and the loader refuses the
+  combination (a recorded run logged `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`). So the `breaks`
+  entry is a gate, not just a declaration. Sodium's own metadata
   declares the pairing under `breaks` only (no `conflicts`) and names the old id `optifabric`, so that entry
   cannot fire on this line: our entry is the only one a loader acts on. Its control run passes; see
   [`README.md`](../README.md#declared-incompatibilities-and-what-the-loader-actually-does).
@@ -176,8 +179,8 @@ others are all tagged "renderer overhaul" in the matrix. The typical evidence is
 [`README.md`](compatibility/README.md) (method, traps, per-phase coverage, the defects found in the rig itself),
 [`LIST.md`](compatibility/LIST.md) (the same rows as a Chinese checklist, from an earlier build of the report) and
 [`upstream-optifabric-probe.md`](compatibility/upstream-optifabric-probe.md) (the probe record behind this file's and
-the READMEs' upstream claims: each upstream branch's `fabric.mod.json`, and the run that shows the loader **warns**
-rather than refuses when a mod is listed under `conflicts`). [`INDEX.md`](compatibility/INDEX.md) gives each file's
+the READMEs' upstream claims: each upstream branch's `fabric.mod.json`, and the measurement that a `conflicts`
+entry only **warns** while a `breaks` entry is **enforced**). [`INDEX.md`](compatibility/INDEX.md) gives each file's
 line count, source byte size and LF-canonical SHA-256, its snapshot date, and which sweep files were deliberately
 **not** copied into the repository (raw logs, caches, jars, and the workspace-state file that explains how to resume
 the run).
