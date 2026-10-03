@@ -53,6 +53,14 @@
 | **RyoamicLights** | OptiFine 把原版视频设置界面(`class_446`)**整类替换成自己的实现,连父类都换掉**,而它的 mixin 注入在原版父类上,于是变换失败(`Delegate constructor lookup failed`)。删掉不会损失功能 —— OptiFine 自带动态光源(视频设置 → 品质 → 动态光源)。更一般地,凡是往 OptiFine 整类替换的界面类里注入的模组都可能同样失败 |
 | 依赖 FRAPI/indigo 的模组 | indigo 已按 Fabric 的机制让位(`fabric-renderer-api-v1:contains_renderer`),这些模组不再获得 indigo 的自定义渲染,地形由 OptiFine 渲染 |
 
+**这些声明在哪、加载器会不会拦**
+
+- 它们**只写在 `fabric.mod.json` 里**,游戏里没有任何界面会显示;`Warnings were found!` 是唯一能看到它们的时机。
+- **加载器不会拦住这个组合。** 实测(Fabric Loader 0.19.5):日志开头是 `Warnings were found!`、点名这条冲突,然后照常进入 `Loading <N> mods:` —— **没有** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。所以这是"已声明的已知不兼容",不是护栏。那次实测是在 1.21.x 线上做的,而 `conflicts` / `breaks` 由加载器自身处理,与是哪条线无关。
+- **来源**:`sodium` 冲突与 `no_fog`、`thallium`、`xradiation` 三条继承自上游 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)(默认分支 `llama`,v1.14.3);上游另有 `cardinal-components-item <2.4.2`、`architectury >1.2.72 <1.3.77`、`meteor-client >=0.4.1` 三条带版本范围的条目,都是 1.16/1.17 时代的,本移植**没有带过来**。`ryoamiclights` 是本移植自己加的。
+- **id 上的差别**:本线 mod id 仍是 **`optifabric`**,而 Sodium 自己那份元数据里针对的正是 `optifabric` —— 所以在 id 这一层,Sodium 那条声明**不会失配**,这条冲突不是只有我们单方面在声明(1.21.x / 26.x 两线从 2.0.0 起改名成 `optifabric_reforged`,那两条线上会失配)。Sodium 1.20.6 构建里那条声明覆盖的确切版本范围,本仓库**没有实测记录**。
+- **Architectury**:上游声明它坏,architectury 自己的元数据也写着 `breaks: optifabric <1.13.0`。1.21.x 线在字节码层面修掉了背后的局部槽位冲突(`LocalSlotLayoutFix`),并靠改名绕开了那条声明。**本线没有那个 fixer,也没有做过实测**,按**未测**处理。
+
 > 与本仓库另外两条线不同,**1.20.6 还没有** `-Dmixin.debug=true` 那套"点名失败的模组"的排查配方文档;
 > 需要时按同样的方法做:Mixin 只在 debug 模式下打印 `Mixin apply for mod <模组> failed …`。
 

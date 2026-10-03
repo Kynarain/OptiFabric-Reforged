@@ -96,11 +96,36 @@ mods/<OptiFine>.jar
 
 ## 已知限制
 
-- **与 Sodium 不兼容**:两者都是渲染器,`fabric.mod.json` 已声明 `conflicts`。`no_fog`、`thallium`、`xradiation`、`ryoamiclights` 同样声明为不兼容。
+- **与 Sodium 不兼容**:两者都是渲染器,`fabric.mod.json` 已声明 `conflicts`。`no_fog`、`thallium`、`xradiation`、`ryoamiclights` 同样声明为不兼容。完整清单、这些条目的来源,以及加载器到底会不会拦,见下面「[声明的不兼容](#声明的不兼容以及加载器会不会拦)」。
 - **RyoamicLights 的具体冲突**:OptiFine 把原版视频设置界面(`class_446`)**整类替换成自己的实现,连父类都换掉**,而 RyoamicLights 的 mixin 注入在原版父类上,于是变换失败(`Delegate constructor lookup failed`)。这是 OptiFine 自身的行为,不是补丁造成的。删掉它不会损失功能 —— OptiFine 自带动态光源(视频设置 → 品质 → 动态光源)。更一般地,凡是往 OptiFine 整类替换的界面类里注入的模组都可能同样失败。
 - **OptiFine 看不到 Fabric 模组内部的资源**:日志里会出现成片的 `[OptiFine] Unknown resource pack type: ...ModNioResourcePack`,属于 OptiFine 侧的限制,不影响启动与运行。
 - **光影包与 OptiFine 版本不匹配时会报 `[Shaders] Invalid program name: ...`**(例如 Photon 的 `dh_water`、`gbuffers_particles*`),属于光影包自身问题。
 - OptiFine 各项功能的具体效果(连接纹理、缩放、动态光源、FPS 优化幅度)尚未逐项验证;启动、进世界、模型与区块渲染、光影子系统已确认工作。
+
+### 声明的不兼容,以及加载器会不会拦
+
+本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。`1.1.1` 产物声明的是:
+
+| 声明 | 条目 |
+|---|---|
+| `conflicts` | `sodium`(`*`) |
+| `breaks` | `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(`*`) |
+
+Sodium 这一条与其中三条 `breaks` **继承自上游**:[Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)(其默认分支 `llama` 上的 `fabric.mod.json`,v1.14.3)声明的同样是 `sodium` 冲突,以及 `no_fog`、`thallium`、`xradiation` 三条 `breaks`;它另外还有三条带版本范围的条目,**本移植有意没有带过来**:
+
+| 上游条目 | 没有带过来的原因 |
+|---|---|
+| `cardinal-components-item <2.4.2` | 1.16/1.17 时代的版本范围,只有那些构建落在范围里 |
+| `architectury >1.2.72 <1.3.77` | 1.16/1.17 时代的范围;它背后那个真实冲突是 1.21.x 线修的(见下),这条线没有对应实现 |
+| `meteor-client >=0.4.1` | 1.16/1.17 时代的条目 |
+
+`ryoamiclights` 是本移植自己加的,原因见上面那条已知限制。
+
+**加载器并不会拦住这个组合。** 在 **Fabric Loader 0.19.5** 上、`mods/` 里同时有 `sodium` 时实测:日志开头是 `Warnings were found!`、点名这条冲突,然后照常进入 `Loading <N> mods:` —— **没有** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。所以这些属于**已声明的、已知的不兼容**:加载器用它自己的措辞警告你,然后照常把游戏载起来。(那次实测是在 1.21.x 线上做的;`conflicts` 与 `breaks` 由加载器自身处理,与是哪条线无关。)请把这张表读成"作者已知这个组合会坏",而不是"装了会被拦住"。
+
+**与另外两条线不同的一点**:本线的 mod id 仍是 **`optifabric`**(1.21.x / 26.x 两线从 2.0.0 起改成了 `optifabric_reforged`),而 Sodium 自己那份元数据里针对的正是 `optifabric` —— 所以在 id 这一层上,Sodium 那条声明**不会像在那两条线上那样失配**,这条冲突不是只有我们单方面在声明。Sodium 1.20.6 构建里那条声明覆盖的确切版本范围,本仓库没有实测记录。
+
+**Architectury**:上游声明它坏,architectury 自己的元数据也写着 `breaks: optifabric <1.13.0`。1.21.x 线在字节码层面修掉了它背后那个冲突(OptiFine 往 `GameRenderer.render` 中间插自己的局部变量,把 Mixin `LocalCapture` 交给处理器的槽位整体顶高,那边用 `LocalSlotLayoutFix` 把多出来的槽位挪到局部变量区末尾),并改名绕开了那条声明。**本线既没有那个 fixer,也没有做过对应的实测**,所以在这条线上 architectury 属于**未测**。
 
 完整清单与复现结论见 [`docs/FAQ.md`](docs/FAQ.md);下面这条是最近一次查清的:
 
