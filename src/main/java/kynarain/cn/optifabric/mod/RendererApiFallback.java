@@ -9,13 +9,14 @@
  * it decides who renders: Indigo refuses to apply its mixins and never registers itself. Fabric API's renderer
  * modules, however, do not check the flag - they check the *registry*:
  *
- *   private static Renderer activeRenderer;   // net.fabricmc.fabric.impl.renderer.RendererManager
- *   if (activeRenderer == null) throw new UnsupportedOperationException(
- *       "Attempted to retrieve active rendering plug-in before one was registered.");
+ *   private Renderer activeRenderer;          // net.fabricmc.fabric.impl.renderer.RendererAccessImpl
+ *   public Renderer getRenderer() { return this.activeRenderer; }
  *
  * Two live paths reach that: the "Renderer:" line of the F3 debug screen (an entry fabric-renderer-api-v1 registers
  * for itself), and - before StubInjectionTargetFix hid it - the moving block hook that was the multiplayer crash.
- * The first one is still there, so pressing F3 would take the game down.
+ * The first one is still there, so pressing F3 would take the game down. A third path is a mod of its own: anything
+ * that asks RendererAccess.getRenderer() and uses the answer, which is what Twilight Forest's ForceFieldModel does
+ * in its static initialiser - a null there is a NullPointerException during model loading, not a missing drawing.
  *
  * OptiFabric cannot become a real renderer (OptiFine draws; this is not an Indigo replacement), so what gets
  * registered is a placeholder that throws a sentence worth reading if anything ever does ask it to draw, and whose
@@ -39,8 +40,16 @@
  *     resolved *through* the patched set - loading one of them around it leaves the game with the vanilla class for
  *     the rest of the run (that is exactly how the getBlockStateBaseCacheClass crash happened, see
  *     RendererApiStubGenerator);
- *   - nothing here calls a reflective method lookup that resolves the interface's other signatures. Only "register"
- *     is looked up, and its only argument type is the interface itself.
+ *   - the registration itself is done through the API's *registry object*, never through a method on the interface:
+ *     {@code RendererAccess.INSTANCE.registerRenderer(renderer)} on 1.21.x. Looking the static
+ *     {@code Renderer.register(Renderer)} up instead - which is what this did - resolves nothing on a current
+ *     Fabric API: the re-verification in compat-recheck found the method gone from 0.116.17 (checked with
+ *     {@code javap -p -c} on the fabric-renderer-api-v1-0.116.17.jar nested in fabric-api-0.116.17+1.21.1.jar,
+ *     where RendererAccess declares only registerRenderer/getRenderer/hasRenderer). The lookup threw
+ *     NoSuchMethodException, the placeholder was therefore never registered, and every FRAPI mod ran against a null
+ *     renderer - with OptiFine on the classpath as well as without it. Only "register" is still looked up, and its
+ *     only argument type is the interface itself; nothing here resolves the interface's other signatures, so no
+ *     game type is loaded (see RendererApiStubGenerator).
  *
  * If something else registered a renderer first, that one is left alone and this only logs a line.
  */
@@ -63,6 +72,14 @@ public final class RendererApiFallback {
 
 	/** Where Indigo's entrypoint lives: enough to tell whether it is on the classpath at all. */
 	private static final String INDIGO_CLASS = "net/fabricmc/fabric/impl/client/indigo/Indigo.class";
+
+	/**
+	 * The API's registry object on 1.21.x. Its {@code INSTANCE} field is the singleton whose
+	 * {@code registerRenderer(Renderer)} is the only way to register a rendering plug-in on every Fabric API of this
+	 * line (verified against fabric-renderer-api-v1-0.116.17, see the class comment). Loaded without being
+	 * initialised: its static initialiser mentions no game type, but nothing here has any reason to run it early.
+	 */
+	private static final String RENDERER_ACCESS_CLASS = "net.fabricmc.fabric.api.renderer.v1.RendererAccess";
 
 	/**
 	 * Where the interface lives, newest first. 26.1 moved it and its implementation down into the client package
@@ -111,9 +128,7 @@ public final class RendererApiFallback {
 
 		try {
 			Object placeholder = RendererApiStubGenerator.newInstance(renderer);
-			MethodHandle register = MethodHandles.publicLookup().findStatic(renderer, "register",
-					MethodType.methodType(void.class, renderer));
-			register.invoke(placeholder);
+			register(renderer, placeholder);
 
 			System.out.println("[OptiFabric] Registered " + placeholder.getClass().getSimpleName()
 					+ " as Fabric's rendering plug-in (" + renderer.getName() + "): Fabric API expects one to exist"
@@ -124,6 +139,38 @@ public final class RendererApiFallback {
 			System.err.println("[OptiFabric] Could not register a placeholder for Fabric's renderer API, "
 					+ "Fabric API hooks that ask for it may crash: " + t);
 		}
+	}
+
+	/**
+	 * Hands the placeholder to the API's registry, in the shape that API actually has.
+	 *
+	 * <p>On 1.21.x the registry is a singleton the API interface carries as a static field, and registering is a call
+	 * on <em>that</em>: {@code RendererAccess.INSTANCE.registerRenderer(renderer)} - the method on the interface
+	 * itself, which is where the implementation's null check and its "a second rendering plug-in attempted to
+	 * register" refusal live. The older shape, a static {@code Renderer.register(Renderer)}, is tried first and kept
+	 * rather than dropped: it is what the API used before this line's releases and what an older Fabric API on the
+	 * classpath still has. When neither is there the caller logs the failure it already did - this method has no
+	 * second way to report it.
+	 *
+	 * <p>Only "register" is ever looked up, and both of its possible owners are asked for by name without being
+	 * initialised, so no game type is resolved here (see RendererApiStubGenerator).
+	 */
+	private static void register(Class<?> renderer, Object placeholder) throws Throwable {
+		try {
+			MethodHandle register = MethodHandles.publicLookup().findStatic(renderer, "register",
+					MethodType.methodType(void.class, renderer));
+			register.invoke(placeholder);
+
+			return;
+		} catch (NoSuchMethodException ignored) {
+			//the shape of the API before this registry object existed; registerRenderer below is the current one
+		}
+
+		Class<?> access = Class.forName(RENDERER_ACCESS_CLASS, false, RendererApiFallback.class.getClassLoader());
+		Object registry = MethodHandles.publicLookup().findStaticGetter(access, "INSTANCE", access).invoke();
+		MethodHandle register = MethodHandles.publicLookup().findVirtual(access, "registerRenderer",
+				MethodType.methodType(void.class, renderer));
+		register.invoke(registry, placeholder);
 	}
 
 	/**

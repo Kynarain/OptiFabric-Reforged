@@ -97,6 +97,46 @@ public class OptifineFixer {
 		//fabric-lifecycle-events-v1 injects into it - the same shape as the two entries above.
 		registerFix("class_3898", new RestoreVanillaMethodsFix("method_17227", "method_18843", "method_60440"));
 
+		//net/minecraft/Util (The Twilight Forest's twilightforest.mixins.json:UtilMixin, @Redirect)
+		//OptiFine recompiled this class from a release in which the game itself had downgraded one logging call:
+		//inside method_29191 - the private data fixer lookup its public helper method_29187 delegates to - the same
+		//catch block that vanilla 1.21.1 writes as an org.slf4j.Logger.error(String, Object) call on field_1129
+		//with the caught exception's type reference reads Logger.debug(...) in the patched class. That single
+		//opcode is the whole difference: the rest of the method is byte for byte the same, and so is its exception
+		//table. That call site is exactly what Twilight Forest redirects, so with the debug call in place the
+		//redirect scans nothing, fails its injection check (0/1 succeeded, "Scanned 0 target(s)") and takes
+		//class_156 down with it: "Mixin transformation of net.minecraft.class_156 failed" before the title screen.
+		//The vanilla body is put back - and it has to be the *body*, not a name: no fixer can reach the call
+		//because it is inside a try block whose argument is the caught exception, and a re-created call in front of
+		//the method would log on every lookup instead of only when the fixer is missing (see InjectionCallPointFix).
+		//Reverting OptiFine's own edit costs nothing here: it changed a log level and nothing else, that level is
+		//the one the game's own release states, and no OptiFine code calls the method expecting debug output.
+		registerFix("class_156", new RestoreVanillaMethodsFix(true, "method_29191"));
+
+		//net/minecraft/client/render/LevelRenderer (c2me-client-uncapvd MixinFogRenderer, @ModifyArg)
+		//The same class, the other half of what C2ME needs: OptiFine's recompile emitted the Runnable body the game
+		//declares as method_37365(Lnet/minecraft/class_4184;FZF)V under javac's own lambda name
+		//lambda$updateCameraAndRender$1 and pointed the class's own bootstrap method handle at it. Descriptor,
+		//access flags, registration site (method_22710, three LambdaMetafactory indys on both sides) and the
+		//class_758.method_3211 call the mixin's @ModifyArg wraps are all unchanged - only the name moved, so the
+		//mixin's name+descriptor lookup finds nothing and defaultRequire 1 fails the class during OptiFine's
+		//Reflector bootstrap, exactly like the method_62214 entry below. LambdaMethodRefFix gives the lambda the
+		//game's name back - the same repair class_329 gets - and it has to be that and not
+		//RestoreVanillaMethodsFix("method_37365"): restoring the body would put vanilla's copy next to OptiFine's
+		//lambda and leave OptiFine's path in use, so the clamp the mixin injects would be applied to code that
+		//never runs. It is registered before the method_62214 entry because getFixers preserves registration order.
+		registerFix("class_761", new LambdaMethodRefFix());
+
+		//Synthetic outer-instance fields OptiFine's recompile renamed to this$0 while the game's names are
+		//field_17443 / field_18255. c2me-base's @Accessor IThreadedAnvilChunkStorageLevelManager and
+		//c2me-rewrites-chunk-system's @Shadow MixinChunkTicketManagerTicketDistanceLevelPropagator ask for them by
+		//name, and an accessor or shadow that cannot be located fails the whole target class - reachable only once
+		//a world starts ("Mixin transformation of net.minecraft.class_3898$class_3216 failed" /
+		//"…class_3204$class_4077 failed" on the integrated-server thread). Same rule as the four SyntheticFieldFix
+		//entries below.
+		registerFix("class_3898$class_3216", new SyntheticFieldFix());
+		registerFix("class_3204$class_4077", new SyntheticFieldFix());
+
 		//net/minecraft/client/render/LevelRenderer (fabric-rendering-v1 LevelRendererMixin, @ModifyExpressionValue)
 		//OptiFine's recompile turned this lambda body into lambda$addMainPass$1 with one extra parameter, so the
 		//vanilla method - name and descriptor - is simply not in the patched class any more. Mixin resolves an
@@ -151,6 +191,17 @@ public class OptifineFixer {
 
 		//Where OptiFine's build kept no lambda for them either, the vanilla methods are added back next to its code.
 		registerFix("class_329", new RestoreVanillaMethodsFix("method_55806", "method_55807", "method_55808"));
+
+		//net/minecraft/client/world/ClientLevel (porting_lib's porting_lib_client_events, ClientLevelMixin)
+		//The recompile turned the method the game registers for its own colour resolvers into a lambda of
+		//OptiFine's: the patched class declares lambda$new$3(Object2ObjectArrayMap) where the game declares
+		//method_23778(Object2ObjectArrayMap), same descriptor, and the BootstrapMethods entry that used to point at
+		//method_23778 now points at the lambda. Porting Lib's @Inject asks for method_23778 by name, so it resolves
+		//nothing ("could not find any targets matching ... class_638;method_23778(...)") and Mixin fails the whole
+		//class. Renaming the lambda is the exact repair this fixer was written for (see LambdaMethodRefFix, whose
+		//class_329 entry is the same shape) - and because the lambda *is* the method the game registered, the
+		//bootstrap handle matches again the moment it carries the game's name.
+		registerFix("class_638", new LambdaMethodRefFix());
 
 		//net/minecraft/client/world/ClientChunkManager (fabric-lifecycle-events-v1)
 		//OptiFine creates its own net.optifine.ChunkOF instead of WorldChunk, so the mixin's
@@ -225,6 +276,18 @@ public class OptifineFixer {
 		//The descriptor is left out on purpose, exactly as in the two entries above: it differs between releases,
 		//and the fixer then works off the descriptor OptiFine's own class carries.
 		registerFix("class_757", new LocalSlotLayoutFix(null, "method_3192"));
+
+		//net/minecraft/client/render/LevelRenderer again, the same reason on a different method (Porting Lib's
+		//porting_lib_base LevelRendererMixin, @Inject at the DebugRenderer.render call in method_22710 = renderLevel).
+		//Its handler captures that call's PoseStack through MixinExtras with @Local(index = 24), and OptiFine's
+		//recompile moved the locals around it, so the sugar cannot build the callback:
+		//  SugarApplicationException: Failed to validate sugar @Local(index = 24) class_4587 on method
+		//  port_lib$renderEntityOutline ... in target method net/minecraft/class_761::method_22710(...)
+		//  Caused by: SugarApplicationException: Unable to find matching local!
+		// and the injection then reports "expected 1 invocation(s) but 0 succeeded", which fails the class. The
+		// game's own local layout is what that index was written against, so OptiFine's extra locals are moved past
+		// the end of the local range exactly as for class_757 above. No descriptor either, for the same reason.
+		registerFix("class_761", new LocalSlotLayoutFix(null, "method_22710"));
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
