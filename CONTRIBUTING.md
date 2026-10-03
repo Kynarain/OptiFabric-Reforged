@@ -5,7 +5,7 @@
 > [`release/MANUAL_RELEASE.md`](release/MANUAL_RELEASE.md);26.x 为什么单独一条线、官方名带来的每一类冲突见
 > [`docs/PORT_26.x.md`](docs/PORT_26.x.md);逐轮排查记录与离线工具链见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
 
-本分支是 **26.x 线**,一份源码出两个 jar:**26.2**(当前,`2.2.1`)与 **26.1.2**(`2.2.1`)。1.21.x 线(混淆名 +
+本分支是 **26.x 线**,一份源码出两个 jar:**26.2**(当前,`2.2.2`)与 **26.1.2**(`2.2.2`)。1.21.x 线(混淆名 +
 yarn/intermediary,一份源码出十个版本)在自己的 worktree 里独立开发,两条线的 jar **不能互相替代**。
 
 ## 一、环境要求

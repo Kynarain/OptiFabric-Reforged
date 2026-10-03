@@ -1,7 +1,7 @@
 ﻿# NOTE: keep this file UTF-8 WITH BOM. Windows PowerShell reads .ps1 as ANSI when there is no BOM, and the
 # Chinese text below then mis-parses (a trailing quote gets eaten and the whole file fails to load).
 <#
-    把 dist/ 里那个 jar 发到三个平台。逐版一个发布条目,版本号就是 <版本>+mc<MC版本>(当前是 2.1.1+mc26.2)。
+    把 dist/ 里那个 jar 发到三个平台。逐版一个发布条目,版本号就是 <版本>+mc<MC版本>(当前是 2.2.2+mc26.2)。
 
     用法:
       # 先看要执行什么(不联网、不改远端)
