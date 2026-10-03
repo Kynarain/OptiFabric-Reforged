@@ -47,6 +47,7 @@
     "no_fog": "*",
     "thallium": "*",
     "xradiation": "*",
-    "ryoamiclights": "*"
+    "ryoamiclights": "*",
+    "sodium": "*"
   }
 }

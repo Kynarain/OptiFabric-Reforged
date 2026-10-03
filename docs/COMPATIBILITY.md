@@ -81,8 +81,8 @@ no-OptiFine control run gives:
 unknown (`carpet-fixes`, the row whose rig run failed); Wilson 95 % upper bound 1.5 %.** Of the 27 control-passing
 failures, 11 name a `net.minecraft` class that is in OptiFine's extracted rewritten set (`class_761` WorldRenderer,
 `class_702` ParticleManager, `class_757`, `class_1921`, `class_309`, `class_332`, …), 15 name no class at all, and 1
-— `sodium` — is declared by this mod's own `fabric.mod.json`, so it is a pre-declared limitation rather than a
-discovered defect.
+— `sodium` — is declared by this mod's own `fabric.mod.json` (in both `conflicts` and `breaks`), so it is a
+pre-declared limitation rather than a discovered defect.
 
 **The sample-based acceptance criterion has not been measured.** A 100-row random sample was drawn (seed
 `optifabric-compat-matrix/random-sample/2026-10-03T09:20Z`, 61 Modrinth + 39 CurseForge rows), 6 of the hundred were
@@ -98,8 +98,12 @@ those the renderer family is over-represented — `sodium`, `iris`, `immediately
 others are all tagged "renderer overhaul" in the matrix. The typical evidence is
 `Mixin transformation of net.minecraft.class_<n> failed`, where that class is one OptiFine rewrote.
 
-- **`sodium` is a declared conflict**, not a discovered one — see
-  [`README.md`](../README.md#declared-incompatibilities-and-what-the-loader-actually-does). Its control run passes.
+- **`sodium` is a declared incompatibility**, not a discovered one: this mod's `fabric.mod.json` lists it in both
+  `conflicts` and `breaks`, and on the loader version measured for that section neither field prevents the game
+  from starting — both are warnings, so the entry is a declaration rather than a gate. Sodium's own metadata
+  declares the pairing under `breaks` only (no `conflicts`) and names the old id `optifabric`, so that entry
+  cannot fire on this line: our entry is the only one a loader acts on. Its control run passes; see
+  [`README.md`](../README.md#declared-incompatibilities-and-what-the-loader-actually-does).
 - **The Twilight Forest** (`twilightforest-fabric-1.21.1-4.8.734.jar`, CurseForge file id 9003337) is FAIL
   (`mixin-transform` on `class_156` / `class_638`) — but it is a CurseForge-only 1.21.1 Fabric port and its
   no-OptiFine control **also fails**, for a different reason, so it is owned `mod-broken-on-plain-fabric`: not

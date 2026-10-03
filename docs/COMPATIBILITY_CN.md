@@ -77,7 +77,7 @@ CurseForge 批次和抽样。它们一律标成 `not run`,从不计入通过。
 (`carpet-fixes`,那一行是运行装置本身失败);Wilson 95% 置信上界 1.5%。** 在 27 条对照通过的失败里,11 条点名的
 `net.minecraft` 类**确实**在 OptiFine 改写过的集合里(`class_761` WorldRenderer、`class_702` ParticleManager、
 `class_757`、`class_1921`、`class_309`、`class_332` 等),15 条没点名任何类,还有 1 条 —— `sodium` —— 是本模组自己的
-`fabric.mod.json` 声明的,因此属于**事先声明的限制**,而不是新发现的缺陷。
+`fabric.mod.json` 声明的(`conflicts` 与 `breaks` 两处都有),因此属于**事先声明的限制**,而不是新发现的缺陷。
 
 **基于抽样的验收标准还没有被测过。** 100 行随机样本已经抽出(种子
 `optifabric-compat-matrix/random-sample/2026-10-03T09:20Z`,61 行 Modrinth + 39 行 CurseForge),其中 6 行在启动前
@@ -92,8 +92,10 @@ CurseForge 批次和抽样。它们一律标成 `not run`,从不计入通过。
 `sodium-shadowy-path-blocks` 等在矩阵里都标着"渲染器重构"。典型证据是
 `Mixin transformation of net.minecraft.class_<n> failed`,而那个类正是 OptiFine 改写过的。
 
-- **`sodium` 是事先声明的冲突**,不是这次新发现的 —— 见
-  [`README_CN.md`](../README_CN.md#声明的不兼容以及加载器实际会怎么做)。它的对照是能启动的。
+- **`sodium` 是事先声明的不兼容**,不是这次新发现的:本模组 `fabric.mod.json` 在 `conflicts` 与 `breaks` 两处都写了它;
+  在那一节实测的加载器版本上,两个字段都不会阻止游戏启动 —— 它们只是警告,所以这是声明,不是闸门。
+  Sodium 自己的元数据只在 `breaks` 里声明这一对(没有 `conflicts`),点名的又是旧 id `optifabric`,所以那条声明在本线上根本不会命中:加载器唯一会理会的只有我们这一条。它的对照是能启动的,见
+  [`README_CN.md`](../README_CN.md#声明的不兼容以及加载器实际会怎么做)。
 - **The Twilight Forest**(`twilightforest-fabric-1.21.1-4.8.734.jar`,CurseForge file id 9003337)是 FAIL
   (`mixin-transform`,涉及 `class_156` / `class_638`)—— 但它是**只发在 CurseForge** 的 1.21.1 Fabric 移植,
   且不带 OptiFine 的对照**同样失败**(原因不同),因此归属是 `mod-broken-on-plain-fabric`:**不能算到 OptiFabric 头上**。
