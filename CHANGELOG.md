@@ -5,6 +5,114 @@
 > 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.3`)
 > 与 **26.1.2**(`2.2.3`),所以这一线也有了"逐 MC 版本的版本号"。
 
+## 2.2.4+mc26.2 — 26.x 线的第九版(把 Mixin 类元数据的 cache drop 收窄到顶层类:2.2.1–2.2.3 的"装了 OptiFine 就起不来"再修一次,这次去掉的是原因)
+
+> **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
+> 「修 fixer、修兼容性 → 修订号」。这一版**不移除任何支持、也不新增支持范围**,改的是 2.2.1 引进、2.2.3 只是绕过去的
+> 那个 cache drop 本身。`2.2.3 → 2.2.4`,两个 MC 版本各出一个 jar。
+
+### 改了什么
+
+**症状(用户可见)**:Fabric API + 本模组 + 对应版 OptiFine 的组合下,**2.2.1 与 2.2.2 连主界面都到不了**;
+2.2.3 补上 accessor 接口之后能起来了,但那个接口是**修症状**:导致它的那次 cache drop 还在,只要哪个模组碰到同样的
+位置就还会翻车。报错落在 **Fabric API 自己那个 mixin** 上,不是本模组的名字:
+
+    Mixin apply for mod fabric-rendering-v1 failed fabric-rendering-v1.mixins.json:GuiRendererMixin from mod
+    fabric-rendering-v1 -> net.minecraft.client.gui.render.GuiRenderer: InvalidInjectionException
+    @WrapOperation operation wrapper method net/minecraft/client/gui/render/GuiRenderer::fixNonQuadIndexing …
+    Cannot @Coerce argument type net.minecraft.client.gui.render.GuiRenderer$Draw at index 4 to
+    net.fabricmc.fabric.mixin.client.rendering.GuiRendererDrawAccessor
+
+26.1.2 上是同一处,接口在那一版叫 `.../DrawAccessor`。
+
+**归因(受控实验,不是推理)**:把 2.2.3 的源码放进干净的临时 worktree,只做一处改动 —— 让
+`MixinClassMetadata.drop(...)` 一个条目都不删 —— 26.1.2 与 26.2 **两边都到主界面**,`Cannot @Coerce` 与
+`InvalidInjectionException` 各 0 条,也没有替代性失败。反过来,在 pre-2.2.3 的代码路径上**只**把那一个 drop 调用
+打开,两边都稳定复现上面的崩溃。也就是说这一处 drop 对这次崩溃**既充分又必要**。
+
+**机制**:`Injector.checkCoerce` → `canCoerce` → `ClassInfo.forType` 读的正是这个 drop 删掉的 `ClassInfo` cache,
+而 `GuiRenderer$Draw` 就是被本模组接管过去的类之一。accessor mixin 加到类上的那条**接口**也活在这份元数据里,
+删掉条目就把它一起删了。
+
+**为什么当初会删**:这个 drop 是从 **1.21.x 线抄过来的**,在那边修的是 **ShoulderSurfing 的 `LVTGeneratorError`**
+(`class_757`,即 `GameRenderer.getFov` 被 OptiFine 从 private 放宽成 public,`Locals` 按旧缓存查方法元数据查不到)。
+那条失败发生在**顶层类的一个方法的 access 标志**上,与嵌套类无关。而引入它的提交 `06c381a` 自己的说明里就写着
+**"neither 26.2 nor 26.1.2 has been launched end to end with it"** —— 26.x 这条线当初没有重做过那次实测。
+
+**修复**(本版):只删**顶层类**的条目,嵌套类保留自己的缓存,`MixinClassMetadata.drop(...)` 循环里的第一条判断:
+
+```java
+for (String name : classNames) {
+    String internalName = name.replace('.', '/');
+
+    //Nested classes are what an accessor mixin turns into an interface …
+    if (internalName.indexOf('$') >= 0) continue;   // nested classes keep their cached metadata
+
+    //Once per class only: …
+    if (!dropped.add(internalName)) continue;
+```
+
+一个条件、一处改动。2.2.3 的 `AddInterfaceFix` **保留**:实测 `drop on + iface off = FAIL`(两个 26.x 版本都是),
+所以只要 drop 还在(哪怕是收窄过的),这个接口就是让 jar 能起来的那一半;等收窄后的 drop 在更宽的模组集上验完,
+它才会变成纯粹的死重量。
+
+### 实测
+
+`PASS` = 到主界面(日志里的 `Sound engine started`);**只有写明"进世界"的那几行进了世界**。
+所有手臂用同一个 Loader `0.19.5`、同一份 OptiFine 预览版、同一个 Java 25 runtime,只换模组集与 jar。
+
+| 手臂 | 模组 | 结果 |
+|---|---|---|
+| 2.2.1(26.1.2)/ 2.2.2(26.2),只 Fabric API | 49 mods | **FAIL** 22 秒,就是上面那条 `Cannot @Coerce` |
+| 2.2.3 − drop 一个调用(26.1.2 / 26.2),只 Fabric API | 49 mods | **PASS**,两边都到主界面 |
+| **本版 scoped drop,26.1.2,宽模组集** | **19 jars → `Loading 118 mods`** | **PASS,进世界**(12 秒到主界面 / 16 秒进世界);`Cannot @Coerce`、`InvalidInjectionException`、`Mixin apply … failed`、`LVTGeneratorError` **各 0 条** |
+| 同上的**对照**:出厂 **2.2.3**(未收窄的 drop + `AddInterfaceFix`) | 同一套 20 jars,`Loading 118 mods` | **PASS,主界面**(20 秒);即**这套模组集里没有任何东西需要未收窄的 drop** |
+| **本版 scoped drop,26.2,宽模组集** | **17 jars → `Loading 118 mods`** | **PASS,进世界**(12 秒到主界面 / 16 秒进世界);四个计数器同样全 0 |
+
+模组集(每个 jar 的确切版本都在 `r224\mods-*` 里):
+**26.1.2**:C2ME `0.4.0-alpha.0.62`、`moreculling 1.7.3`、`particle_core 0.3.2`(带 `fzzy_config 0.7.6`、
+`fabric-language-kotlin`)、`bobby 5.2.13`、`ferrite-core 9.0.0`、`entityculling 1.11.2`、`krypton 0.3.0`、
+`BadOptimizations 2.4.1`、`packetfixer 3.3.5`、`Chunky 1.5.3`、`lithium 0.24.7`、`lomka 0.6.0`、
+`cloth-config 26.1.154`、TRansition/TRender、Fabric API `0.155.3+26.1.2`(+ OptiFine `preview_26.1.2_HD_U_K1_pre2`);
+**26.2**:同一批里**该版本真实存在**的构建 —— C2ME `0.4.2-alpha.0.55`、`moreculling 1.8.1`、`particle_core 0.3.3`
+(带 `fzzy_config 0.7.7+26.2`)、`bobby 5.2.15`、`ferrite-core 9.0.0`、`entityculling 1.11.2-mc26.2`、`krypton 0.3.1`、
+`BadOptimizations 2.4.1-26.2`、`Chunky 1.5.3`、`lithium 0.25.3`、`lomka 0.6.0+26.2`、`cloth-config 26.2.155`、
+Fabric API `0.160.0+26.2`(+ OptiFine `preview_26.2_HD_U_K2_pre1`)。
+
+**26.2 的宽模组集比 26.1.2 小,而且这不是选择**:`modernfix` 与 `noisium`(1.21.1 的构建)**在 26.1.2 与 26.2 上
+都直接拒载** —— `modernfix` 是 `Failed to read classTweaker file … Namespace (intermediary) does not match current
+runtime namespace (official)`(26.x 不混淆,而它的 classTweaker 是 intermediary 的),`noisium` 的元数据只允许
+`>=1.21 <=1.21.1`;The Twilight Forest 在 26.x 上**没有发布**。**`immediatelyfast` 在两个 26.x 版本上都在渲染类上失败**
+(`Critical injection failure: Redirector disableTranslucencySorting(…) in immediatelyfast-common.mixins.json:
+skip_text_translucency_sorting.MixinRenderTypes … failed injection check, (0/1) succeeded. Scanned 0 target(s)`,
+目标是 `net.minecraft.client.renderer.rendertype.RenderTypes`),于是它被移出两套模组集 —— 见下面「边界」。
+另外 `iris` 在两个 26.x 版本上都硬依赖 `sodium`,而本模组的 `breaks: sodium` 会**先**把整个实例拒载,所以它也移出。
+
+**sodium 那条手臂(顺带把 2.2.2 的文档说法纠正了)**:Loader `0.19.5` 上,`breaks` 是**真的会被执行**的:
+
+    Immediate reason: [HARD_DEP iris 1.11.4+mc26.2 {depends sodium @ [0.9.x]},
+                       NEG_HARD_DEP optifabric_reforged 2.2.3+mc26.2 {breaks sodium @ [*]}, …]
+    [main/ERROR]: Incompatible mods found!
+
+也就是说 `breaks` 不是警告而是**硬拒载**(`NEG_HARD_DEP`),`conflicts` 单写在 `2.2.1` 上实测只是警告
+(见 `compat-matrix\README.md` §10.10)。本文件 2.2.2 那一条写的"两个字段都不产生 `Incompatible mods found`"
+**是错的**,已在本版更正;1.20.6 那条线的 README / FAQ / CHANGELOG 也在同一批更正里。
+
+### 边界(不要读过头)
+
+- 两个 26.x 版本的 PASS **都在 28 秒内**结束(12 秒到主界面 + 4 秒后进世界 + 约 12 秒停留),进世界那次**只在一个世界**、
+  **没有加载光影包**、没有压测、没有长时间 soak;
+- **26.2 的宽模组集覆盖不了 1.21.x 专属的那些模组**,因为它们在 26.2 上没有构建或直接拒载(见上);
+- **`immediatelyfast` 的失败没有查清归属**:它在本版 jar 上失败,**在出厂 2.2.3 上也失败**(同一句、同一个类),
+  目前只测到"这个组合起不来";没做"去掉 `AddInterfaceFix` / 去掉 drop"的对照,所以**不能**说它与这次修复有关,
+  也**不能**说无关 —— 这是一条**新发现**,不属于本版修复的范畴;
+- "26.x 是否真的需要那个 drop" 这个问题**本版只回答了一半**:在**这套**模组集里,未收窄的 2.2.3 与本版一样能起
+  (所以**没有任何东西需要那条嵌套条目**),但这不是穷举;1.21.x 的原始失败模式(顶层类的方法 access 标志)在收窄后
+  **仍然被覆盖**,而 26.x 上**没有复现出任何一个必须删顶层类条目的案例** —— 只能说"没有观察到";
+- **`sodium` 那条手臂里同时有 `iris`**(它硬依赖 sodium,所以 sodium 反正也会被拉进来),不是"只有 sodium + 本模组"的
+  干净对照;1.20.6 线那次(`crossline-check\logs\1.20.6-sodium-withus`)是干净的,结论相同;
+- `AddInterfaceFix` 留着是**有意的**,理由在上面(它是 guard,不是死代码)。
+
 ## 2.2.3+mc26.2 — 26.x 线的第八版(修好"装了 OptiFine 就起不来":给 OptiFine 那份 `GuiRenderer$Draw` 补上 Fabric API 的 accessor 接口)
 
 > **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是

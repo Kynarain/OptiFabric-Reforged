@@ -96,6 +96,14 @@ public final class MixinClassMetadata {
 		for (String name : classNames) {
 			String internalName = name.replace('.', '/');
 
+			//Nested classes are what an accessor mixin turns into an interface (fabric-rendering-v1's
+			//DrawAccessor is @Mixin'd onto GuiRenderer$Draw) and Injector.canCoerce answers "is that interface a
+			//supertype of this class" out of the very ClassInfo this loop drops, so dropping a nested entry also
+			//throws away the accessor-derived hierarchy the @Coerce check reads. The metadata that matters for
+			//LVTGeneratorError is a *method's* access flags on a top-level class (class_757 / GameRenderer.getFov
+			//private -> public), which nested entries do not describe, so they keep their entry.
+			if (internalName.indexOf('$') >= 0) continue;   // nested classes keep their cached metadata
+
 			//Once per class only: a second drop could not reach anything older than the metadata Mixin has
 			//meanwhile rebuilt from the bytes we installed, which is exactly the metadata that has to stay.
 			if (!dropped.add(internalName)) continue;
