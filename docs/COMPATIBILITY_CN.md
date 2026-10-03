@@ -31,8 +31,8 @@
 
 ## 二、数字与口径
 
-快照日期:**2026-10-03**,报告由合并后的逐次运行记录生成。**扫描处于暂停状态,并没有跑完** —— 当前没有任何进程
-在跑,随机抽样阶段从未启动。
+快照日期:**2026-10-03**,报告由合并后的逐次运行记录生成,其中**已经包含 49 行的 CurseForge 批次**。**扫描处于
+暂停状态,并没有跑完** —— 当前没有任何进程在跑,随机抽样阶段从未启动。
 
 | 分类 | 数量 | 含义 |
 |---|---|---|
@@ -84,7 +84,41 @@ CurseForge 批次和抽样。它们一律标成 `not run`,从不计入通过。
 即判定无法测试,可启动的 94 行依赖闭包全部解析完毕 —— 但**一行都没跑**,所以那项研究没有任何比率可言。本文件里
 任何数字都不应被当作那个比率。
 
-## 四、失败长什么样
+## 四、34 个失败按类别拆开
+
+同样是这 34 个 FAIL,按每一行点名的东西和它那次不带 OptiFine 的对照做了什么来排,数据取自 `MATRIX.md` 的逐行
+`Implicated layer` 与"Target class in OptiFine's rewritten set?"两列:
+
+| 类别 | Modrinth 各阶段 | CurseForge 批次 | 合计 |
+|---|---|---|---|
+| **FAIL 行** | 30 | 4 | **34** |
+| `mod-incompatible-with-optifine` —— 对照进到了标题界面 | 27 | 0 | 27 |
+| ⤷ 证据点名的 `net.minecraft` 类在 OptiFine 改写集合里 | 12 | 0 | 12 |
+| ⤷ 证据没有点名这类类 | 15 | 0 | 15 |
+| `unexplained` —— 对照本身没跑出结果 | 3 | 0 | 3 |
+| `mod-broken-on-plain-fabric` —— 对照同样失败 | 0 | 4 | 4 |
+| 由 OptiFabric 自己的 `fabric.mod.json` 声明(`sodium`,属于那 12 条) | 1 | 0 | 1 |
+| 对照没能跑起来 | 3 | 0 | 3 |
+| 可归因于 OptiFabric | 0 | 0 | **0** |
+
+那 12 条点名了被改写类的行是 `sodium`、`iris`、`immediatelyfast`、`sodium-extra`、`entity-model-features`、
+`reeses-sodium-options`、`modernfix`、`moreculling`、`c2me-fabric`、`supplementaries`、`fallingleaves` 与
+`carry-on`,其中只有 `sodium` 是 OptiFabric 自己声明的;没有主张归属的 3 行是 `rei`、`freecam`、`bobby` —— 与对照
+没跑起来的那 3 行是同一批,所以这里的"unexplained"和"对照没跑起来"是一组(`carpet-fixes` 是第 4 条对照没跑起来的
+行,但它是 `HARNESS-ERROR`,不属于这 34 个 FAIL)。**一个与渲染器 / OptiFine 改写类共享同一机理的失败,是 OptiFine
+加那个模组的性质,不是 OptiFabric 的性质** —— 同一个模组在对照里能在原版 Fabric 上启动,而它的 mixin 没能完成变换的
+那个类正是 OptiFine 改写过的 —— 所以可归因于 OptiFabric 的数量是 **0**,归属未被主张的行是 `rei`、`freecam`、
+`bobby`,以及这 34 条之外的 `carpet-fixes`。
+
+源数据里有两处互相矛盾,这里如实写出而不是挑一边:`MATRIX.md` 自己的汇总行与分组表说有 **4** 条失败是
+unexplained,而它的逐行数据只给出 **3** 条(第 4 条是 `carpet-fixes`,那个 `HARNESS-ERROR`;上表采用逐行的值);
+另外 `MATRIX.md` 把全部 49 条 CurseForge 行的类名一列都留成 `—`,所以上表 CurseForge 那一列的 0 是"没有数据",
+不是"测量结果是 0" —— 扫描工作区自己的 `PAUSED.md` 记录着 `cf--the-twilight-forest` 的证据点名了 `class_156` 与
+`class_638`,而这两个类都在改写集合里。`analysis.json` 是更早一次构建(126 条 Modrinth 行、17 个 FAIL:16 条
+`mod-incompatible-with-optifine` 加 `rei`,同样的 12 条改写类行、同样只有那一条声明),里面**没有任何 CurseForge
+行**;它的机理计数与 `MATRIX.md` 一致,而它的总数早于那轮串行重跑。
+
+## 五、失败长什么样
 
 失败高度集中在预期的地方:**替换渲染器**的模组,以及**注入到 OptiFine 改写过的方法/类**里的模组。最大的一类是
 `mixin-transform`(34 个失败里占 27 个),其中渲染器家族明显偏多 —— `sodium`、`iris`、`immediatelyfast`、
@@ -106,7 +140,7 @@ CurseForge 批次和抽样。它们一律标成 `not run`,从不计入通过。
 - `structory` 跑不了:它 1.21.1 Fabric 文件的记录里没有 `downloadUrl`,文件存在,但不走 CurseForge 官方 API 就取不到。
   这一条记为"无法测试",而不是悄悄丢掉。
 
-## 五、这次扫描没有覆盖什么
+## 六、这次扫描没有覆盖什么
 
 1. **不开世界、不渲染、不开光影** —— 见第一节的提示框。最大的盲区是:任何只在世界加载之后才出现的失败。
 2. **一次一个模组。** 不测组合、不测整合包、不测两个非基础模组之间的相互作用。
@@ -120,11 +154,13 @@ CurseForge 批次和抽样。它们一律标成 `not run`,从不计入通过。
    `freecam`),以及 4 行 CurseForge(两条在依赖补回之前测出的无效 DEP,两条超时);此外第 200 名之后的 50 行按设计
    丢弃,100 行随机样本从未启动。重跑会改变这些数字。
 
-## 六、数据在哪
+## 七、数据在哪
 
 [`docs/compatibility/`](compatibility/) 放着从扫描工作区拷出来的快照:
 [`MATRIX.md`](compatibility/MATRIX.md)(逐行表格、按原因分组的失败、CurseForge 批次)、
 [`README.md`](compatibility/README.md)(方法、坑、逐阶段覆盖、装置自身被查出并修掉的缺陷)、
-[`LIST.md`](compatibility/LIST.md)(同样这些行的中文清单,来自更早一次的报表构建)。
-[`INDEX.md`](compatibility/INDEX.md) 逐个说明每个文件是什么、快照日期,以及哪些扫描文件**有意没有**拷进仓库
-(原始日志、缓存、jar,以及说明如何继续那次运行的工作区状态文件)。
+[`LIST.md`](compatibility/LIST.md)(同样这些行的中文清单,来自更早一次的报表构建)以及
+[`upstream-optifabric-probe.md`](compatibility/upstream-optifabric-probe.md)(本文件与各 README 里那些上游说法的
+证据记录:上游各分支的 `fabric.mod.json`,以及那次证明加载器在 `conflicts` 下**只警告、不拒绝**的运行)。
+[`INDEX.md`](compatibility/INDEX.md) 逐个给出每个文件的行数、源字节数、**LF 归一化后的 SHA-256**、快照日期,以及
+哪些扫描文件**有意没有**拷进仓库(原始日志、缓存、jar,以及说明如何继续那次运行的工作区状态文件)。

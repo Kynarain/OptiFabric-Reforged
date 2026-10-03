@@ -34,8 +34,9 @@ load at all). That control run is what separates "broken by the OptiFine interac
 
 ## 2. The numbers, and their scope
 
-Snapshot: **2026-10-03**, reports generated from the merged per-run records. **The sweep is paused, not finished** —
-nothing is running, and the random-sample phase was never launched.
+Snapshot: **2026-10-03**, reports generated from the merged per-run records, which already include the 49-row
+CurseForge batch. **The sweep is paused, not finished** — nothing is running, and the random-sample phase was never
+launched.
 
 | Bucket | Count | Meaning |
 |---|---|---|
@@ -89,7 +90,43 @@ pre-declared limitation rather than a discovered defect.
 untestable before launch and all 94 launchable rows have a resolved dependency closure — but **none of them was
 launched**, so no rate from that study exists. Nothing in this document should be read as that number.
 
-## 4. What the failures look like
+## 4. The 34 failures, by category
+
+The same 34 FAILs sorted by what each row names and by what its no-OptiFine control did, from the per-row
+`Implicated layer` and *Target class in OptiFine's rewritten set?* columns of `MATRIX.md`:
+
+| Category | Modrinth phases | CurseForge batch | Total |
+|---|---|---|---|
+| **FAIL rows** | 30 | 4 | **34** |
+| `mod-incompatible-with-optifine` — the control reached the title screen | 27 | 0 | 27 |
+| ⤷ evidence names a `net.minecraft` class in OptiFine's rewritten set | 12 | 0 | 12 |
+| ⤷ evidence names no such class | 15 | 0 | 15 |
+| `unexplained` — the control run produced nothing | 3 | 0 | 3 |
+| `mod-broken-on-plain-fabric` — the control failed as well | 0 | 4 | 4 |
+| declared by OptiFabric's own `fabric.mod.json` (`sodium`, inside the 12) | 1 | 0 | 1 |
+| control that failed to run | 3 | 0 | 3 |
+| attributable to OptiFabric | 0 | 0 | **0** |
+
+The 12 rewritten-class rows are `sodium`, `iris`, `immediatelyfast`, `sodium-extra`, `entity-model-features`,
+`reeses-sodium-options`, `modernfix`, `moreculling`, `c2me-fabric`, `supplementaries`, `fallingleaves` and
+`carry-on`, of which `sodium` is the only one OptiFabric declares; the 3 rows with no asserted owner are `rei`,
+`freecam` and `bobby` — the same 3 whose control failed to run, so "unexplained" and "control failed to run" are one
+group here (`carpet-fixes`, the fourth row whose control failed to run, is a `HARNESS-ERROR` and not one of the 34
+FAILs). **A failure that shares the renderer / OptiFine-rewritten-class mechanism is a property of OptiFine plus
+that mod, not of OptiFabric** — the same mod starts on plain Fabric in the control, and the class its mixin could not
+be transformed against is one OptiFine had already rewritten — so the count attributable to OptiFabric is **0**, and
+the rows where ownership is not asserted are `rei`, `freecam`, `bobby` and, outside the 34, `carpet-fixes`.
+
+Two disagreements in the source data, stated rather than resolved by picking a side: `MATRIX.md`'s own summary line
+and group table say **4** failures are unexplained where its rows give **3** (the fourth is `carpet-fixes`, the
+`HARNESS-ERROR`; the table above uses the row-level value), and `MATRIX.md` leaves the class column as `—` for all 49
+CurseForge rows, so the CurseForge column above is 0 by absence of data rather than by measurement — the sweep's own
+`PAUSED.md` records that `cf--the-twilight-forest`'s evidence names `class_156` and `class_638`, both in the
+rewritten set. `analysis.json` is an earlier build (126 Modrinth rows, 17 FAILs: 16 `mod-incompatible-with-optifine`
+plus `rei`, with the same 12 rewritten-class rows and the same single declaration) and contains no CurseForge row at
+all; its mechanism counts agree with `MATRIX.md`, while its totals predate the serial re-run pass.
+
+## 5. What the failures look like
 
 The failures are overwhelmingly concentrated where you would expect: mods that **replace the renderer** or **inject
 into classes OptiFine rewrites**. The largest single cause group is `mixin-transform` (27 of the 34), and among
@@ -115,7 +152,7 @@ others are all tagged "renderer overhaul" in the matrix. The typical evidence is
 - `structory` could not be run: its 1.21.1 Fabric file record carries no `downloadUrl`, so the file exists but
   cannot be fetched without CurseForge's official API. It is recorded as untestable rather than dropped.
 
-## 5. What this does not cover
+## 6. What this does not cover
 
 1. **No world, no rendering, no shaders** — see the box in §1. The single biggest blind spot is any failure that
    only appears after a world is loaded.
@@ -132,12 +169,15 @@ others are all tagged "renderer overhaul" in the matrix. The typical evidence is
    missing dependency was restored, and two timeouts) — plus the 50 rank-past-200 rows deliberately dropped and the
    100-row sample never launched. A resumed run would change these numbers.
 
-## 6. Where the data is
+## 7. Where the data is
 
 [`docs/compatibility/`](compatibility/) holds the snapshot copied out of the sweep workspace:
 [`MATRIX.md`](compatibility/MATRIX.md) (every row, grouped failures, the CurseForge batch),
-[`README.md`](compatibility/README.md) (method, traps, per-phase coverage, the defects found in the rig itself) and
-[`LIST.md`](compatibility/LIST.md) (the same rows as a Chinese checklist, from an earlier build of the report).
-[`INDEX.md`](compatibility/INDEX.md) lists what each file is, its snapshot date, and which sweep files were
-deliberately **not** copied into the repository (raw logs, caches, jars, and the workspace-state file that explains
-how to resume the run).
+[`README.md`](compatibility/README.md) (method, traps, per-phase coverage, the defects found in the rig itself),
+[`LIST.md`](compatibility/LIST.md) (the same rows as a Chinese checklist, from an earlier build of the report) and
+[`upstream-optifabric-probe.md`](compatibility/upstream-optifabric-probe.md) (the probe record behind this file's and
+the READMEs' upstream claims: each upstream branch's `fabric.mod.json`, and the run that shows the loader **warns**
+rather than refuses when a mod is listed under `conflicts`). [`INDEX.md`](compatibility/INDEX.md) gives each file's
+line count, source byte size and LF-canonical SHA-256, its snapshot date, and which sweep files were deliberately
+**not** copied into the repository (raw logs, caches, jars, and the workspace-state file that explains how to resume
+the run).

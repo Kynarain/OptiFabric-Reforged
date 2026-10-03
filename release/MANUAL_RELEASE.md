@@ -6,7 +6,7 @@
 正文直接用 release/notes/mc<版本>.md(已是 Markdown,含安装步骤、已知限制、该 jar 的尺寸与 SHA-256)。
 
 > **tag 归属(两条线都别忘)**:`v<版本>+mc<MC版本>` 这一串只属于本线。仓库的 **Latest 徽章归 26.x 线** —— 它的
-> 当前产物用**裸标签** `v2.2.1`(`v2.1.0` / `v2.2.0` 也是这样,见那一线的 `release/MANUAL_RELEASE.md`)。
+> 当前产物用**裸标签** `v2.2.2`(`v2.1.0` / `v2.2.0` / `v2.2.1` 也是这样,见那一线的 `release/MANUAL_RELEASE.md`)。
 > 所以本线这十个条目都要用 **`make_latest=false`** 创建,否则最后发的那个 jar 会把 Latest 从 26.x 抢过来。
 > 已发的 `v2.2.2+mc1.21` … `v2.2.2+mc1.21.11` 十个 tag 就是按这个口径打的(`git tag --list` 可复核)。
 
