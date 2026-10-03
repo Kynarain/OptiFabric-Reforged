@@ -20,13 +20,23 @@
  * repointed. Renaming rather than copying the vanilla method in next to OptiFine's matters: the vanilla
  * body is what the class's own handle would then run, while OptiFine's is what actually executes today -
  * renaming keeps OptiFine's body on the executed path, so a mod that overwrites the method replaces the
- * code that really runs. It also matters for correctness here: OptiFine's lambda for method_17224 has the
- * same body as the game's but with two parameters swapped, which this fixer undoes (see below), while
- * RestoreVanillaMethodsFix would have left OptiFine's differently-shaped method in place.
+ * code that really runs.
  *
  * Because this runs before RestoreVanillaMethodsFix in the registration order, the names are occupied by
  * the time that fixer looks, so it leaves them alone instead of adding a second method under the same name
  * - which is what keeps the class's own bootstrap handles pointing at a method that exists.
+ *
+ * A registration whose parameters OptiFine recompiled into a different order keeps that order and is only
+ * renamed. That is deliberate, and it is the one thing this fixer cannot repair. For class_3898's
+ * method_17224 the three things that have to agree do not: OptiFine's patched class registers the lambda
+ * with an argument list of (class_9259, class_3898, class_1923, class_2806, class_3193, Executor), the
+ * lambda declares (class_1923, class_2806, class_3193, Executor, class_9259) and its body reads slot 2 as
+ * the status and slot 3 as the chunk holder, while the game declares (class_1923, class_3193, class_2806,
+ * Executor, class_9259). The body, the descriptor and the value list therefore already disagree in
+ * OptiFine's own bytes, so there is no reordering that makes all three consistent *and* present the game's
+ * signature: correcting the body's slots changes what it acts on, and correcting the descriptor without
+ * the slots is a member that exists but lies - worse for c2me, whose @ModifyReturnValue would then read
+ * the wrong values, than one that does not exist. Such a registration is reported and left renamed only.
  *
  * Two alignments are used, both taken from the two class files' own bytes:
  *
@@ -45,15 +55,13 @@
  *   * the patched handle names a javac lambda of this class, the vanilla handle does not;
  *   * the vanilla name is free in the patched class (two methods cannot share a name and descriptor);
  *   * the lambda body exists under that name and descriptor in the patched class;
- *   * the descriptor is either identical or a permutation of the vanilla one (see permute below).
+ *   * where the descriptors differ, they are a reordering of the same parameter types.
  */
 package kynarain.cn.optifabric.patcher.fixes;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.objectweb.asm.Handle;
@@ -61,22 +69,20 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 public class LambdaMethodRefFix implements ClassFixer {
-	/** how many of this run's renames also had to put a reordered parameter list back */
-	private int reshaped;
+	/** how many of this run's renames had to leave a recompiled parameter list in place */
+	private int leftAsIs;
 
 	@Override
 	public void fix(ClassNode optifine, ClassNode minecraft) {
 		if (minecraft == null) return;
 
 		int renamed = 0;
-		reshaped = 0;
+		leftAsIs = 0;
 		int refused = 0;
 
 		//The registrations pass 1 has already handled, by the name and descriptor the lambda had when it was
@@ -135,7 +141,7 @@ public class LambdaMethodRefFix implements ClassFixer {
 		if (renamed == 0 && refused == 0) return;
 
 		System.out.println("[OptiFabric] " + optifine.name + ": " + renamed + " method reference(s) restored"
-				+ (reshaped > 0 ? ", " + reshaped + " of them with a reordered parameter list put back" : "")
+				+ (leftAsIs > 0 ? ", " + leftAsIs + " of them keeping a recompiled parameter list" : "")
 				+ (refused > 0 ? " (" + refused + " javac lambda name(s) still unmatched)" : ""));
 	}
 
@@ -169,137 +175,70 @@ public class LambdaMethodRefFix implements ClassFixer {
 		}
 
 		// The registered descriptor is the arguments the class's own invokedynamic supplies, in the order the
-		// lambda declares them. OptiFine recompiled some of these with two parameters swapped, which puts the
-		// method out of reach of a mod that asks for the game's signature - putting the order back is part of
-		// restoring the member, and the body's parameter slots have to follow it.
+		// lambda declares them. OptiFine recompiled some of these with two parameters swapped, so the method
+		// sits under the game's name but with OptiFine's signature.
 		boolean permuted = !patchedHandle.getDesc().equals(vanillaHandle.getDesc());
-		int[] permutation = null;
-		if (permuted) {
-			permutation = parameterPermutation(vanillaHandle.getDesc(), patchedHandle.getDesc());
-			if (permutation == null) {
-				System.out.println("[OptiFabric] " + optifine.name + '.' + patchedHandle.getName()
-						+ " is registered as " + patchedHandle.getDesc() + " where the game declares "
-						+ vanillaHandle.getDesc() + ", which is not a reordering of the same parameters - left alone");
-				return false;
-			}
-		}
 
-		List<AbstractInsnNode> reorder = null;
-		InsnList registrationSite = null;
-		if (permutation != null) {
-			registrationSite = registrationSite(optifine, patchedSite);
-			reorder = registrationSite == null ? null : capturedArguments(optifine, patchedSite, permutation);
-			if (reorder == null) {
-				System.out.println("[OptiFabric] " + optifine.name + '.' + patchedHandle.getName()
-						+ " is registered with its parameters reordered, but the arguments at its registration site ("
-						+ patchedSite.name + patchedSite.desc + ") are not a plain list of loads - left alone rather"
-						+ " than risk feeding the method's body the wrong values");
-				return false;
-			}
+		// A recompiled parameter list is deliberately left alone. See the note on the class: OptiFine's copy of
+		// the registration for method_17224 hands the lambda its arguments in an order that neither its own
+		// descriptor nor the game's matches, so renaming it would put a member in place whose signature is
+		// right but whose values are not - and c2me's @ModifyReturnValue would then read the wrong ones. A
+		// member that exists but lies is worse than one that does not exist, so this fixer does not create it.
+		if (permuted && parameterPermutation(vanillaHandle.getDesc(), patchedHandle.getDesc()) == null) {
+			System.out.println("[OptiFabric] " + optifine.name + '.' + patchedHandle.getName()
+					+ " is registered as " + patchedHandle.getDesc() + " where the game declares "
+					+ vanillaHandle.getDesc() + ", which is not a reordering of the same parameters - left alone");
+			return false;
 		}
 
 		//Everything that names the registration has to move together: the lambda itself, the handle that
-		//registers it, and - when the parameter list is being put back in the game's order - the invokedynamic's
-		//own descriptor and the arguments it pushes, or the call site no longer type checks.
+		//registers it, and the invokedynamic that carries it.
 		String oldDesc = lambda.desc;
 		String oldName = lambda.name;
 		String newDesc = vanillaHandle.getDesc();
-		String newSiteDesc = null;
 
-		if (permutation != null) {
-			Type[] hostParams = Type.getArgumentTypes(oldDesc);
-			Type[] reordered = new Type[hostParams.length];
-
-			for (int i = 0; i < hostParams.length; i++) reordered[permutation[i]] = hostParams[i];
-
-			//the return type is the lambda's, so the two descriptors differ in exactly the parameter list
-			newSiteDesc = Type.getMethodDescriptor(Type.getReturnType(patchedSite.desc), reordered);
-		}
-
-		List<VarInsnNode> moved = permutation == null ? null : new ArrayList<>();
 		for (MethodNode method : optifine.methods) {
 			for (AbstractInsnNode insn : method.instructions.toArray()) {
-				if (method == lambda && permutation != null && insn instanceof VarInsnNode variable) {
-					moved.add(variable);
-				} else if (insn instanceof MethodInsnNode call && call.owner.equals(optifine.name)
+				if (insn instanceof MethodInsnNode call && call.owner.equals(optifine.name)
 						&& call.name.equals(oldName) && call.desc.equals(oldDesc)) {
 					call.name = vanillaHandle.getName();
-					if (permutation != null) call.desc = newDesc;
 				} else if (insn instanceof InvokeDynamicInsnNode dynamic) {
 					for (int i = 0; i < dynamic.bsmArgs.length; i++) {
 						if (!(dynamic.bsmArgs[i] instanceof Handle handle)) continue;
 						if (!handle.getOwner().equals(optifine.name) || !handle.getName().equals(oldName)
 								|| !handle.getDesc().equals(oldDesc)) continue;
 						dynamic.bsmArgs[i] = new Handle(handle.getTag(), handle.getOwner(), vanillaHandle.getName(),
-								permutation != null ? newDesc : handle.getDesc(), handle.isInterface());
+								handle.getDesc(), handle.isInterface());
 					}
-
-					if (dynamic == patchedSite && newSiteDesc != null) dynamic.desc = newSiteDesc;
 				}
-			}
-		}
-
-		if (permutation != null) {
-			Type[] patchedParams = Type.getArgumentTypes(patchedHandle.getDesc());
-			int[] slots = new int[patchedParams.length];
-			int slot = 1; //slot 0 is this
-
-			for (int i = 0; i < patchedParams.length; i++) {
-				slots[i] = slot;
-				slot += patchedParams[i].getSize();
-			}
-
-			//The new slots are worked out before anything is written: rewriting a slot in place would make a
-			//later access match the value it has just taken over rather than the parameter it was compiled for.
-			Map<Integer, Integer> newSlot = new HashMap<>();
-
-			for (int i = 0; i < slots.length; i++) {
-				newSlot.put(slots[i], slots[permutation[i]]);
-			}
-
-			for (VarInsnNode variable : moved) {
-				Integer replacement = newSlot.get(variable.var);
-
-				if (replacement != null) variable.var = replacement;
 			}
 		}
 
 		lambda.name = vanillaHandle.getName();
 		lambda.access &= ~Opcodes.ACC_SYNTHETIC; //it is a method the game itself declares now
 
-		//The arguments the registration site pushes have to follow the parameter list into the game's order,
-		//or the lambda is constructed with the values in the wrong slots. The list is a plain run of loads
-		//directly before the invokedynamic, so its order is what carries the meaning: the originals are taken
-		//out and the same instructions are put back in the order the game's parameter list asks for.
-		if (reorder != null) {
-			for (AbstractInsnNode insn : reorder) registrationSite.remove(insn);
-
-			for (int i = reorder.size() - 1; i >= 0; i--) {
-				registrationSite.insertBefore(patchedSite, reorder.get(i));
-			}
-		}
-
-		if (permutation != null) {
-			lambda.desc = vanillaHandle.getDesc();
-			lambda.signature = null;
-			reshaped++;
-		}
-
+		//A lambda whose parameter list OptiFine recompiled keeps its own descriptor and its own body: the values
+		//at the registration site stay where they are, so whatever the body reads does not change. The result is
+		//internally consistent - it is the game's name on OptiFine's shape, not the game's shape.
 		System.out.println("[OptiFabric] " + optifine.name + '.' + patchedHandle.getName() + " renamed to "
-				+ vanillaHandle.getName() + (permuted ? " with its parameters put back in the game's order ("
-						+ patchedHandle.getDesc() + " -> " + vanillaHandle.getDesc() + ")" : "")
+				+ vanillaHandle.getName() + (permuted ? " but keeps its recompiled parameter list ("
+						+ oldDesc + "), because the registration site feeds it those values in that order" : "")
 				+ " so the method a mod asks for exists");
 
+		if (permuted) leftAsIs++;
 		return true;
 	}
 
 	/**
 	 * The reordering that turns {@code patched} into {@code vanilla}, as "for each patched parameter, which
 	 * vanilla parameter is it": {@code result[i] == j} means the patched parameter {@code i} is the game's
-	 * parameter {@code j}, and therefore that the game's parameter {@code j} is where the patched slot of
-	 * parameter {@code i} has to be read from. Null when the two are not a permutation of the same parameter
-	 * types, or when the reordering is not unique (two parameters of the same type), because a wrong
-	 * reordering would silently feed the body the wrong values.
+	 * parameter {@code j}. Null when the two are not a permutation of the same parameter types, or when the
+	 * reordering is not unique (two parameters of the same type).
+	 *
+	 * <p>Only used to decide whether a recompiled parameter list is a reordering at all, and to say so in the
+	 * log; it is deliberately not used to put the order back, because doing that correctly needs the
+	 * registration site's values as well and those do not always agree with the descriptor (see the note on
+	 * the class).
 	 */
 	static int[] parameterPermutation(String vanillaDesc, String patchedDesc) {
 		Type vanillaReturn = Type.getReturnType(vanillaDesc);
@@ -337,92 +276,6 @@ public class LambdaMethodRefFix implements ClassFixer {
 		}
 
 		return patchedToVanilla;
-	}
-
-	/**
-	 * The instructions that push the arguments of a registration, in the order the game's parameter list
-	 * wants them, or null when the registration site is not the plain "receiver load, then one load per
-	 * argument" shape this can reorder safely.
-	 *
-	 * <p>The invokedynamic's own descriptor lists the captured arguments, so the last {@code n} instructions
-	 * before it are the loads for them, preceded by the load of the receiver. Every one of those loads has to
-	 * be a plain load with no label, line number or frame in between - a branch target inside the argument
-	 * list would make reordering it change control flow.
-	 */
-	private static List<AbstractInsnNode> capturedArguments(ClassNode owner, InvokeDynamicInsnNode site,
-			int[] permutation) {
-		Type[] captured = Type.getArgumentTypes(site.desc);
-		if (captured.length == 0) return null;
-
-		MethodNode host = hostOf(owner, site);
-		if (host == null) return null;
-
-		List<AbstractInsnNode> run = new ArrayList<>();
-		AbstractInsnNode insn = site.getPrevious();
-
-		for (int i = 0; i <= captured.length && insn != null; i++, insn = insn.getPrevious()) {
-			if (insn.getOpcode() < 0) return null; //a label, line number or frame inside the argument list
-			run.add(0, insn);
-		}
-
-		if (run.size() != captured.length + 1) return null;
-
-		//The receiver is the first value; the captured arguments are the rest, and each load must be able to
-		//produce the value at that position.
-		AbstractInsnNode receiver = run.get(0);
-		if (!pushesType(receiver, owner.name)) return null;
-
-		List<AbstractInsnNode> arguments = new ArrayList<>(run.subList(1, run.size()));
-		for (int i = 0; i < captured.length; i++) {
-			if (!pushesType(arguments.get(i), captured[i])) return null;
-		}
-
-		//The list has to end up in the game's parameter order: the value for the game's parameter j is the one
-		//the patched list carries at the position that the permutation maps to j.
-		AbstractInsnNode[] ordered = new AbstractInsnNode[arguments.size() + 1];
-		ordered[0] = receiver;
-
-		for (int i = 0; i < arguments.size(); i++) {
-			ordered[permutation[i] + 1] = arguments.get(i);
-		}
-
-		return new ArrayList<>(java.util.Arrays.asList(ordered));
-	}
-
-	/** The instruction list a registration lives in, or null when the site is not in this class. */
-	private static InsnList registrationSite(ClassNode owner, InvokeDynamicInsnNode site) {
-		MethodNode host = hostOf(owner, site);
-		return host == null ? null : host.instructions;
-	}
-
-	private static MethodNode hostOf(ClassNode owner, InvokeDynamicInsnNode site) {
-		for (MethodNode method : owner.methods) {
-			for (AbstractInsnNode insn : method.instructions) {
-				if (insn == site) return method;
-			}
-		}
-
-		return null;
-	}
-
-	/** Whether an instruction is a plain load of the given type - a class name, or a {@link Type}. */
-	private static boolean pushesType(AbstractInsnNode insn, Object expected) {
-		String type = expected instanceof Type t ? t.getDescriptor() : "L" + expected + ";";
-
-		switch (insn.getOpcode()) {
-			case Opcodes.ALOAD:
-				return type.startsWith("L") || type.startsWith("[");
-			case Opcodes.ILOAD:
-				return type.equals("I") || type.equals("Z") || type.equals("B") || type.equals("C") || type.equals("S");
-			case Opcodes.LLOAD:
-				return type.equals("J");
-			case Opcodes.FLOAD:
-				return type.equals("F");
-			case Opcodes.DLOAD:
-				return type.equals("D");
-			default:
-				return false;
-		}
 	}
 
 	/** The invokedynamic instructions that a class's own bootstrap methods build, in order. */

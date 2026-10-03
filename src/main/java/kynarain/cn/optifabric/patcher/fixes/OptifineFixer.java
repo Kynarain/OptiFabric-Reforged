@@ -64,9 +64,11 @@ public class OptifineFixer {
 		//lambda and leave every handle pointing at the lambda.
 		//
 		//c2me is why this matters: c2me-opts-scheduling @Overwrites method_17252, method_19487 and
-		//method_20579, and c2me-threading-worldgen injects into method_17224. Mixin resolves those by name and
-		//descriptor, so with the lambdas still under javac's names the world-load transform fails the whole
+		//method_20579, so with the lambdas still under javac's names the world-load transform fails the whole
 		//class ("Mixin transformation of net.minecraft.class_3898 failed") on the integrated server thread.
+		//c2me-threading-worldgen also injects into method_17224, which this does not repair - see the note on
+		//LambdaMethodRefFix, that registration's argument list, descriptor and body disagree in OptiFine's own
+		//bytes, so no reordering can both make them consistent and present the game's signature.
 		registerFix("class_3898", new LambdaMethodRefFix());
 		registerFix("class_3898", new RestoreVanillaMethodsFix("method_17227", "method_18843"));
 
