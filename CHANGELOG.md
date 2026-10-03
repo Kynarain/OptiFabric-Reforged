@@ -1,5 +1,22 @@
 # 更新日志
 
+## 1.1.2+mc1.20.6 — 把 sodium 同时声明进 conflicts 与 breaks(声明,不是闸门)
+
+### 改了什么
+
+- **`fabric.mod.json`**:`sodium` 现在同时写在 `conflicts` 与 `breaks` 两处(`*`;**原有的 `conflicts` 条目一个字没动**)。上游 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)(默认分支 `llama`,v1.14.3)只在 `conflicts` 里声明它,而有些启动器与平台只读 `breaks`,所以两处都写。
+- **文档**:`README.md` 与 `docs/FAQ.md` 新增「声明的不兼容」一节 —— 完整清单、继承自上游的条目、本移植**有意没有带过来**的三条 1.16/1.17 时代的版本范围(`cardinal-components-item <2.4.2`、`architectury >1.2.72 <1.3.77`、`meteor-client >=0.4.1`)、`ryoamiclights` 与本条 `sodium` 的来历,以及**加载器到底会不会拦**。
+
+### 这是一条声明,不是闸门
+
+在 **Fabric Loader 0.19.5** 上、`mods/` 里同时有 sodium 时实测(那次是在 1.21.x 线上做的;`conflicts` 与 `breaks` 都由加载器自身处理,与是哪条线无关):日志开头是 `Warnings were found!` 并点名这条冲突,然后照常进入 `Loading <N> mods:` —— `conflicts` 与 `breaks` **两个字段都不产生** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。两个字段都只是**警告**:请把这张表读成"作者已知这个组合会坏",而不是"装了会被拦住"。
+
+本线的 mod id 仍是 **`optifabric`**,而 Sodium 自己那份元数据里针对的正是 `optifabric`(Sodium 只在 `breaks` 里声明它,没有 `conflicts`)—— 所以在 id 这一层上 Sodium 那条声明**不会失配**,它会照常命中,与我们新写进 `breaks` 的这一条并存;Sodium 1.20.6 构建里那条声明覆盖的确切版本范围,本仓库**没有实测记录**。
+
+### 验证
+
+这一版**没有改代码**:补丁管线、fixer 表与丢 `ClassInfo` 缓存那一步都与 1.1.1 逐字节相同(改动只进 `fabric.mod.json` 与文档),所以 1.0.0 记下的离线数字(**425 / 425 通过**、ASM 数据流验证器 **0 问题**)仍然对应那一份产物,1.1.1 的真机记录也继续适用。声明本身不影响启动期行为。
+
 ## 1.1.1+mc1.20.6 — 丢掉 Mixin 为被替换的类缓存的 ClassInfo(修 @ModifyVariable 的 LVTGeneratorError)
 
 ### 修复
