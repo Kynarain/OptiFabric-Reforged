@@ -1,9 +1,84 @@
 # 更新日志
 
-> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.2.2+mc26.2`、`2.2.1+mc26.2`、
-> `2.2.0+mc26.2`、`2.1.1+mc26.2`、`2.1.0+mc26.2`、`2.0.0+mc26.1.2`、`1.2.0+mc26.1.2`)与 **1.21.x**(`1.1.0` – `1.1.2`,十个 MC
-> 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.2`)
-> 与 **26.1.2**(`2.2.2`),所以这一线也有了"逐 MC 版本的版本号"。
+> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.2.3+mc26.2`、`2.2.2+mc26.2`、
+> `2.2.1+mc26.2`、`2.2.0+mc26.2`、`2.1.1+mc26.2`、`2.1.0+mc26.2`、`2.0.0+mc26.1.2`、`1.2.0+mc26.1.2`)与 **1.21.x**(`1.1.0` – `1.1.2`,十个 MC
+> 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.3`)
+> 与 **26.1.2**(`2.2.3`),所以这一线也有了"逐 MC 版本的版本号"。
+
+## 2.2.3+mc26.2 — 26.x 线的第八版(修好"装了 OptiFine 就起不来":给 OptiFine 那份 `GuiRenderer$Draw` 补上 Fabric API 的 accessor 接口)
+
+> **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
+> 「修 fixer、修兼容性 → 修订号」。这一版**不移除任何支持、也不新增支持范围**,只是修掉一个"在最常见配置下根本
+> 起不来"的缺陷,所以是修订号(`2.2.2 → 2.2.3`),两个 MC 版本各出一个 jar。
+
+### 改了什么
+
+**症状(用户可见)**:Fabric API + 本模组 + 对应版 OptiFine、**没有别的模组**时,客户端在启动阶段直接崩掉,连主界面
+都到不了。日志里失败的是 **Fabric API 自己那个 mixin**,不是本模组:
+
+    Mixin apply for mod fabric-rendering-v1 failed fabric-rendering-v1.mixins.json:GuiRendererMixin from mod
+    fabric-rendering-v1 -> net.minecraft.client.gui.render.GuiRenderer: InvalidInjectionException
+    @WrapOperation operation wrapper method net/minecraft/client/gui/render/GuiRenderer::fixNonQuadIndexing …
+    Cannot @Coerce argument type net.minecraft.client.gui.render.GuiRenderer$Draw at index 4 to
+    net.fabricmc.fabric.mixin.client.rendering.GuiRendererDrawAccessor
+
+26.1.2 上是同一处,接口在那一版叫 `.../DrawAccessor`。
+
+**归因**(四条对照,每次只差一个变量):只有 Fabric API → 正常;Fabric API + 本模组、**不放 OptiFine** → 正常;
+Fabric API + 本模组 + OptiFine(**不放别的模组**)→ 失败;再加任何别的模组 → 同样失败。所以只有 OptiFine 在场时
+才坏,而报错落在 Fabric API 的注入器上。
+
+**根因**:OptiFine 重编译过的类由本模组交给加载器,Mixin 从这份字节建元数据时,**Fabric API 那个 accessor mixin
+加的接口还没在类上**。Fabric 的 `@WrapOperation` 处理器要把正在画的 `Draw` 当成那个接口用,Mixin 用
+`ClassInfo#canCoerce` 校验 —— 问的是"这个接口现在是 `GuiRenderer$Draw` 的超类型吗" —— 答案是否,于是**整个类**
+变换失败。**这不是改名、也不是方法体问题**:`GuiRenderer.executeDraw(Draw, RenderPass)` 的描述符与局部变量槽位
+两边完全一样,`Draw` 的成员与 `executeDrawRange` 的指令表都与原版逐字节相同;缺的是一条**类级别的接口**
+(`InnerClasses` 标志位那一处也试过,不解决问题)。
+
+**修复**:新增 `src/main/java/kynarain/cn/optifabric/patcher/fixes/AddInterfaceFix.java` —— 一个 `ClassFixer`,
+把接口**从类路径上找出来**(遍历已加载模组的 mixin 包,包名读自各自的 `*.mixins.json`,含 jar 里
+`META-INF/jars/` 下的嵌套 jar;找 `@Mixin(targets=…)` 指向该类的**接口**,只接受声明了目标类当前没有的方法的
+候选),再加到 OptiFine 那份 `Draw` 上;accessor 方法本身**留给 Mixin 生成**(自己写进去会让整个类因
+`cannot overwrite method … because @Overwrite is required by the parent configuration` 失败,已实测)。
+`OptifineFixer.registerOfficialNameFixes()` 里只有**一条注册**:
+
+```java
+registerFix("net/minecraft/client/gui/render/GuiRenderer$Draw",
+        new AddInterfaceFix("net/minecraft/client/gui/render/GuiRenderer$Draw"));
+```
+
+接口**不写死名字**是因为它在两个版本里不同(26.2 `GuiRendererDrawAccessor`,26.1.2 `DrawAccessor`):写死一个会让
+另一条线在 fixer 里抛 `ClassNotFoundException` —— **已实测**。
+
+### 实测
+
+| 手臂 | 结果 |
+|---|---|
+| 旧 jar(2.2.2),26.2 / 26.1.2,Fabric API + 本模组 + OptiFine | **FAIL,23 秒 / 21 秒** |
+| **新 jar,26.2 / 26.1.2**,同上三件 | **主界面,两边各 20 秒**,`Loading 49 mods` |
+| **新 jar,26.2 + C2ME** | **主界面,17 秒**,`Loading 79 mods` |
+| **新 jar,26.2 + C2ME,进世界** | **世界加载并渲染**;`Starting integrated minecraft server version 26.2`、`Loaded 1585 recipes`、`Time elapsed: 1424 ms`;`Cannot @Coerce` / `InvalidInjectionException` / `Mixin apply … failed` **各 0 条** |
+
+**边界(不要读过头)**:进世界那次只有约 **40 秒**,不是压测;那次与 26.2 + C2ME 的启动都是**发布前拿"2.2.2 + 这一处
+修复"的构建**跑的(与正式产物只差版本号一个字符串,条目级比对见下);**26.1.2 只到主界面,没有进世界**;修复只在两个
+26.x 版本与各自参考安装里那份 Fabric API 上实测过;另外**没有查明** Mixin 的 accessor 那一趟本来为什么没有走到本模组
+提供的这份 `Draw` 上 —— 失败判据的方向与"补上接口就能修好"是实测结论,最初漏掉的原因不是。
+
+### 验证(离线)
+
+补丁管线其余部分与 2.2.2 逐字节相同,所以 2.2.1 / 2.2.2 的离线数字继续适用:26.2 **562 / 562**、26.1.2
+**567 / 567**、`FAILED: 0`、`ASM verifier problems: 0`、四个扫描器全 0。两个产物都在**干净的临时 worktree**里构建
+(本机的 `I:\mods\OptiFabric` 有 9 个未提交的实验文件,那里的构建会把实验类打进 jar),并与已发布的 2.2.2 逐条目比对:
+共同条目 81 个里 79 个哈希相同,不同的是 `fabric.mod.json`(只差版本号一行)与 `patcher/fixes/OptifineFixer.class`,
+新增的只有 `patcher/fixes/AddInterfaceFix.class` 与 `AddInterfaceFix$Candidate.class`;与发布前那份
+"2.2.2 + 这一处修复"的构建相比,则**只有 `fabric.mod.json` 不同**。两个 jar 里都没有任何实验类
+(`Probe` / `PerDrawShaderState` / `SectionDraw`),也没有 OptiFine 的类或 `mappings/mappings.tiny`。
+
+产物:`OptiFabric-Reforged-2.2.3+mc26.2.jar` — 188876 字节
+`SHA-256: 07B91508EE9948A5EF35FD343A057D2ACB1530B6525DF851C161390968FC45A8`
+
+产物:`OptiFabric-Reforged-2.2.3+mc26.1.2.jar` — 188879 字节
+`SHA-256: 611C717726FA066B57CB54815224904636FD385276BD9B01159CE1D6E1C811AA`
 
 ## 2.2.2+mc26.2 — 26.x 线的第七版(sodium 同时声明进 conflicts 与 breaks,并把已声明的不兼容写进两份 README)
 
@@ -205,7 +280,7 @@ unresolvable 0、`LambdaScan DANGLING handles: 0`。
 ## 2.1.0+mc26.2 — 26.x 线的第三版(新增 Minecraft 26.2 支持)
 
 > ⚠️ **这一版有一个已被取代的缺陷(见上一节)**:它把 OptiFine 26.2 preview 对光影包加载的取消删掉了、
-> 把加载强行打开;真机测量下来,选了光影包之后世界**只画粒子、方块透明**。请改用 **`2.2.2+mc26.2`** ——
+> 把加载强行打开;真机测量下来,选了光影包之后世界**只画粒子、方块透明**。请改用 **`2.2.3+mc26.2`** ——
 > 本节其余内容(26.2 的移植记录、离线数字、产物尺寸与摘要)按 §3 原样保留,属于历史记录。
 
 > **次版本号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是

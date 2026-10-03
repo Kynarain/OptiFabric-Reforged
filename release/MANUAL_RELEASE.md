@@ -1,12 +1,12 @@
 # 手动发布清单(26.x,逐版一个发布条目)
 
-> 本文件覆盖 **26.x** —— 仓库里唯一的一条发布线,现在有两个产物:**26.2**(当前,`2.2.2`)与
-> **26.1.2**(`2.2.2`;它以前冻结在 `2.0.0`,但 2.2.1 修的那个缺陷它也有,2.2.1 起它也每版跟着重新出一份)。另一条线(1.21.x,混淆名 +
+> 本文件覆盖 **26.x** —— 仓库里唯一的一条发布线,现在有两个产物:**26.2**(当前,`2.2.3`)与
+> **26.1.2**(`2.2.3`;它以前冻结在 `2.0.0`,但 2.2.1 修的那个缺陷它也有,2.2.1 起它也每版跟着重新出一份)。另一条线(1.21.x,混淆名 +
 > yarn/intermediary,一份源码出十个 MC 版本)在自己的分支上,两条线的 jar 不能互相替代。
 
 版本号统一写成 `<版本>+mc<MC版本>`(jar 名与发布标题都用这一串);**GitHub 的标签一般是版本号本身,不带 `+mc`**
 (与已发的 `v1.2.0` / `v2.0.0` 一致)。**例外**:同一个版本号出两个 jar 时,26.2 那一份用裸标签、26.1.2 那一份加后缀
-(`v2.2.2` 与 `v2.2.2+mc26.1.2`;`v2.2.1` / `v2.2.1+mc26.1.2` 与 `v2.2.0` / `v2.2.0+mc26.1.2` 就是这么发的)
+(`v2.2.3` 与 `v2.2.3+mc26.1.2`;`v2.2.2` / `v2.2.2+mc26.1.2`、`v2.2.1` / `v2.2.1+mc26.1.2` 与 `v2.2.0` / `v2.2.0+mc26.1.2` 就是这么发的)
 —— 否则两份抢同一个标签名。
 正文直接用 release/notes/mc<版本>.md(已是 Markdown,含安装步骤、已知限制、该 jar 的尺寸与 SHA-256)。
 
@@ -14,9 +14,9 @@
 > 一样。所以:
 >
 > ```powershell
-> git tag v2.2.2                 # 26.2 那一份:裸标签(本仓库的 Latest 徽章归这一条)
-> git tag "v2.2.2+mc26.1.2"      # 26.1.2 那一份:必须加后缀,否则和上面撞名
-> git push origin v2.2.2 "v2.2.2+mc26.1.2"
+> git tag v2.2.3                 # 26.2 那一份:裸标签(本仓库的 Latest 徽章归这一条)
+> git tag "v2.2.3+mc26.1.2"      # 26.1.2 那一份:必须加后缀,否则和上面撞名
+> git push origin v2.2.3 "v2.2.3+mc26.1.2"
 > ```
 >
 > 想让脚本自己处理,就给 `publish.ps1` 加一张逐 MC 版本的 tag 后缀表(和 `$modVersions` / `$modTagTargets` 一样
@@ -39,8 +39,8 @@
 
 | 版本 | 版本号 / 标签 | jar | 字节 | SHA-256 | 正文 |
 |---|---|---|---|---|---|
-| 26.2 | 2.2.2+mc26.2 / v2.2.2 | dist\OptiFabric-Reforged-2.2.2+mc26.2.jar | 180471 | 2654F5085EF4E5CA958BDECF627A2BCB195B608AAC1E5EA31C21445479D541C9 | release/notes/mc26.2.md |
-| 26.1.2 | 2.2.2+mc26.1.2 / v2.2.2+mc26.1.2 | dist\OptiFabric-Reforged-2.2.2+mc26.1.2.jar | 180474 | 4EC5357B58238851005EA7D78FA85199F204F63A96F13FBFB6853F074402EFC9 | release/notes/mc26.1.2.md |
+| 26.2 | 2.2.3+mc26.2 / v2.2.3 | dist\OptiFabric-Reforged-2.2.3+mc26.2.jar | 188876 | 07B91508EE9948A5EF35FD343A057D2ACB1530B6525DF851C161390968FC45A8 | release/notes/mc26.2.md |
+| 26.1.2 | 2.2.3+mc26.1.2 / v2.2.3+mc26.1.2 | dist\OptiFabric-Reforged-2.2.3+mc26.1.2.jar | 188879 | 611C717726FA066B57CB54815224904636FD385276BD9B01159CE1D6E1C811AA | release/notes/mc26.1.2.md |
 
 > ⚠️ **`-RecordDigest` 会把这张表里每一行都改一遍,跑完必须 `git diff` 逐行看**
 >
@@ -67,7 +67,7 @@
 > 所以只要 `<旧版本>` 也出现在更早的小节里,那一段就会被一起改掉 —— 已冻结的发布记录于是被改写成当前版本。
 > **这个坑在本仓库已经手工修过三次**(2.1.0 一次,2.2.1 期间两条线各一次)。
 >
-> - 只改某**一个 MC 版本**(`-Mc`)不会踩到:替换串带着 MC 版本(`2.2.2+mc26.2`),别的 MC 版本与历史串都碰不到;
+> - 只改某**一个 MC 版本**(`-Mc`)不会踩到:替换串带着 MC 版本(`2.2.3+mc26.2`),别的 MC 版本与历史串都碰不到;
 > - **每次升版都先 `-DryRun`,真跑完再 `git diff -- CHANGELOG.md`**,只允许出现"当前版本自己那一节"的改动;
 > - 历史小节被改了就先手工改回去再提交发布。
 
@@ -75,22 +75,22 @@
 
 ### GitHub Release
 
-- **Tag**:`v2.2.2`(26.2 那一份;本仓库的 tag 一般只写版本号,已发布的 `v1.2.0` / `v2.0.0` / `v2.1.0` / `v2.1.1` / `v2.2.0` / `v2.2.1` 就是这样;MC 版本留在产物名与标题里)。
-  **26.1.2 那一份用带后缀的 `v2.2.2+mc26.1.2`**(两份同版本号,裸标签会撞名,见文首);
+- **Tag**:`v2.2.3`(26.2 那一份;本仓库的 tag 一般只写版本号,已发布的 `v1.2.0` / `v2.0.0` / `v2.1.0` / `v2.1.1` / `v2.2.0` / `v2.2.1` / `v2.2.2` 就是这样;MC 版本留在产物名与标题里)。
+  **26.1.2 那一份用带后缀的 `v2.2.3+mc26.1.2`**(两份同版本号,裸标签会撞名,见文首);
   target 选 **26.x 线的发布提交(当前在 `wip/26.2` 上,即这次发版的提交)**;
-- **Release title**:OptiFabric Reforged 2.2.2+mc26.2;
+- **Release title**:OptiFabric Reforged 2.2.3+mc26.2;
 - **Describe this release**:粘贴 `release/notes/mc26.2.md`(Markdown);
-- **Attach binaries**:上传 `dist\OptiFabric-Reforged-2.2.2+mc26.2.jar`(正文里已写好尺寸与 SHA-256,方便用户校验)。
-- **26.1.2 那一份要单独发一个条目**(同一个版本号、另一个 jar):tag `v2.2.2+mc26.1.2`、title
-  `OptiFabric Reforged 2.2.2+mc26.1.2`、正文用 `release/notes/mc26.1.2.md`、附件 `dist\OptiFabric-Reforged-2.2.2+mc26.1.2.jar`
-  (以及它的 `-sources.jar`);**`make_latest` 保持 false** —— 仓库的 Latest 徽章归 26.2 那一份(`v2.2.2`)。
+- **Attach binaries**:上传 `dist\OptiFabric-Reforged-2.2.3+mc26.2.jar`(正文里已写好尺寸与 SHA-256,方便用户校验)。
+- **26.1.2 那一份要单独发一个条目**(同一个版本号、另一个 jar):tag `v2.2.3+mc26.1.2`、title
+  `OptiFabric Reforged 2.2.3+mc26.1.2`、正文用 `release/notes/mc26.1.2.md`、附件 `dist\OptiFabric-Reforged-2.2.3+mc26.1.2.jar`
+  (以及它的 `-sources.jar`);**`make_latest` 保持 false** —— 仓库的 Latest 徽章归 26.2 那一份(`v2.2.3`)。
 
 ### Modrinth
 
 | 字段 | 填什么 |
 |---|---|
-| Name | OptiFabric Reforged 2.2.2+mc26.2 |
-| Version number | 2.2.2+mc26.2 |
+| Name | OptiFabric Reforged 2.2.3+mc26.2 |
+| Version number | 2.2.3+mc26.2 |
 | Release channel | Release |
 | Game versions | 只勾 **26.2** |
 | Loaders | Fabric |
@@ -103,7 +103,7 @@
 
 | 字段 | 填什么 |
 |---|---|
-| Display name | OptiFabric Reforged 2.2.2+mc26.2 |
+| Display name | OptiFabric Reforged 2.2.3+mc26.2 |
 | Release type | Release |
 | Game version | Minecraft **26.2** 加 Fabric(只勾该版) |
 | Changelog | 粘贴 `release/notes/mc26.2.md`,格式选 Markdown |
@@ -142,7 +142,7 @@ type release\tmp\modrinth-26.2.json                                             
       只给一个 MC 版本升版就加 `-Mc 26.2`。规则见 [`docs/VERSIONING.md`](../docs/VERSIONING.md);
       不要手改 —— 一次要动 9 个文件);跑完 `git diff -- CHANGELOG.md` 确认历史小节没被动(见上面的警告);
 - [ ] `.\gradlew build --offline` 通过(这一线没有 `-Pmc`,目标版本来自根目录 `gradle.properties` 的
-      `minecraft_version`),且产物名是 `OptiFabric-Reforged-2.2.2+mc26.2.jar`;
+      `minecraft_version`),且产物名是 `OptiFabric-Reforged-2.2.3+mc26.2.jar`;
       **发布用的 jar 是在干净的临时 worktree 里构建的** —— 这个 worktree 里有 9 个未提交的实验文件,
       脏构建会多出约 18 KB 的实验类(178,300 对 196,235,见 [`CONTRIBUTING.md`](../CONTRIBUTING.md) 第二节);
 - [ ] `.\release\version.ps1 -Line 26.x -RecordDigest` 跑过,正文里的尺寸与 SHA-256 与 `dist\` 里的 jar 一致;

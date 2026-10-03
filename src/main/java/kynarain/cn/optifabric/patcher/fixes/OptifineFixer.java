@@ -116,6 +116,34 @@ public class OptifineFixer {
 		registerFix("net/minecraft/client/renderer/item/CuboidItemModelWrapper",
 				new DropVanillaAbsentOverloadsFix(true, "update"));
 
+		//net/minecraft/client/gui/render/GuiRenderer$Draw (fabric-rendering-v1 GuiRendererDrawAccessor, used by
+		//GuiRendererMixin.fixNonQuadIndexing)
+		//The 26.x baseline crash. fabric-rendering-v1 wraps RenderPass.setIndexBuffer inside GuiRenderer.executeDraw
+		//and takes the Draw it is drawing as a "... @Coerce GuiRendererDrawAccessor draw" argument. Mixin validates
+		//that coercion with ClassInfo#canCoerce, i.e. "is GuiRendererDrawAccessor a supertype of GuiRenderer$Draw
+		//right now" - and against OptiFine's recompiled Draw it is not, so the whole class fails:
+		//
+		//  Mixin apply for mod fabric-rendering-v1 failed fabric-rendering-v1.mixins.json:GuiRendererMixin from mod
+		//  fabric-rendering-v1 -> net.minecraft.client.gui.render.GuiRenderer: InvalidInjectionException
+		//  @WrapOperation operation wrapper method net/minecraft/client/gui/render/GuiRenderer::fixNonQuadIndexing
+		//  ... Cannot @Coerce argument type net.minecraft.client.gui.render.GuiRenderer$Draw at index 4 to
+		//  net.fabricmc.fabric.mixin.client.rendering.GuiRendererDrawAccessor
+		//
+		//This is NOT a renamed member, and it is not a method-body problem: the wrapped method
+		//(GuiRenderer.executeDraw(Draw, RenderPass)V) has the same descriptor and the same local layout on both
+		//sides (local 1 = draw:Lnet/minecraft/client/gui/render/GuiRenderer$Draw;), and OptiFine's GuiRenderer$Draw
+		//has the same members as the game's. What is missing is the *interface* Fabric API's accessor mixin puts on
+		//Draw, so declaring it - and leaving Mixin to contribute the accessors it generates from that same mixin - is
+		//the repair. RestoreVanillaMethodsFix cannot express this (it only swaps method bodies) and there is no method
+		//of Draw's to restore here. Measured both ways: with this entry the line reaches the title screen, without it
+		//the same three jars die at 23 s on the message above.
+		//
+		//Do not add the accessors here: GuiRendererDrawAccessor generates fabric$pipeline()/fabric$Draw() itself, and
+		//a class that already declares them fails the class in MixinApplicatorStandard.applyAccessors with
+		//"cannot overwrite method ... because @Overwrite is required by the parent configuration" (measured).
+		registerFix("net/minecraft/client/gui/render/GuiRenderer$Draw",
+				new AddInterfaceFix("net/minecraft/client/gui/render/GuiRenderer$Draw"));
+
 		//net/minecraft/client/renderer/chunk/SectionCompiler (fabric-renderer-api-v1 SectionCompilerMixin)
 		//Two of its handlers inject into the compile loop: one wraps ModelBlockRenderer.tesselateBlock, the other
 		//sits before BlockPos.betweenClosed. Neither call survives in OptiFine's recompiled body. The vanilla body

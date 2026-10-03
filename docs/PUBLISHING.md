@@ -2,8 +2,10 @@
 
 本文档记录"把本项目发出去"需要做的步骤。仓库里已经准备好的东西、以及**你还需要自己做的部分**都写在下面。
 
-> 本仓库只有**一条发布线**:**26.x** = `2.2.2+mc26.2`(26.1.2 那一个是 `2.2.2+mc26.1.2`,这一版两个 MC 版本各出一个 jar)。
-> `2.2.2` 是修订版:`fabric.mod.json` 里把 `sodium` 同时声明进 `conflicts` 与 `breaks`(修正元数据/文档 → 修订号),
+> 本仓库只有**一条发布线**:**26.x** = `2.2.3+mc26.2`(26.1.2 那一个是 `2.2.3+mc26.1.2`,这一版两个 MC 版本各出一个 jar)。
+> `2.2.3` 是修订版(当前):给 OptiFine 那份 `GuiRenderer$Draw` 补上 Fabric API 的 accessor 接口,修好"装了 OptiFine
+> 就起不来"那一处(修 fixer / 修兼容性 → 修订号);
+> `2.2.2` 也是修订版:`fabric.mod.json` 里把 `sodium` 同时声明进 `conflicts` 与 `breaks`(修正元数据/文档 → 修订号),
 > 并把已声明的不兼容清单写进两份 README;
 > `2.2.1` 也是修订版:丢掉 Mixin 为被本模组替换掉的类缓存的 `ClassInfo`,修好 `@ModifyVariable` 在 OptiFine 改过的类上
 > 抛 `LVTGeneratorError`、整个类变换失败的问题(26.2 与 26.1.2 都受它影响,所以两份一起发);
@@ -29,11 +31,11 @@
 > **发布标签是版本号本身**(已发的:`v1.2.0`、`v2.0.0`、`v2.1.0`、`v2.1.1`、`v2.2.0`、`v2.2.1`、`v2.2.2`),不带 `+mc` —— MC 版本留在
 > 产物名与标题里;每个版本一个条目,旧条目原样保留。
 > **例外**:同一个版本号要出两个 jar 时,26.2 那一份用**裸标签**(它是这一线的"当前版本"),26.1.2 那一份**加后缀**,
-> 否则两份抢同一个标签名 —— `v2.2.0` / `v2.2.0+mc26.1.2` 与 `v2.2.1` / `v2.2.1+mc26.1.2` 就是这么发的,`v2.2.2` 与 `v2.2.2+mc26.1.2` 照此办理。
+> 否则两份抢同一个标签名 —— `v2.2.0` / `v2.2.0+mc26.1.2` 与 `v2.2.1` / `v2.2.1+mc26.1.2` 就是这么发的,`v2.2.2` 与 `v2.2.2+mc26.1.2` 照此办理(2.2.3 是 `v2.2.3` 与 `v2.2.3+mc26.1.2`)。
 > ⚠️ `release/publish.ps1` 现在**只会**生成裸标签 `v<版本>`,所以发 26.1.2 那一份时**脚本要加 `-Version 26.1.2`
 > 并把 tag 先手工改成 `v<版本>+mc26.1.2`**,或者按 [`release/MANUAL_RELEASE.md`](../release/MANUAL_RELEASE.md)
-> 里写的手工发那一条 —— 别让两个条目抢同一个 tag。本仓库这次 2.2.2 的两个 tag(`v2.2.2` 与 `v2.2.2+mc26.1.2`)
-> **都是手工打的**:脚本只会给出 `v2.2.2` 这一个,26.1.2 那个带后缀的 tag 它做不出来。
+> 里写的手工发那一条 —— 别让两个条目抢同一个 tag。本仓库 2.2.3 的两个 tag(`v2.2.3` 与 `v2.2.3+mc26.1.2`)
+> **都是手工打的**:脚本只会给出 `v2.2.3` 这一个,26.1.2 那个带后缀的 tag 它做不出来。
 > `release/publish.ps1` 取 tag 的目标分支用脚本顶部的 `$defaultTagTarget`(当前为 `26.x`)。
 >
 > **Latest 徽章归本线**(26.2 那一份的裸标签)。**1.21.x 与 1.20.6 的每一个发布条目都必须用 `make_latest=false`
@@ -55,12 +57,12 @@
 | 项目 | 位置 | 说明 |
 |---|---|---|
 | 源码仓库 | 仓库根目录 | 已配好 `.gitignore`(不含 OptiFine、测试工件、构建产物) |
-| 构建配置 | `build.gradle` / `gradle.properties`(仓库根目录) | 版本号 `2.2.2+mc26.2`,产物名 `OptiFabric-Reforged-2.2.2+mc26.2.jar` |
+| 构建配置 | `build.gradle` / `gradle.properties`(仓库根目录) | 版本号 `2.2.3+mc26.2`,产物名 `OptiFabric-Reforged-2.2.3+mc26.2.jar` |
 | 许可 | `LICENSE.txt` | MPL-2.0(上游 OptiFabric 的许可,移植必须保留) |
 | 使用者文档 | `README.md` | 原理、安装、已知问题、排查(已按 26.2 更新) |
 | 开发记录 | `docs/DEVELOPMENT.md` | 逐轮排查与可复现的离线校验工具 |
 | 移植记录 | `docs/PORT_26.x.md` | 26.x 为什么单独一条线、官方名带来的每一类冲突、26.2 那四处(含**故意不修**的那一处) |
-| 更新日志 | `CHANGELOG.md` | 26.x 的 2.2.2 / 2.2.1 / 2.2.0 / 2.1.1 / 2.1.0 / 2.0.0 / 1.2.0 七节,后面是 1.21.x / 1.20.6 的历史 |
+| 更新日志 | `CHANGELOG.md` | 26.x 的 2.2.3 / 2.2.2 / 2.2.1 / 2.2.0 / 2.1.1 / 2.1.0 / 2.0.0 / 1.2.0 八节,后面是 1.21.x / 1.20.6 的历史 |
 | 页面文案 | `docs/DESCRIPTION.md` | 简要描述 + 详细描述,中英双语,可直接粘贴(已按 26.2 更新) |
 | 模组图标 | `src/main/resources/assets/optifabric/icon.png` | 128×128,已接进 `fabric.mod.json`;想换风格直接替换这个文件 |
 | 发布包副本 | `dist/` | 已构建好的 jar + `README.txt`(含 SHA-256),`.gitignore` 排除,本地上传用 |
@@ -73,14 +75,14 @@
 cd I:\mods\OptiFabric
 git checkout wip/26.2      # 本机这台 worktree 就停在这一支(见文首的分支表)
 .\gradlew build --offline
-Copy-Item "build\libs\OptiFabric-Reforged-2.2.2+mc26.2.jar" dist -Force
+Copy-Item "build\libs\OptiFabric-Reforged-2.2.3+mc26.2.jar" dist -Force
 ```
 
 > ⚠️ **要发布的 jar 必须在干净的临时 worktree 里构建**:这个 worktree 里有 9 个未提交的实验文件(见
 > [`CONTRIBUTING.md`](../CONTRIBUTING.md) 第二节),脏构建会把那些实验类一起打进 jar —— 已记录的对照是
 > **178,300**(干净 2.2.0)对 **196,235**(脏 2.2.0)字节,同名却不同内容。
 >
-> 这一线**没有 `-Pmc`**:`minecraft_version` 就是 `26.2`、`mod_version_base` 就是 `2.2.2`(都在根目录
+> 这一线**没有 `-Pmc`**:`minecraft_version` 就是 `26.2`、`mod_version_base` 就是 `2.2.3`(都在根目录
 > `gradle.properties` 里);26.1.2 那份用的是它自己的版本号,记在 `release\publish.ps1` 的 `$modVersions` 里。
 > 要升版别手改,走 `.\release\version.ps1 -Line 26.x -Kind <major|minor|patch>`(只给某一个 MC 版本升版就加
 > `-Mc <MC 版本>`,先加 `-DryRun`)—— 它一次把 `gradle.properties`、`release/publish.ps1` 与各文档里那 9 处一起改掉
@@ -89,8 +91,8 @@ Copy-Item "build\libs\OptiFabric-Reforged-2.2.2+mc26.2.jar" dist -Force
 
 产物在 `build\libs\`(顺手复制到 `dist\`,里面已有一份现成的):
 
-- `OptiFabric-Reforged-2.2.2+mc26.2.jar` ← **上传这个**
-- `OptiFabric-Reforged-2.2.2+mc26.2-sources.jar`(可选,一般不用发)
+- `OptiFabric-Reforged-2.2.3+mc26.2.jar` ← **上传这个**
+- `OptiFabric-Reforged-2.2.3+mc26.2-sources.jar`(可选,一般不用发)
 
 发布之前建议先跑一遍离线验证(一条命令,几分钟):
 
@@ -103,7 +105,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
 ```powershell
 cd I:\mods\OptiFabric
 git add <你改的文件>       # 别用 -A:这个 worktree 里有 9 个不该提交的实验文件(见 CONTRIBUTING.md 第四节)
-git commit -m "OptiFabric Reforged 2.2.2+mc26.2: OptiFine on Fabric for 26.2"
+git commit -m "OptiFabric Reforged 2.2.3+mc26.2: OptiFine on Fabric for 26.2"
 git remote add origin https://github.com/<你的用户名>/<仓库名>.git
 git push -u origin wip/26.2    # 推当前分支;发布用的分支是 26.x
 ```
@@ -111,13 +113,13 @@ git push -u origin wip/26.2    # 推当前分支;发布用的分支是 26.x
 发 Release —— 26.2 那一份的标签就是版本号本身,旧条目原样保留:
 
 ```powershell
-git tag v2.2.2                  # 26.2,裸标签
-git tag "v2.2.2+mc26.1.2"       # 26.1.2,加后缀(裸标签已被 26.2 占用)
-git push origin v2.2.2 "v2.2.2+mc26.1.2"
+git tag v2.2.3                  # 26.2,裸标签
+git tag "v2.2.3+mc26.1.2"       # 26.1.2,加后缀(裸标签已被 26.2 占用)
+git push origin v2.2.3 "v2.2.3+mc26.1.2"
 ```
 
 然后在 GitHub 网页上基于该 tag 建 Release(`Target` 选 **`26.x`** 分支 —— 见文首分支表),
-把 `OptiFabric-Reforged-2.2.2+mc26.2.jar`
+把 `OptiFabric-Reforged-2.2.3+mc26.2.jar`
 (以及 `-sources.jar`,可选)作为附件上传,并且**只让 26.2 那一条成为 Latest** —— 26.1.2 那一条用
 `make_latest=false`(网页上就是"Set as the latest release"不勾)。仓库根目录的发布脚本也能做同样的事:
 
@@ -144,7 +146,7 @@ git push origin v2.2.2 "v2.2.2+mc26.1.2"
    - 模组加载器:**Fabric**
    - 许可:**MPL-2.0**(与上游一致,必须一致)
    - 分类建议:Optimization / Miscellaneous
-2. **上传文件**:一个 jar **一个文件**,版本名用 `2.2.2+mc26.2`,并在文件设置里把 **26.2** 勾上。
+2. **上传文件**:一个 jar **一个文件**,版本名用 `2.2.3+mc26.2`,并在文件设置里把 **26.2** 勾上。
    changelog 用 `release/notes/mc26.2.md`。
 3. **项目描述**:`docs/DESCRIPTION.md` 里给了成套文案 —— "简介"栏粘贴**简要描述**(英文在前、中文在后,CF 要求英文排最前),
    项目正文粘贴**详细描述**(有中文和英文两版,CF 支持 Markdown;里面已经带了"支持的版本"表)。
@@ -175,7 +177,7 @@ git push origin v2.2.2 "v2.2.2+mc26.1.2"
    (见 [`VERSIONING.md`](VERSIONING.md) 第四、五节)。⚠️ 它会全文件替换 `<旧版本>+mc`,**跑完必须
    `git diff` 复核 `CHANGELOG.md`** —— 历史小节被改写是已知坑,见
    [`release/MANUAL_RELEASE.md`](../release/MANUAL_RELEASE.md) 里那条警告;
-2. 在 `CHANGELOG.md` 顶部加一节(写清新的版本号,例如 `2.2.2+mc26.2`;`release/notes/mc26.2.md` 同步);
+2. 在 `CHANGELOG.md` 顶部加一节(写清新的版本号,例如 `2.2.3+mc26.2`;`release/notes/mc26.2.md` 同步);
 3. 构建(这一线没有 `-Pmc`,目标版本来自 `gradle.properties`;**发布用的 jar 在干净的临时 worktree 里构建**):
    ```powershell
    .\gradlew build --offline
