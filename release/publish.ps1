@@ -32,12 +32,12 @@ $root = Split-Path -Parent $PSScriptRoot
 # 本仓库只有 26.x 一条发布线(见 release\MANUAL_RELEASE.md)。
 # 版本基数:$defaultModVersion 是这一线**当前在发**的那个产物的版本号 —— 26.2 那一份。
 $versions = @("26.1.2", "26.2")
-$defaultModVersion = "2.2.1"
+$defaultModVersion = "2.2.2"
 # 逐 MC 版本的例外值:某个版本单独升过版就写在这里。26.1.2 曾在 2.0.0 上发布,但现在两个 MC 版本一起停在
 # 2.2.0(26.1.2 这一份补上了 2.2.0 的 OptiFine 提示与下载,内容与 26.2 那一份同源),所以两条都写成基数
 # 同值;万一以后只给某一个 MC 版本升版,-Mc 会改这里的值,另一条仍用上面的基数;整条线一起升版用
 # -Kind / -Set,只给某一个 MC 版本升版用 -Mc(见 docs\VERSIONING.md 第五节)。
-$modVersions = @{ "26.1.2" = "2.2.1" }
+$modVersions = @{ "26.1.2" = "2.2.2" }
 # 产物名与显示名也是这一线自己的:mod id 是 optifabric_reforged(见根目录 build.gradle),
 # 所以 jar 名与显示名与另一条线(1.21.x,在自己的分支上)不同。下面几张逐版本覆盖表现在都是空的 ——
 # 只有某个 MC 版本要用别的产物名 / 显示名 / tag 分支时才往里加一条。
