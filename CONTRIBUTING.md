@@ -112,6 +112,7 @@ $b = [System.IO.File]::ReadAllBytes($f)
 | 文档 | 讲什么 |
 |---|---|
 | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | 逐轮排查记录、每一类冲突的根因与修法、离线工具链、与上游的差异 |
+| [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) / [`docs/COMPATIBILITY_CN.md`](docs/COMPATIBILITY_CN.md) | 1.21.1 实测兼容性扫描的结论、方法、归属与口径;原始报表(含逐行 `MATRIX.md`)在 [`docs/compatibility/`](docs/compatibility/) |
 | [`docs/VERSIONING.md`](docs/VERSIONING.md) | 什么算不兼容修改 / 新功能 / 修订,一次升版要动哪些文件,`-Mc` 逐版本升版 |
 | [`docs/PUBLISHING.md`](docs/PUBLISHING.md) | GitHub / CurseForge / Modrinth 上要怎么填,分支与 tag 约定 |
 | [`release/MANUAL_RELEASE.md`](release/MANUAL_RELEASE.md) | 逐版数据(尺寸 / SHA-256)、发布前自查、tag 与标签约定 |

@@ -180,8 +180,35 @@ java.lang.NullPointerException: Cannot read field "norm" because "multiTex" is n
 |---|---|
 | ✅ 可用 | OptiFine 的视频设置、缩放、连接纹理、动态光源、**光影**(1.21.6 / 1.21.7 除外),以及 1.1.2 起的**抗锯齿** |
 | ⚠️ 有意中和 | `BEFORE_BLOCK_OUTLINE` 事件不再触发(方块描边仍照画);移动方块的 FRAPI 渲染钩子失效(移动方块由原版路径正常渲染) |
-| ❌ 不兼容 | **Sodium**(已声明 `conflicts`),以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(已声明 `breaks`)。RyoamicLights 的具体原因是 OptiFine 把原版视频设置界面**整类替换成自己的实现,连父类都换掉**,而它的 mixin 注入在原版父类上;删掉它不会损失功能,OptiFine 自带动态光源 |
+| ❌ 不兼容 | **Sodium**(已声明 `conflicts`),以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(已声明 `breaks`)。RyoamicLights 的具体原因是 OptiFine 把原版视频设置界面**整类替换成自己的实现,连父类都换掉**,而它的 mixin 注入在原版父类上;删掉它不会损失功能,OptiFine 自带动态光源。完整清单、来源与加载器实际会怎么做:[下面这一节](#声明的不兼容以及加载器实际会怎么做) |
 | 📄 OptiFine 侧限制 | OptiFine 看不到 Fabric 模组内部的资源(`[OptiFine] Unknown resource pack type: …ModNioResourcePack`);光影包与你的 OptiFine 版本不匹配时会打印自己的 `[Shaders]` 报错 |
+
+### 声明的不兼容,以及加载器实际会怎么做
+
+本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。`2.2.1` 产物声明的是:
+
+| 声明 | 条目 |
+|---|---|
+| `conflicts` | `sodium`(`*`) |
+| `breaks` | `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(`*`) |
+
+Sodium 这一条与其中三条 `breaks` **继承自上游**:[Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)(其默认分支 `llama` 上的 `fabric.mod.json`,v1.14.3)声明的同样是 `sodium` 冲突,以及 `no_fog`、`thallium`、`xradiation` 三条 `breaks`;它另外还有三条带版本范围的条目,**本移植有意没有带过来**:
+
+| 上游条目 | 没有带过来的原因 |
+|---|---|
+| `cardinal-components-item <2.4.2` | 1.16/1.17 时代的版本范围,只有那些构建落在范围里 |
+| `architectury >1.2.72 <1.3.77` | 1.16/1.17 时代的范围,而且它背后那个冲突在 1.21.1 上已经**被修好**(见下) |
+| `meteor-client >=0.4.1` | 1.16/1.17 时代的条目 |
+
+`ryoamiclights` 是本移植自己加的,原因见上面那张表。
+
+**加载器并不会拦住这个组合。** 在 **Fabric Loader 0.19.5** 上实测,`mods/` 里同时有 `sodium` `0.8.13+mc1.21.1` 时,日志开头是 `Warnings were found!`、点名这条冲突,然后照常进入 `Loading 56 mods:` —— **没有** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。所以这些属于**已声明的、已知的不兼容**:加载器用它自己的措辞警告你,然后照常把游戏载起来。请把这张表读成"作者已知这个组合会坏",而不是"装了会被拦住"。
+
+**Sodium 这一对只有一侧还在声明。** Sodium 自己的元数据里 `breaks` 点名的是**旧 mod id `optifabric`**;而本线从 2.0.0 起以 `optifabric_reforged`(显示名 *OptiFabric Reforged*)发布,那条规则已经匹配不上任何东西。所以你在 sodium 上看到的那条警告,来自**本模组这一侧**。
+
+**Architectury 是反过来的例子,值得留着。** 上游声明 architectury 坏,architectury 自己的元数据也声明了 `breaks: optifabric <1.13.0`。而在 1.21.1 上,本移植把它背后真正的冲突修掉了:OptiFine 往 `GameRenderer.render` **中间**插了自己的局部变量,把 Mixin `LocalCapture` 交给处理器的原版槽位整体顶高,`LocalSlotLayoutFix` 则把这些多出来的槽位挪到局部变量区末尾。现在 `architectury-api` `13.0.11` 能通过兼容性扫描(矩阵第 14 行),而改成 `optifabric_reforged` 正是让 architectury 那条声明不再命中的原因。实测记录见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) 与 [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md)。
+
+实测层面的全貌 —— 哪些模组在 OptiFabric 旁边真的会挂、其中哪些是我们的问题 —— 见 [`docs/COMPATIBILITY_CN.md`](docs/COMPATIBILITY_CN.md)。
 
 ### 与 indigo 的关系
 
@@ -227,7 +254,7 @@ OptiFabric/
 │   ├── mixin/                       # 本模组自己的两个 mixin
 │   └── util/                        # ASM / mixin / remap / zip 工具
 ├── src/main/resources/              # fabric.mod.json、optifabric.mixins.json、assets/…/icon.png
-├── docs/                            # DEVELOPMENT.md、VERSIONING.md、DESCRIPTION.md、PUBLISHING.md
+├── docs/                            # DEVELOPMENT.md、COMPATIBILITY.md(+ _CN)、compatibility/(1.21.1 实测数据)……
 ├── release/                         # version.ps1、publish.ps1、notes/、MANUAL_RELEASE.md
 ├── build.gradle · gradle.properties · settings.gradle
 └── gradlew · gradlew.bat

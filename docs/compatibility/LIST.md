@@ -1,0 +1,336 @@
+# OptiFabric Reforged 兼容性清单
+
+来源: MATRIX.md（2026-10-03 09:55）；共 313 行。
+
+**汇总**: FAIL=18  DEP=18  HARNESS-ERROR=2  OK=89  N/A=5  not run=181
+
+## FAIL (18)
+
+- #2 sodium  — [sodium](https://modrinth.com/mod/sodium) *(renderer overhaul: replaces the chunk renderer)*
+- #3 iris  — [iris](https://modrinth.com/mod/iris) *(renderer overhaul: replaces the shader pipeline)*
+- #9 immediatelyfast  — [immediatelyfast](https://modrinth.com/mod/immediatelyfast) *(renderer overhaul: rewrites immediate-mode rendering)*
+- #15 sodium-extra  — [sodium-extra](https://modrinth.com/mod/sodium-extra) *(renderer overhaul: replaces the chunk renderer)*
+- #17 entity-model-features  — [entity-model-features](https://modrinth.com/mod/entity-model-features) *(renderer overhaul: rewrites entity models/rendering)*
+- #17 
+- #21 reeses-sodium-options  — [reeses-sodium-options](https://modrinth.com/mod/reeses-sodium-options) *(renderer overhaul: Sodium's options screen)*
+- #23 modernfix
+- #29 moreculling  — [moreculling](https://modrinth.com/mod/moreculling) *(renderer overhaul: rewrites chunk/render culling)*
+- #42 no-chat-reports
+- #50 indium  — [indium](https://modrinth.com/mod/indium) *(renderer overhaul: Sodium's Fabric rendering API backend)*
+- #64 c2me-fabric
+- #88 supplementaries
+- #90 fallingleaves  — [fallingleaves](https://modrinth.com/mod/fallingleaves) *(renderer overhaul: rewrites particle/leaf rendering)*
+- #93 rei
+- #94 carry-on
+- #104 ebe
+- #120 sodium-shadowy-path-blocks  — [sodium-shadowy-path-blocks](https://modrinth.com/mod/sodium-shadowy-path-blocks) *(renderer overhaul: replaces the chunk renderer)*
+
+## DEP (18)
+
+- # carpet-org-addition
+- # carpet-tis-addition
+- #17 
+- #30 zoomify
+- #32 fancymenu
+- #33 dynamic-fps
+- #36 puzzles-lib
+- #38 veinminer-client
+- #56 inventory-profiles-next
+- #65 enchantment-descriptions
+- #66 biomes-o-plenty
+- #98 visual-workbench
+- #109 capes
+- #132 drippy-loading-screen
+- #142 particle-rain
+- #146 sodium-options-api  — [sodium-options-api](https://modrinth.com/mod/sodium-options-api) *(renderer overhaul: replaces the chunk renderer)*
+- #153 better-stats
+- #166 chloride
+
+## HARNESS-ERROR (2)
+
+- # carpet-fixes
+- #1 
+
+## OK (89)
+
+- # carpet-ams-addition
+- # carpet
+- #4 entityculling  — [entityculling](https://modrinth.com/mod/entityculling) *(renderer overhaul: rewrites entity rendering/culling)*
+- #5 cloth-config
+- #6 ferrite-core
+- #7 modmenu
+- #8 lithium
+- #10 yacl
+- #11 fabric-language-kotlin
+- #12 xaeros-minimap
+- #13 entitytexturefeatures  — [entitytexturefeatures](https://modrinth.com/mod/entitytexturefeatures) *(renderer overhaul: rewrites entity textures/rendering)*
+- #14 architectury-api
+- #16 xaeros-world-map
+- #18 appleskin
+- #19 not-enough-animations
+- #20 veinminer
+- #22 jei
+- #24 3dskinlayers  — [3dskinlayers](https://modrinth.com/mod/3dskinlayers) *(renderer overhaul: rewrites player model rendering)*
+- #25 continuity  — [continuity](https://modrinth.com/mod/continuity) *(renderer overhaul: replaces the block/connected-texture renderer)*
+- #26 geckolib
+- #27 simple-voice-chat
+- #28 jade
+- #31 placeholder-api
+- #34 forge-config-api-port
+- #35 collective
+- #37 konkrete
+- #39 balm
+- #40 mouse-tweaks
+- #41 lambdynamiclights
+- #43 sound-physics-remastered
+- #44 creativecore
+- #45 melody
+- #46 chat-heads
+- #47 owo-lib
+- #48 bookshelf-lib
+- #49 essential
+- #51 badoptimizations
+- #52 krypton
+- #53 language-reload
+- #54 moonlight
+- #55 fzzy-config
+- #57 terrablender
+- #58 presence-footsteps
+- #59 searchables
+- #60 controlling
+- #61 ambientsounds
+- #62 clumps
+- #63 shulkerboxtooltip
+- #67 debugify
+- #68 malilib
+- #69 iceberg
+- #70 distanthorizons  — [distanthorizons](https://modrinth.com/mod/distanthorizons) *(renderer overhaul: replaces distant terrain rendering)*
+- #71 cobblemon
+- #72 resourceful-lib
+- #73 patchouli
+- #74 yungs-api
+- #75 libipn
+- #76 betterf3
+- #77 modelfix  — [modelfix](https://modrinth.com/mod/modelfix) *(renderer overhaul: patches model rendering)*
+- #78 supermartijn642s-config-lib
+- #79 cherished-worlds
+- #80 coroutil
+- #81 visuality  — [visuality](https://modrinth.com/mod/visuality) *(renderer overhaul: adds render-layer effects)*
+- #82 packet-fixer
+- #83 emi
+- #84 midnightlib
+- #85 morechathistory
+- #86 euphoria-patches  — [euphoria-patches](https://modrinth.com/mod/euphoria-patches) *(renderer overhaul: shader-pack add-on)*
+- #87 cubes-without-borders  — [cubes-without-borders](https://modrinth.com/mod/cubes-without-borders) *(renderer overhaul: changes the render/window pipeline)*
+- #88 
+- #89 playeranimator
+- #91 rrls  — [rrls](https://modrinth.com/mod/rrls) *(renderer overhaul: rewrites the render layer/state pipeline)*
+- #92 handcrafted
+- #95 better-advancements
+- #96 natures-compass
+- #97 optigui
+- #99 waystones
+- #100 litematica
+- #105 cit-resewn
+- #110 physicsmod
+- #112 yosbr
+- #114 better-mount-hud
+- #115 customskinloader
+- #126 chatanimation
+- #140 dynamiccrosshair
+- #143 animatica
+- #159 sodium-dynamic-lights  — [sodium-dynamic-lights](https://modrinth.com/mod/sodium-dynamic-lights) *(renderer overhaul: replaces the chunk renderer)*
+- #180 main-menu-credits
+- #195 yes-steve-model
+
+## N/A (5)
+
+- # servux
+- # carpet-extra
+- # gca
+- #1 fabric-api
+- #4 
+
+## not run (181)
+
+- # 
+- #1 The Twilight Forest
+- #2 Just Enough Resources (JER)
+- #3 Storage Drawers
+- #4 CraftTweaker
+- #5 Cupboard
+- #6 Cooking for Blockheads
+- #7 OpenBlocks Elevator
+- #8 Crafting Tweaks
+- #9 Torchmaster
+- #10 Connectivity
+- #11 Cyclops Core
+- #12 Refined Storage
+- #13 Macaw's Bridges
+- #14 Dark Utilities
+- #15 Framework
+- #16 FTB XMod Compat
+- #17 Configured
+- #18 iChunUtil
+- #19 Macaw's Doors
+- #20 TrashSlot
+- #21 Server Performance - Smooth Chunk Save
+- #22 KleeSlabs
+- #23 Better Compatibility Checker
+- #24 Macaw's Windows
+- #25 Farming for Blockheads
+- #26 Serene Seasons
+- #27 Macaw's Fences and Walls
+- #28 Just Enough Professions (JEP)
+- #29 Reborn Core
+- #30 Macaw's Trapdoors
+- #31 Trash Cans
+- #32 fix GPU memory leak
+- #33 FTB Essentials (Forge & Fabric)
+- #34 Macaw's Roofs
+- #35 Structure Essentials
+- #36 Explorer's Compass
+- #37 Charm of Undying (Fabric/Forge/Quilt)
+- #38 Macaw's Furniture
+- #39 Goblin Traders
+- #40 Inventory HUD+
+- #41 Valhelsia Core
+- #42 Creeper Overhaul
+- #43 Tips
+- #44 Macaw's Lights and Lamps
+- #45 Loot Integrations
+- #46 Pehkui
+- #47 The Aether
+- #48 SmartBrainLib (Forge/Fabric/Quilt)
+- #49 Starter Kit
+- #101 puzzle
+- #102 polymorph
+- #103 resourceful-config
+- #106 e4mc
+- #107 trinkets
+- #108 netherportalfix
+- #111 lmd
+- #113 controlify
+- #116 fast-ip-ping
+- #117 athena-ctm
+- #118 lithostitched
+- #119 terralith
+- #121 fastquit
+- #122 chipped
+- #123 comforts
+- #124 glitchcore
+- #125 yungs-better-nether-fortresses
+- #127 spark
+- #128 lootr
+- #129 open-parties-and-claims
+- #130 modern-ui
+- #131 rhino
+- #133 kiwi
+- #134 yungs-better-dungeons
+- #135 yungs-better-ocean-monuments
+- #136 attributefix
+- #137 better-third-person
+- #138 dungeons-and-taverns
+- #139 freecam
+- #141 bobby
+- #144 almanac
+- #145 travelersbackpack
+- #147 yungs-better-mineshafts
+- #148 yungs-better-jungle-temples
+- #149 toms-storage
+- #150 mru
+- #151 yungs-better-end-island
+- #152 mixintrace
+- #154 enhancedvisuals
+- #155 fabrishot
+- #156 crash-assistant
+- #157 amendments
+- #158 yeetus-experimentus
+- #160 replaymod
+- #161 sound
+- #162 chunky
+- #163 yungs-better-strongholds
+- #164 default-options
+- #165 cristel-lib
+- #167 supermartijn642s-core-lib
+- #168 paginatedadvancements
+- #169 prism-lib
+- #170 towns-and-towers
+- #171 cut-through
+- #172 wavey-capes
+- #173 yungs-better-witch-huts
+- #174 polytone
+- #175 advancement-plaques
+- #176 veinminer-enchantment
+- #177 servercore
+- #178 i18nupdatemod
+- #179 item-highlighter
+- #181 vmp-fabric
+- #182 invmove
+- #183 particle-core
+- #184 bettergrassify
+- #185 tcdcommons
+- #186 better-combat
+- #187 tectonic
+- #188 yungs-better-desert-temples
+- #189 easy-anvils
+- #190 shatterbyte-lib
+- #191 tooltipfix
+- #192 farmers-delight-refabricated
+- #193 another-furniture
+- #194 deeperdarker
+- #196 yungs-bridges
+- #197 cicada
+- #198 pick-up-notifier
+- #199 globalpacks
+- #200 libjf
+- #201 betterend
+- #202 cardinal-components-api
+- #203 notenoughcrashes
+- #204 eating-animation
+- #205 what-are-they-up-to
+- #206 fusion-connected-textures
+- #207 immersive-aircraft
+- #208 corgilib
+- #209 justenoughcharacters
+- #210 bisect-mod
+- #211 journeymap
+- #212 jamlib
+- #213 scalablelux
+- #214 durability-tooltip
+- #215 exposure
+- #216 first-person-model
+- #217 txnilib
+- #218 repurposed-structures-fabric
+- #219 nuit
+- #220 particular
+- #221 skyboxify
+- #222 accessories
+- #223 elytra-slot
+- #224 imblocker-original
+- #225 bad-wither-no-cookie
+- #226 easy-magic
+- #227 ping-wheel
+- #228 better-ping-display-fabric
+- #229 boat-item-view
+- #230 necronomicon
+- #231 artifacts
+- #232 ukulib
+- #233 craftpresence
+- #234 dynamictrees
+- #235 axiom
+- #236 make_bubbles_pop
+- #237 betternether
+- #238 gamma-utils
+- #239 prickle
+- #240 sophisticated-core-(unofficial-fabric-port)
+- #241 leaves-be-gone
+- #242 resourcify
+- #243 yungs-extras
+- #244 mmmmmmmmmmmm
+- #245 bclib
+- #246 fallingtree
+- #247 cobblemon-mega-showdown
+- #248 sodium-extras
+- #249 rightclickharvest
+- #250 smarter-farmers-farmers-replant

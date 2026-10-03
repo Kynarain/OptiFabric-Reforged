@@ -182,8 +182,35 @@ java.lang.NullPointerException: Cannot read field "norm" because "multiTex" is n
 |---|---|
 | ✅ Works | OptiFine's video settings, zoom, connected textures, dynamic lights, **shaders** (on every release except 1.21.6 / 1.21.7), and since 1.1.2 **anti-aliasing** |
 | ⚠️ Neutralised | the `BEFORE_BLOCK_OUTLINE` event no longer fires (the block outline is still drawn); the moving-block FRAPI render hook is inert (moving blocks are drawn by the vanilla path) |
-| ❌ Incompatible | **Sodium** (declared `conflicts`), plus `no_fog`, `thallium`, `xradiation`, `ryoamiclights` (declared `breaks`). RyoamicLights fails because OptiFine replaces the whole video-settings screen — parent class included — and its mixin targets the vanilla parent; OptiFine has its own dynamic lights, so nothing is lost |
+| ❌ Incompatible | **Sodium** (declared `conflicts`), plus `no_fog`, `thallium`, `xradiation`, `ryoamiclights` (declared `breaks`). RyoamicLights fails because OptiFine replaces the whole video-settings screen — parent class included — and its mixin targets the vanilla parent; OptiFine has its own dynamic lights, so nothing is lost. The full list, where it comes from and what the loader does with it: [Declared incompatibilities](#declared-incompatibilities-and-what-the-loader-actually-does) |
 | 📄 OptiFine-side limits | OptiFine cannot see resources inside Fabric mods (`[OptiFine] Unknown resource pack type: …ModNioResourcePack`); shader packs print their own `[Shaders]` errors when they do not match your OptiFine build |
+
+### Declared incompatibilities, and what the loader actually does
+
+Everything this mod declares against lives in `fabric.mod.json` and nowhere else — no screen shows it — so this is that list in prose. The `2.2.1` artifact declares:
+
+| Declaration | Entries |
+|---|---|
+| `conflicts` | `sodium` (`*`) |
+| `breaks` | `no_fog`, `thallium`, `xradiation`, `ryoamiclights` (`*`) |
+
+The sodium conflict and three of those four `breaks` are **inherited from upstream**: [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) (`fabric.mod.json` on its default branch `llama`, v1.14.3) declares the same `sodium` conflict and `breaks` on `no_fog`, `thallium` and `xradiation`, and adds three range-limited entries this fork deliberately dropped:
+
+| Upstream entry | Why it is not carried here |
+|---|---|
+| `cardinal-components-item <2.4.2` | a 1.16/1.17-era version range; those mod builds are the only ones inside it |
+| `architectury >1.2.72 <1.3.77` | a 1.16/1.17-era range, and the underlying conflict is *fixed* on 1.21.1 (below) |
+| `meteor-client >=0.4.1` | a 1.16/1.17-era entry |
+
+`ryoamiclights` is this fork's own addition, for the reason in the table above.
+
+**The loader does not refuse the combination.** Measured on **Fabric Loader 0.19.5** with `sodium` `0.8.13+mc1.21.1` present, the log begins `Warnings were found!`, names the conflict, and then continues into a normal `Loading 56 mods:` — there is no `Incompatible mods found` line, and no `HARD_DEP` refusal. These are therefore **declared, known incompatibilities**: the loader warns you in its own wording and then loads the game anyway. Treat the list as "the author already knows this pairing breaks", not as a guard rail.
+
+**The sodium pairing is declared on one side only.** Sodium's own metadata declares its `breaks` against the **old** mod id `optifabric`; since 2.0.0 this line ships as `optifabric_reforged` (display name *OptiFabric Reforged*), so that entry no longer matches anything. The warning you see for sodium is the one from this mod's side.
+
+**Architectury is the reverse story, and worth keeping.** Upstream declared architectury broken, and architectury's own metadata declares `breaks: optifabric <1.13.0`. On 1.21.1 this fork fixed the real conflict behind that declaration: OptiFine inserts its own locals into the middle of `GameRenderer.render`, which shifts the vanilla slots that Mixin's `LocalCapture` hands to a handler, so `LocalSlotLayoutFix` moves the extra slots to the end of the local variable range. `architectury-api` `13.0.11` now passes the sweep (row #14 of the matrix), and the rename to `optifabric_reforged` is what stops architectury's own declaration from firing. The measurements are in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) and [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md).
+
+The empirical picture — which mods actually fail next to OptiFabric, and which of those failures are ours — is in [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
 
 ### How indigo is handled
 
@@ -229,7 +256,7 @@ OptiFabric/
 │   ├── mixin/                       # the two mixins this project ships
 │   └── util/                        # ASM / mixin / remap / zip helpers
 ├── src/main/resources/              # fabric.mod.json, optifabric.mixins.json, assets/…/icon.png
-├── docs/                            # DEVELOPMENT.md, VERSIONING.md, DESCRIPTION.md, PUBLISHING.md
+├── docs/                            # DEVELOPMENT.md, COMPATIBILITY.md (+ _CN), compatibility/ (the 1.21.1 sweep), …
 ├── release/                         # version.ps1, publish.ps1, notes/, MANUAL_RELEASE.md
 ├── build.gradle · gradle.properties · settings.gradle
 └── gradlew · gradlew.bat
