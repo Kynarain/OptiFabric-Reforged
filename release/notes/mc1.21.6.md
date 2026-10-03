@@ -1,8 +1,12 @@
-# OptiFabric 2.2.1+mc1.21.6
+# OptiFabric 2.2.2+mc1.21.6
 
 **Minecraft 1.21.6** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar`
 
 状态:**不开光影可正常启动(2026-09-13 实机确认);启用光影会在启动阶段崩溃 —— 该版 OptiFine 预览构建自身缺陷,本移植不提供光影支持(见文末"已知限制")**
+
+## 2.2.2 的改动
+
+- **`sodium` is now declared in both `conflicts` and `breaks`** in `fabric.mod.json`: on Fabric Loader 0.19.5 measured here, **neither field prevents the game from starting** -- both are warnings, so this is a declaration, not a gate.
 
 ## 2.2.1 的改动
 
@@ -113,6 +117,6 @@
 
 ## 校验
 
-`OptiFabric-2.2.1+mc1.21.6.jar` — 871196 字节
+`OptiFabric-2.2.2+mc1.21.6.jar` — 871198 字节
 
-`SHA-256: 3EE3505F4511DAFAA4F17571E6EB1447AF69FF1CCB2C11479704E3A67356EDD7`
+`SHA-256: 7483970595EB15382CCD9C3676C866CB9E6292AE3700681BE5E3D5FB0C0AC8FB`

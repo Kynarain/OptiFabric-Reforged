@@ -1,8 +1,12 @@
-# OptiFabric 2.2.1+mc1.21.1
+# OptiFabric 2.2.2+mc1.21.1
 
 **Minecraft 1.21.1** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `OptiFine_1.21.1_HD_U_J1.jar`
 
 状态:**已实测正常**
+
+## 2.2.2 的改动
+
+- **`sodium` is now declared in both `conflicts` and `breaks`** in `fabric.mod.json`: on Fabric Loader 0.19.5 measured here, **neither field prevents the game from starting** -- both are warnings, so this is a declaration, not a gate.
 
 ## 2.2.1 的改动
 
@@ -97,6 +101,6 @@
 
 ## 校验
 
-`OptiFabric-2.2.1+mc1.21.1.jar` — 791847 字节
+`OptiFabric-2.2.2+mc1.21.1.jar` — 791848 字节
 
-`SHA-256: 0D9E2B0442BF50034EA45DAFDD039A8F0DA9116F281707B1476F7DFEAB5CF4F1`
+`SHA-256: 2BE78C963461835366A59BCF18CF0C4B4D657A739CBDC48291AFF6CCE5E80310`

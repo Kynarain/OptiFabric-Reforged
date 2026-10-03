@@ -1,8 +1,12 @@
-# OptiFabric 2.2.1+mc1.21.11
+# OptiFabric 2.2.2+mc1.21.11
 
 **Minecraft 1.21.11** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `OptiFine_1.21.11_HD_U_J9.jar`
 
 状态:**已实测正常(含抗锯齿)**
+
+## 2.2.2 的改动
+
+- **`sodium` is now declared in both `conflicts` and `breaks`** in `fabric.mod.json`: on Fabric Loader 0.19.5 measured here, **neither field prevents the game from starting** -- both are warnings, so this is a declaration, not a gate.
 
 ## 2.2.1 的改动
 
@@ -113,6 +117,6 @@
 - 真机:1.1.1 已由用户在自己的 1.21.11 实例确认(启动、资源重载、切光影包、开关抗锯齿都正常,`[ERROR]` 0 条);
   1.1.2 用同一个实例再跑一遍资源重载,`Resource not found: minecraft:post_effect/*` **0 条**。
 
-`OptiFabric-2.2.1+mc1.21.11.jar` — 916911 字节
+`OptiFabric-2.2.2+mc1.21.11.jar` — 916913 字节
 
-`SHA-256: BFE7F0328C4351CC545A3250022D55D492CABBA1340CC160E4F83D322131A2C1`
+`SHA-256: 3C95F82849293CB47163850BD4A9516DA6BAD315975B82F9F6684B64E875CDA2`

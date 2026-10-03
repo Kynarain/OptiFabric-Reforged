@@ -1,5 +1,13 @@
 # 更新日志
 
+## 2.2.2+mc1.21 … 2.2.2+mc1.21.11 — 声明 sodium 不兼容（conflicts 与 breaks 同时列出）
+
+> 这一版覆盖全部 10 个产物（1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11）,
+> 行为一致。**修订号递增的原因是元数据修正(声明不兼容而不是门槛)**：
+> sodium 现在 `conflicts` 和 `breaks` 两处都列出（Fabric Loader 0.19.5 上两个字段都只产生警告、不阻止游戏启动）。
+
+- **`sodium` is now declared in both `conflicts` and `breaks`** in `fabric.mod.json`: on Fabric Loader 0.19.5 measured here, **neither field prevents the game from starting** -- both are warnings, so this is a declaration, not a gate.
+
 ## 2.2.1+mc1.21 … 2.2.1+mc1.21.11 — 换过类之后丢掉 Mixin 的旧类元数据,局部变量捕获不再让整个类变换失败
 
 > **这一版覆盖全部 10 个产物**(1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11),
