@@ -4,7 +4,9 @@
 > 发布怎么走见 [`docs/PUBLISHING.md`](docs/PUBLISHING.md);已知问题见 [`docs/FAQ.md`](docs/FAQ.md);
 > 逐轮排查记录与离线校验工具见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
 
-本分支是 **1.20.6 线**,只出一个 jar(`main` 分支,mod id 仍是 `optifabric`)。更新的两条线
+本分支是 **1.20.6 线**:`main` 出已发布的那一个 jar(mod id 仍是 `optifabric`),`wip/1.20.6-reforged` 出替代产物
+`OptiFabric-Reforged-1.1.2-reforged+mc1.20.6.jar`(mod id `optifabric_reforged`;两者**只能装一个**,见
+[`docs/REFORGED_BUILD.md`](docs/REFORGED_BUILD.md))。更新的两条线
 (1.21.x、26.x)在各自的 worktree/分支上独立开发,各线的 jar **不能互相替代**。
 
 ## 一、环境要求

@@ -11,8 +11,12 @@
 | Minecraft | 产物 | OptiFine 构建 | Java |
 |---|---|---|---|
 | 1.20.6 | `OptiFabric-1.1.2+mc1.20.6.jar` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
+| 1.20.6 | `OptiFabric-Reforged-1.1.2-reforged+mc1.20.6.jar`(`wip/1.20.6-reforged` 分支) | 同上 | 21 |
 
 - mod id `optifabric`,仅客户端,要求 **Fabric Loader ≥ 0.19.3**。
+- 表里第二行是**替代产物**:mod id 是 `optifabric_reforged`,给「别的模组的元数据里拒绝 `optifabric`、因而拒绝本模组」的组合用 ——
+  1.20.6 上就是 **c2me**。它和已发布的那一个**只能装一个**(两者对加载器来说是两个模组,加载器不会替你拦住);
+  适用人群、代价与实测见 [`docs/REFORGED_BUILD.md`](docs/REFORGED_BUILD.md)。
 - 一个 jar 只对应一个版本:jar 里打包着该版本的 `official → intermediary` 映射表(混淆名每版不同,用错版本会把 OptiFine 重映射坏),`fabric.mod.json` 里的 `minecraft` 依赖也精确到该版本。
 - 1.20.6 的 OptiFine **只有 preview 构建**,下载后直接丢进 `mods/` 即可(它是安装器形态,OptiFabric 会自己运行 `optifine.Patcher`)。请到 OptiFine 官网 <https://optifine.net/downloads> 的 **Minecraft 1.20.6** 一节里自己取:`preview_OptiFine_1.20.6_HD_U_J1_pre18.jar`(2024-09-27,J1_pre18)它是该版本最新的构建。本模组**不携带、也不指向任何第三方镜像**:它只会从 OptiFine 官网下载,失败时也只告诉你原因并让你去官网手动下载。
 - 离线字节码校验 **425 / 425 通过**、ASM 数据流验证器 0 问题;真机验证:进入主界面、单人存档、多人服务器、模型与区块渲染、光影生效。
@@ -124,6 +128,10 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 **加载器在两个字段上都不会拦住这个组合。** Sodium 现在同时写在 `conflicts` 与 `breaks` 里,而在下面实测的加载器版本上,**两个字段都不会阻止游戏启动** —— 它们只是警告,这条不兼容是声明,不是闸门。在 **Fabric Loader 0.19.5** 上、`mods/` 里同时有 `sodium` 时实测:日志开头是 `Warnings were found!`、点名这条冲突,然后照常进入 `Loading <N> mods:` —— **没有** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。所以这些属于**已声明的、已知的不兼容**:加载器用它自己的措辞警告你,然后照常把游戏载起来。(那次实测是在 1.21.x 线上做的;`conflicts` 与 `breaks` 由加载器自身处理,与是哪条线无关。)请把这张表读成"作者已知这个组合会坏",而不是"装了会被拦住"。
 
 **与另外两条线不同的一点**:本线的 mod id 仍是 **`optifabric`**(1.21.x / 26.x 两线从 2.0.0 起改成了 `optifabric_reforged`),而 Sodium 自己那份元数据里针对的正是 `optifabric`(Sodium 只在 `breaks` 里声明它,没有 `conflicts`)—— 所以在 id 这一层上,Sodium 那条声明**不会像在那两条线上那样失配**,它会照常命中,与我们新写进 `breaks` 的这一条并存,这条冲突不是只有我们单方面在声明。Sodium 1.20.6 构建里那条声明覆盖的确切版本范围,本仓库没有实测记录。
+
+> **替代产物**:`wip/1.20.6-reforged` 分支出的 `optifabric_reforged` 版本,上面这些针对 `optifabric` 的声明**一条都不会命中**
+> (包括 c2me 那条,这正是它的目的)。装哪个、代价是什么、实测结果见 [`docs/REFORGED_BUILD.md`](docs/REFORGED_BUILD.md);
+> 两个 1.20.6 产物**只能装一个**。
 
 **Architectury**:上游声明它坏,architectury 自己的元数据也写着 `breaks: optifabric <1.13.0`。1.21.x 线在字节码层面修掉了它背后那个冲突(OptiFine 往 `GameRenderer.render` 中间插自己的局部变量,把 Mixin `LocalCapture` 交给处理器的槽位整体顶高,那边用 `LocalSlotLayoutFix` 把多出来的槽位挪到局部变量区末尾),并改名绕开了那条声明。**本线既没有那个 fixer,也没有做过对应的实测**,所以在这条线上 architectury 属于**未测**。
 
