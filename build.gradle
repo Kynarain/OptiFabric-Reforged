@@ -9,6 +9,14 @@ base {
     archivesName = project.archives_base_name
 }
 
+// The mod id and display name this branch publishes. They are inputs of processResources below: without an
+// inputs.property for them Gradle treats the expanded fabric.mod.json as up to date and keeps handing out the
+// previous id, which is how a rename silently fails to take effect. The published 1.20.6 line keeps
+// `optifabric`; this branch publishes the alternative product, so the id and the display name are the only
+// metadata that differs between the two jars.
+def modId = "optifabric_reforged"
+def modName = "OptiFabric Reforged"
+
 repositories {
     // Loom already adds the repositories needed for Minecraft, Fabric Loader and the mapping artifacts.
 }
@@ -45,12 +53,22 @@ processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", project.minecraft_version
     inputs.property "loader_version", project.loader_version
+    inputs.property "optifabric_id", modId
+    inputs.property "optifabric_name", modName
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
         expand "version": project.version,
                 "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version
+                "loader_version": project.loader_version,
+                // The id is the whole point of this branch: third-party metadata that names `optifabric`
+                // (c2me's `breaks: optifabric` on this release, plus sodium / iris / EMF / ETF / ImmediatelyFast
+                // / Embeddium / Architectury / EBE) stops matching as soon as the jar does not carry that id.
+                // `provides` is deliberately absent - Loader builds a `breaks` constraint from a map that
+                // includes ids supplied via `provides`, so declaring `provides: ["optifabric"]` would re-arm the
+                // very refusal this build exists to avoid (measured on Loader 0.19.5).
+                "optifabric_id": modId,
+                "optifabric_name": modName
     }
 
     // Bundle the official -> intermediary mappings taken from the intermediary artifact
@@ -78,5 +96,12 @@ java {
 jar {
     from("LICENSE.txt") {
         rename { "${it}_${project.archives_base_name}" }
+    }
+}
+
+tasks.named("build") {
+    doFirst {
+        println "Building ${project.archives_base_name} ${project.version} (Minecraft" +
+                " ${project.minecraft_version}, Fabric Loader ${project.loader_version})"
     }
 }

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "optifabric",
+  "id": "${optifabric_id}",
   "version": "${version}",
 
-  "name": "OptiFabric",
-  "description": "Loads OptiFine into Fabric. Put the OptiFine jar for 1.20.6 into the mods folder next to this mod; OptiFabric patches, remaps and applies it at runtime. OptiFine itself is not bundled or redistributed.",
+  "name": "${optifabric_name}",
+  "description": "Loads OptiFine into Fabric. Put the OptiFine jar for ${minecraft_version} into the mods folder next to this mod; ${optifabric_name} patches, remaps and applies it at runtime. OptiFine itself is not bundled or redistributed. This is the alternative 1.20.6 build: it does not claim the id optifabric, so mods whose metadata refuses that id (c2me does on this release) can load next to it. Install only one of the two 1.20.6 builds.",
   "authors": [
     "kynarain (1.20.6 port)",
     "Modmuss50",
