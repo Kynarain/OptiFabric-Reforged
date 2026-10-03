@@ -157,8 +157,27 @@ OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26
 | ✅ 可用 | OptiFine 的视频设置、缩放、连接纹理、动态光源、**抗锯齿**,以及依赖 FRAPI 的模组自己生成的几何(在 26.1.2 上用 LambdaBetterGrass 实测:更好的草与连接纹理正常,光影开启)。**光影只在 26.1.2 上可用**(2.0.0 的记录);26.2 上**不可用** —— 见下一行 |
 | ⚠️ 26.2 的光影 | **这个 OptiFine 构建上不可用。** 26.2 的 preview 在 `Shaders.loadShaderPack` 里取消了光影包加载(日志 `[Shaders] No shaderpack loaded.`),现在这段字节码**原样留成 OptiFine 写的样子**。OptiFine 的光影设置里仍然可以选包,但选了**什么都不会发生、也不会报错**。把加载强行打开(2.1.0 的做法)只会更糟:日志打出 `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`、编译 27 个 program,而世界**只画粒子、方块透明** |
 | ⚠️ 有意停用 | 两条 Fabric 渲染钩子:**移动方块提交**与**方块模型提交**(方块破坏裂纹仍然真的走 Fabric 的渲染器);这两条路径改由原版/OptiFine 绘制 |
-| ❌ 不兼容 | **Sodium**(已声明 `conflicts`),以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(已声明 `breaks`) |
+| ❌ 不兼容 | **Sodium**(已声明 `conflicts`),以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(已声明 `breaks`)。完整清单、来源与加载器实际会怎么做:[下面这一节](#声明的不兼容以及加载器实际会怎么做) |
 | 📄 OptiFine 侧限制 | OptiFine 看不到 Fabric 模组内部的资源(`[OptiFine] Unknown resource pack type: …ModNioResourcePack`);光影包与你的 OptiFine 版本不匹配时会打印自己的 `[Shaders]` 报错 |
+
+### 声明的不兼容,以及加载器实际会怎么做
+
+本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。两个 `2.2.1` 产物(26.2 与 26.1.2)声明的是:
+
+| 声明 | 条目 |
+|---|---|
+| `conflicts` | `sodium`(`*`) |
+| `breaks` | `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(`*`) |
+
+Sodium 这一条与其中三条 `breaks` **继承自上游**:[Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)(其默认分支 `llama` 上的 `fabric.mod.json`,v1.14.3)声明的同样是 `sodium` 冲突,以及 `no_fog`、`thallium`、`xradiation` 三条 `breaks`;它另外还有三条带版本范围的条目,**本移植有意没有带过来**:`cardinal-components-item <2.4.2`、`architectury >1.2.72 <1.3.77`、`meteor-client >=0.4.1` —— 三条都是 1.16/1.17 时代的范围。`ryoamiclights` 是本移植自己加的:OptiFine 把原版视频设置界面**整类替换成自己的实现,连父类都换掉**,而它的 mixin 注入在原版父类上,于是变换失败;OptiFine 自带动态光源,删掉它不会损失功能。
+
+**加载器并不会拦住这个组合。** 在 **Fabric Loader 0.19.5** 上、`mods/` 里有 `sodium` 时实测:日志开头是 `Warnings were found!`、点名这条冲突,然后照常进入 `Loading <N> mods:` —— **没有** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。所以这些属于**已声明的、已知的不兼容**:加载器用它自己的措辞警告你,然后照常把游戏载起来。(那次实测是在 1.21.x 线上做的,它要求的加载器世代与此相同;`conflicts` 与 `breaks` 是加载器自己处理的,与本模组无关。)请把这张表读成"作者已知这个组合会坏",而不是"装了会被拦住"。
+
+**Sodium 这一对只有一侧还在声明。** Sodium 自己的元数据里 `breaks` 点名的是**旧 mod id `optifabric`**;本线以 `optifabric_reforged`(显示名 *OptiFabric Reforged*)发布,那条规则已经匹配不上任何东西。所以你在 sodium 上看到的那条警告,来自**本模组这一侧**。
+
+**Architectury 是反过来的例子。** 上游声明 architectury 坏(architectury 自己的元数据至今也还写着 `breaks: optifabric <1.13.0`,而本线的 id 已经不再命中它)。在 1.21.x 线上,那个冲突在字节码层面被修掉了 —— OptiFine 往 `GameRenderer.render` 中间插自己的局部变量,把 Mixin `LocalCapture` 交给处理器的槽位整体顶高 —— 那边的 `architectury-api` 通过了实测扫描。**那个 fixer 属于 1.21.x 线,这条线里没有对应实现,也没有为这两个版本做过任何兼容性实测**,所以在 26.2 / 26.1.2 上 architectury 属于**未测**,而不是"已声明可用"。
+
+模组自己的实机记录在 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) 与 [`docs/PORT_26.x.md`](docs/PORT_26.x.md);那次实测的兼容性扫描(**只覆盖 1.21.1,不覆盖 26.x**)写在 1.21.x 线的 `docs/COMPATIBILITY.md` 里。
 
 ## 📊 验证状态
 

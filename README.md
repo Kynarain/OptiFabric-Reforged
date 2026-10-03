@@ -153,8 +153,27 @@ Any other build of the same Minecraft version still works; the prompt only appea
 | ✅ Works | OptiFine's video settings, zoom, connected textures, dynamic lights, **anti-aliasing** — and FRAPI mods' own geometry (verified on 26.1.2 with LambdaBetterGrass: better grass and connected textures, with shaders on). **Shaders work on 26.1.2 only** (the 2.0.0 record); on 26.2 they are **not available** — see the row below |
 | ⚠️ Shaders on 26.2 | **not available with this OptiFine build.** The 26.2 preview cancels the shaderpack load inside `Shaders.loadShaderPack` (`[Shaders] No shaderpack loaded.`), and that is left exactly as OptiFine wrote it. OptiFine's shader settings still let you pick a pack, and it then **silently does nothing**. Forcing the load back on — what 2.1.0 did — made it worse: `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`, 27 programs compiled, and a world that drew **only particles with see-through blocks** |
 | ⚠️ Neutralised | two Fabric render hooks are intentionally inert: the **moving-block** and **block-model** submits (block-breaking crack overlays still go through Fabric's renderer); those paths are drawn by vanilla/OptiFine instead |
-| ❌ Incompatible | **Sodium** (declared `conflicts`), plus `no_fog`, `thallium`, `xradiation`, `ryoamiclights` (declared `breaks`) |
+| ❌ Incompatible | **Sodium** (declared `conflicts`), plus `no_fog`, `thallium`, `xradiation`, `ryoamiclights` (declared `breaks`). The full list, where it comes from and what the loader does with it: [Declared incompatibilities](#declared-incompatibilities-and-what-the-loader-actually-does) |
 | 📄 OptiFine-side limits | OptiFine cannot see resources inside Fabric mods (`[OptiFine] Unknown resource pack type: …ModNioResourcePack`); shader packs print their own `[Shaders]` errors when they do not match your OptiFine build |
+
+### Declared incompatibilities, and what the loader actually does
+
+Everything this mod declares against lives in `fabric.mod.json` and nowhere else — no screen shows it — so this is that list in prose. Both `2.2.1` artifacts (26.2 and 26.1.2) declare:
+
+| Declaration | Entries |
+|---|---|
+| `conflicts` | `sodium` (`*`) |
+| `breaks` | `no_fog`, `thallium`, `xradiation`, `ryoamiclights` (`*`) |
+
+The sodium conflict and three of those four `breaks` are **inherited from upstream**: [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) (`fabric.mod.json` on its default branch `llama`, v1.14.3) declares the same `sodium` conflict and `breaks` on `no_fog`, `thallium` and `xradiation`, and adds three range-limited entries this fork deliberately dropped: `cardinal-components-item <2.4.2`, `architectury >1.2.72 <1.3.77` and `meteor-client >=0.4.1` — all three are 1.16/1.17-era ranges. `ryoamiclights` is this fork's own addition: OptiFine replaces the whole video-settings screen, parent class included, and that mod's mixin targets the vanilla parent, so the transform fails; OptiFine has its own dynamic lights, so nothing is lost.
+
+**The loader does not refuse the combination.** Measured on **Fabric Loader 0.19.5** with `sodium` present, the log begins `Warnings were found!`, names the conflict, and then continues into a normal `Loading <N> mods:` — there is no `Incompatible mods found` line, and no `HARD_DEP` refusal. These are therefore **declared, known incompatibilities**: the loader warns you in its own wording and then loads the game anyway. (That measurement was taken on the 1.21.x line, which requires the same loader generation; `conflicts` and `breaks` are handled by Loader itself, not by this mod.) Treat the list as "the author already knows this pairing breaks", not as a guard rail.
+
+**The sodium pairing is declared on one side only.** Sodium's own metadata declares its `breaks` against the **old** mod id `optifabric`; this line ships as `optifabric_reforged` (display name *OptiFabric Reforged*), so that entry no longer matches anything. The warning you see for sodium is the one from this mod's side.
+
+**Architectury is the reverse story.** Upstream declared architectury broken (and architectury's own metadata still declares `breaks: optifabric <1.13.0`, which this line's id no longer matches). On the 1.21.x line that conflict was fixed at the bytecode level — OptiFine inserts its own locals into the middle of `GameRenderer.render`, shifting the slots Mixin's `LocalCapture` hands to a handler — and `architectury-api` passes the measured sweep there. **That fixer belongs to the 1.21.x line; nothing equivalent is present here, and no compatibility run has been made for these two releases**, so architectury on 26.2 / 26.1.2 is untested rather than declared working.
+
+The mod's own in-game records are in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) and [`docs/PORT_26.x.md`](docs/PORT_26.x.md); the measured incompatibility sweep (1.21.1 only, and it does **not** cover 26.x) is written up in the 1.21.x line's `docs/COMPATIBILITY.md`.
 
 ## 📊 Verified State
 
