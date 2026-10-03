@@ -113,6 +113,17 @@ skip_text_translucency_sorting.MixinRenderTypes … failed injection check, (0/1
   干净对照;1.20.6 线那次(`crossline-check\logs\1.20.6-sodium-withus`)是干净的,结论相同;
 - `AddInterfaceFix` 留着是**有意的**,理由在上面(它是 guard,不是死代码)。
 
+产物:`OptiFabric-Reforged-2.2.4+mc26.2.jar` — 188912 字节
+`SHA-256: 8D67F55207184A39E4778A5F1ACD9968E8360A28391184501755D6D352AB4E8E`
+
+产物:`OptiFabric-Reforged-2.2.4+mc26.1.2.jar` — 188915 字节
+`SHA-256: F08706DC0357EB46396B1793F287058A384A9380D95A32DC9609F6B9197F5A18`
+
+两个 jar 都从**同一个干净临时 worktree**(`r224\wt`,HEAD = 本次的收窄提交)构建,`fabric.mod.json` 里分别是
+`2.2.4+mc26.2` 与 `2.2.4+mc26.1.2`。与上一条(2.2.3)那两个产物逐条目比对:**83 个条目里 82 个哈希完全相同**,
+唯一不同的就是 `fabric.mod.json`(版本号那一行)—— 也就是说本版改的确实只有那一处代码加版本号,验证过的字节
+与被发布的字节是同一份。
+
 ## 2.2.3+mc26.2 — 26.x 线的第八版(修好"装了 OptiFine 就起不来":给 OptiFine 那份 `GuiRenderer$Draw` 补上 Fabric API 的 accessor 接口)
 
 > **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
