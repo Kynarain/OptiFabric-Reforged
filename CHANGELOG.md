@@ -1,31 +1,31 @@
 # 更新日志
 
-## 未发布 — `class_3898` 的 lambda 名字还回去(c2me 进世界那一步)
-
-### 修了什么
-
-- **症状**:装上 c2me(`0.2.0+alpha.11.100+1.20.6`)之后能到主界面,**一进世界就崩**:`InvalidMixinException: @Overwrite method method_17252(Lnet/minecraft/class_3193;Ljava/lang/Runnable;)V … was not located in the target class net.minecraft.class_3898` → `Mixin transformation of net.minecraft.class_3898 failed` → 集成服务器崩溃报告。去掉 OptiFabric、同样那几个 jar 时,同一个世界 0 错误加载。
-- **根因**(逐字节确认):OptiFine 重编译 `net/minecraft/class_3898` 时,javac 给**游戏自己的 lambda 体**取了 javac 的名字,而游戏本体是用混淆名声明它们的。`method_17252(Lclass_3193;Ljava/lang/Runnable;)V` 就是 `lambda$protoChunkToFullChunk$36`,**描述符、访问标志、注册它的 bootstrap 方法句柄的 owner 与 tag 全都一样**,只是名字变了 —— 是**改名**,不是删除。c2me 按名字+描述符找它,自然找不到。这个类里这样的成员一共 **59 个**。
-- **修法**:新增 `LambdaMethodRefFix`,把 lambda 改回游戏给它的名字,并把注册它的方法句柄一起改指过去。它排在 `RestoreVanillaMethodsFix("method_17227", "method_18843")` **之前**注册,于是后者发现名字已被占,不再往旁边塞一份 vanilla 拷贝 —— 这样类自己的 bootstrap 句柄仍然指向一个存在的成员,而且跑的是 OptiFine 那份代码(模组 `@Overwrite` 覆盖的才是真正执行的那份)。
-- **顺带**:`method_17224` 的**参数表被 OptiFine 调换过顺序**(`(class_1923, class_2806, class_3193, Executor, class_9259)` ↔ 游戏的 `(class_1923, class_3193, class_2806, Executor, class_9259)`)。c2me-threading-worldgen 的 `@ModifyReturnValue` 也按名字+描述符解析目标,所以只改名还是找不到。修正时把描述符、lambda 体里参数槽的编号、以及注册点上被压栈的那几个实参一起按游戏顺序摆回来;摆回来的方法与游戏那份**逐指令相同**(把参数槽按参数读)。
-- **两种对齐方式**:先按「同一个宿主方法内,两边 LambdaMetafactory 的 invokedynamic 逐位对齐」;够不到的再按「两张 BootstrapMethods 表逐位对齐,且调用点形状必须一致」。两者都只从两个 class 文件自己的字节里取证据,任何一条对不上就**不动这个类**,而不是猜。
-
-### 验证
-
-pristine 缓存 + 新 jar:主界面 → **进世界**,`c2me-opts-scheduling` 与 `c2me-threading-worldgen` 的注入全部应用,0 个 `/ERROR`;不带 c2me 的 OptiFabric + OptiFine 也照常进世界。`1.21.x` 线上早有同类 fixer(`LambdaMethodRefFix`),这里是它在 1.20.6 线上的对应物。
-
-## 1.1.2+mc1.20.6 — 把 sodium 同时声明进 conflicts 与 breaks(声明,不是闸门)
+## 1.1.2+mc1.20.6 — 把 sodium 同时声明进 conflicts 与 breaks(breaks 是闸门,conflicts 只是警告)
 
 ### 改了什么
 
 - **`fabric.mod.json`**:`sodium` 现在同时写在 `conflicts` 与 `breaks` 两处(`*`;**原有的 `conflicts` 条目一个字没动**)。上游 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)(默认分支 `llama`,v1.14.3)只在 `conflicts` 里声明它,而有些启动器与平台只读 `breaks`,所以两处都写。
 - **文档**:`README.md` 与 `docs/FAQ.md` 新增「声明的不兼容」一节 —— 完整清单、继承自上游的条目、本移植**有意没有带过来**的三条 1.16/1.17 时代的版本范围(`cardinal-components-item <2.4.2`、`architectury >1.2.72 <1.3.77`、`meteor-client >=0.4.1`)、`ryoamiclights` 与本条 `sodium` 的来历,以及**加载器到底会不会拦**。
 
-### 这是一条声明,不是闸门
+### `breaks` 是闸门,`conflicts` 只是警告
 
-在 **Fabric Loader 0.19.5** 上、`mods/` 里同时有 sodium 时实测(那次是在 1.21.x 线上做的;`conflicts` 与 `breaks` 都由加载器自身处理,与是哪条线无关):日志开头是 `Warnings were found!` 并点名这条冲突,然后照常进入 `Loading <N> mods:` —— `conflicts` 与 `breaks` **两个字段都不产生** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。两个字段都只是**警告**:请把这张表读成"作者已知这个组合会坏",而不是"装了会被拦住"。
+> **本节的早期版本写错了。** 它当时说 `conflicts` 与 `breaks` **两个字段都不产生** `Incompatible mods found`、都只是警告 —— 那是只测了 `conflicts`。在 **Fabric Loader 0.19.5** 上重测后:`breaks` **会被执行**,运行在解析阶段就被拒载。
 
-本线的 mod id 仍是 **`optifabric`**,而 Sodium 自己那份元数据里针对的正是 `optifabric`(Sodium 只在 `breaks` 里声明它,没有 `conflicts`)—— 所以在 id 这一层上 Sodium 那条声明**不会失配**,它会照常命中,与我们新写进 `breaks` 的这一条并存;Sodium 1.20.6 构建里那条声明覆盖的确切版本范围,本仓库**没有实测记录**。
+在**本条线自己的 1.20.6 实例**里实测(Loader 0.19.5、Fabric API `0.100.8+1.20.6`、OptiFabric `1.1.2+mc1.20.6`、OptiFine `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar`,`mods/` 里再加 `sodium-fabric-0.5.11+mc1.20.6.jar`):
+
+```
+[main/INFO]: Immediate reason: [NEG_HARD_DEP optifabric 1.1.2+mc1.20.6 {breaks sodium @ [*]}, ROOT_FORCELOAD_SINGLE optifabric 1.1.2+mc1.20.6, ROOT_FORCELOAD_SINGLE sodium 0.5.11+mc1.20.6]
+[main/INFO]: Reason: [NEG_HARD_DEP optifabric 1.1.2+mc1.20.6 {breaks sodium @ [*]}, NEG_HARD_DEP sodium 0.5.11+mc1.20.6 {breaks optifabric @ [*]}]
+[main/ERROR]: Incompatible mods found!
+```
+
+整个实例**连 `Loading <N> mods:` 都没到**,没有类被加载过。所以 `breaks` 是**闸门**:装上就是被加载器拦住,不是"作者温馨提示"。
+
+`conflicts` 则是**警告**:`2.2.1` 那份产物只声明了 `conflicts: sodium`,在 1.21.x 线上实测 sodium 照常加载、应用自己的 mixin、然后在 mixin 里失败(见 `compat-matrix\README.md` §10.10),那次没有 `Incompatible mods found`。两个字段由加载器自身处理,与是哪条线无关。
+
+于是这条声明的实际效果是:**在 id `optifabric` 这一份产物上,`sodium` 被硬拒载;`conflicts` 只为那些只读 `conflicts` 的平台保留**(上游 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) 的默认分支 `llama` v1.14.3 只在 `conflicts` 里声明它 —— 它没带 `breaks`,也就没有这层闸门)。
+
+本线的 mod id 仍是 **`optifabric`**,而 Sodium 自己那份元数据里针对的正是 `optifabric`(Sodium 只在 `breaks` 里声明它,没有 `conflicts`)—— 所以在 id 这一层上两条 `breaks` 会**同时**生效(都记在上面那条 `Immediate reason` 里;没有做"只留一条"的对照)。Sodium 1.20.6 构建里那条声明覆盖的确切版本范围,本仓库**没有实测记录**。
 
 ### 验证
 

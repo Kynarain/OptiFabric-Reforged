@@ -125,9 +125,18 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 
 `ryoamiclights` 是本移植自己加的,原因见上面那条已知限制。把 `sodium` 也列进 `breaks` 同样是本移植自己加的:上游只在 `conflicts` 里声明它,而有些启动器与平台只读 `breaks`。
 
-**加载器在两个字段上都不会拦住这个组合。** Sodium 现在同时写在 `conflicts` 与 `breaks` 里,而在下面实测的加载器版本上,**两个字段都不会阻止游戏启动** —— 它们只是警告,这条不兼容是声明,不是闸门。在 **Fabric Loader 0.19.5** 上、`mods/` 里同时有 `sodium` 时实测:日志开头是 `Warnings were found!`、点名这条冲突,然后照常进入 `Loading <N> mods:` —— **没有** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。所以这些属于**已声明的、已知的不兼容**:加载器用它自己的措辞警告你,然后照常把游戏载起来。(那次实测是在 1.21.x 线上做的;`conflicts` 与 `breaks` 由加载器自身处理,与是哪条线无关。)请把这张表读成"作者已知这个组合会坏",而不是"装了会被拦住"。
+**两个字段不等价:加载器会执行 `breaks`,而 `conflicts` 只是警告。** 在 **Fabric Loader 0.19.5** 上实测:
 
-**与另外两条线不同的一点**:本线的 mod id 仍是 **`optifabric`**(1.21.x / 26.x 两线从 2.0.0 起改成了 `optifabric_reforged`),而 Sodium 自己那份元数据里针对的正是 `optifabric`(Sodium 只在 `breaks` 里声明它,没有 `conflicts`)—— 所以在 id 这一层上,Sodium 那条声明**不会像在那两条线上那样失配**,它会照常命中,与我们新写进 `breaks` 的这一条并存,这条冲突不是只有我们单方面在声明。Sodium 1.20.6 构建里那条声明覆盖的确切版本范围,本仓库没有实测记录。
+- **`breaks` = 硬拒载。** 在**本条线自己的 1.20.6 实例**里(Loader 0.19.5、Fabric API `0.100.8+1.20.6`、OptiFabric `1.1.2+mc1.20.6`、OptiFine `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar`,`mods/` 里再加 `sodium-fabric-0.5.11+mc1.20.6.jar`)实测:运行在**解析阶段**就结束,第 4 行是
+
+  ```
+  Immediate reason: [NEG_HARD_DEP optifabric 1.1.2+mc1.20.6 {breaks sodium @ [*]}, ROOT_FORCELOAD_SINGLE optifabric 1.1.2+mc1.20.6, ROOT_FORCELOAD_SINGLE sodium 0.5.11+mc1.20.6]
+  ```
+
+  整个实例连 `Loading <N> mods:` 都没到,没有类被加载过。**所以"装了会被拦住"对 `breaks` 是准确的** —— 拦住你的是加载器,不是本模组。
+- **`conflicts` 只是警告。** `2.2.1` 那份产物只声明了 `conflicts: sodium`,在 1.21.x 线上实测时 sodium 照常加载:它应用自己的 mixin、然后**在 mixin 里**失败(见 `compat-matrix\README.md` §10.10);同一份产物在 `sodium` 在场的那次运行里**没有** `Incompatible mods found`。
+
+所以这张表要分两半读:`breaks` 里的条目是**闸门**(装了会被加载器拒载),`conflicts` 里的条目是**声明**(加载器只警告)。本线的 mod id 仍是 `optifabric`,而 Sodium 自己那份元数据里针对的也正是 `optifabric`(Sodium 只在 `breaks` 里声明它,没有 `conflicts`)—— 所以在 id 这一层上,两个 `breaks` 声明会**同时**生效(都记在日志的 `Immediate reason` 里;没有做"只留一条"的对照)。Sodium 1.20.6 构建里那条声明覆盖的确切版本范围,本仓库没有实测记录。
 
 > **替代产物**:`wip/1.20.6-reforged` 分支出的 `optifabric_reforged` 版本,上面这些针对 `optifabric` 的声明**一条都不会命中**
 > (包括 c2me 那条,这正是它的目的)。装哪个、代价是什么、实测结果见 [`docs/REFORGED_BUILD.md`](docs/REFORGED_BUILD.md);
