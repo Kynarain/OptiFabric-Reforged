@@ -90,6 +90,15 @@ public abstract class MixinTitleScreen extends Screen {
 
 		String actionButtonText, helpButtonText;
 		BooleanConsumer action;
+		// Every button here is local: it copies a URL or a path to the game's own clipboard (or the stack trace,
+		// as before) and never starts a process. Opening a folder or a page through the operating system is a
+		// shell execute - the same shape as the process launch this release had to remove for the platform's
+		// review - so the labels say "copy" and what used to be opened is now copied.
+		String modsPath = new File(FabricLoader.getInstance().getGameDirectory(), "mods").getAbsolutePath();
+		String logsPath = new File(FabricLoader.getInstance().getGameDirectory(), "logs").getAbsolutePath();
+		String readme = "https://github.com/Kynarain/OptiFabric/blob/main/README.md";
+		String issues = "https://github.com/Kynarain/OptiFabric/issues";
+
 		switch (OptifineVersion.jarType) {
 		case SOMETHING_ELSE: //Valid jar states, we shouldn't be here
 		case OPTIFINE_INSTALLER:
@@ -100,31 +109,17 @@ public abstract class MixinTitleScreen extends Screen {
 		case CORRUPT_ZIP:
 		case INCOMPATIBLE:
 		case DUPLICATED:
-			actionButtonText = "Open mods folder";
-			helpButtonText = "Open help";
-			action = help -> {
-				if (help) {
-					Util.getOperatingSystem().open("https://github.com/Kynarain/OptiFabric/blob/main/README.md");
-				} else {
-					Util.getOperatingSystem().open(new File(FabricLoader.getInstance().getGameDirectory(), "mods"));
-				}
-			};
+			actionButtonText = "Copy mods folder path";
+			helpButtonText = "Copy help link";
+			action = help -> client.keyboard.setClipboard(help ? readme : modsPath);
 			break;
 
 		case INTERNAL_ERROR: //Something wrong with OptiFabric itself
 		default: {
 			String stack = OptifabricError.getErrorLog();
-			actionButtonText = stack != null ? "Copy stack-trace" : "Open logs folder";
-			helpButtonText = "Open issues";
-			action = help -> {
-				if (help) {
-					Util.getOperatingSystem().open("https://github.com/Kynarain/OptiFabric/issues");
-				} else if (stack != null) {
-					client.keyboard.setClipboard(stack);
-				} else {
-					Util.getOperatingSystem().open(new File(FabricLoader.getInstance().getGameDirectory(), "logs"));
-				}
-			};
+			actionButtonText = stack != null ? "Copy stack-trace" : "Copy logs folder path";
+			helpButtonText = "Copy issues link";
+			action = help -> client.keyboard.setClipboard(help ? issues : stack != null ? stack : logsPath);
 			break;
 		}
 		}

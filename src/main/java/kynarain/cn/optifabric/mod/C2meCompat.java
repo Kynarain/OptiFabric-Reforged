@@ -49,10 +49,13 @@ import net.fabricmc.loader.api.FabricLoader;
  * </pre>
  *
  * So a {@code preLaunch} write is always one launch too late for the launch it runs in. This class therefore
- * writes the file and, when C2ME has already resolved that module to on for this launch, restarts the game
- * once with the same command line (the restart the OptiFine downloader already uses). Three guards keep that
- * from looping: C2ME's resolved value for this launch must not already be false, the file must be re-read from
- * disk and really say {@code false} after the write, and a marker file allows exactly one automatic restart.
+ * writes the file and, when C2ME has already resolved that module to on for this launch, <b>stops this launch
+ * and asks the user to start the game again by hand</b>. It does not restart the game: starting the replacement
+ * process was a process launch (on Windows through {@code CreateProcessW}), and the platforms this build is
+ * submitted to require that a mod must not download files or start processes while the game runs. Three guards
+ * keep the behaviour sane: C2ME's resolved value for this launch must not already be false, the file must be
+ * re-read from disk and really say {@code false} after the write, and a marker file records that this shim
+ * already stopped one launch (a second stop for the same unresolved state never happens).
  */
 public final class C2meCompat {
 	/** Set this to {@code true} to leave C2ME's config completely alone: {@code -Doptifabric.noC2meCompat=true}. */
@@ -213,21 +216,21 @@ public final class C2meCompat {
 		System.out.println("[OptiFabric]   C2ME read its config before Fabric's preLaunch entrypoints run"
 				+ (resolved == null ? " (and this shim cannot read back what it resolved)" : "")
 				+ ", so this launch still has c2me-threading-worldgen on: the fixed value can only take effect"
-				+ " on a restart. Restarting the game once.");
-		Files.write(marker, ("C2meCompat restarted the game once at " + java.time.Instant.now()
-				+ " so C2ME would read [" + SECTION + "] " + KEY + " = false\r\n")
+				+ " on a restart.");
+		System.out.println("[OptiFabric]   OptiFabric changed a setting that takes effect after a restart:"
+				+ " please start the game again by hand.");
+		System.out.println("[OptiFabric]   OptiFabric 改动了一项需要重启才生效的设置:请手动重新启动游戏。");
+		System.out.println("[OptiFabric]   this launch is stopped instead, so the configuration that cannot work"
+				+ " is never used; OptiFabric does not start any process (no restart, no CreateProcessW) and"
+				+ " fetches nothing from the network. With [" + SECTION + "] " + KEY + " = false on the next"
+				+ " start, 1.20.6 + C2ME + OptiFine enters worlds with 0 errors.");
+		Files.write(marker, ("C2meCompat wrote " + CONFIG_PATH + " and stopped the launch once at "
+				+ java.time.Instant.now() + " so C2ME would read [" + SECTION + "] " + KEY + " = false\r\n")
 				.getBytes(StandardCharsets.UTF_8));
 
-		if (OptifineDownloader.restart()) {
-			System.out.println("[OptiFabric]   the restarted game reads [" + SECTION + "] " + KEY
-					+ " = false and will enter worlds; this process ends now");
-			// The replacement process is already running the same command line; stop this one before it can
-			// reach the game, so the configuration that cannot work is never used.
-			Runtime.getRuntime().halt(0);
-		}
-
-		System.out.println("[OptiFabric]   could not restart automatically: start the game once more by hand,"
-				+ " and C2ME will read [" + SECTION + "] " + KEY + " = false");
+		// Nothing is relaunched: starting the game again is the user's own action, and this exit is the whole
+		// of what this shim does about it (exit code 0, no process started, no network touched).
+		System.exit(0);
 	}
 
 	/** What one c2me.toml says about the one key this shim cares about. */
