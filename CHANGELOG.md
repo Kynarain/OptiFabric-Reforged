@@ -40,7 +40,7 @@
 - 它同样带着 `class_3898` 的 lambda 改名修复(59 个成员):没有它,`c2me-opts-scheduling` 的三个 `@Overwrite`
   与 `c2me-notickvd` 的几个注入都找不到目标。
 
-## 未发布 — `class_3898` 的 lambda 名字还回去(c2me 进世界那一步)
+## 1.1.3+mc1.20.6 — `class_3898` 的 lambda 名字还回去(并说清 c2me 在这一份产物上到底行不行)
 
 ### 修了什么
 
@@ -64,9 +64,34 @@
 
 要把这一格也做掉,只能换一层动手:让 c2me 的 `@ModifyReturnValue` 去匹配 OptiFine 实际交出来的签名,或者对这一个注册点做一次知道真实实参顺序的专门重建(需要把体、描述符、实参表三者一起重写并按真实顺序验证,而不是只把描述符改个顺序)。这一条留给下一步,不在本次改动里。
 
+### `1.20.6 + c2me`:这一份产物上它连加载都过不去(而且不是我们能修的)
+
+- c2me 的 `fabric.mod.json` 里写着 `"breaks": { "tic_tacs": "*", "optifabric": "*" }`,而 **Fabric Loader 0.19.5 会执行 `breaks`**:不是警告,是硬拒载(`NEG_HARD_DEP`)—— 机制与那次实测见 1.1.2 那一节。
+- 这条判断发生在**模组解析阶段**,早于 `preLaunch`、早于任何模组代码。拒载发生时**本模组一个类都没被加载**,所以**本模组这边没有任何代码、配置或运行时开关能绕开它**。
+- 实测(本条线自己的 1.20.6 实例:Loader 0.19.5、Fabric API `0.100.8+1.20.6`、OptiFabric `1.1.3+mc1.20.6`、OptiFine `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar`,再加 `c2me-fabric-mc1.20.6-0.2.0+alpha.11.100.jar`):
+
+  ```
+  [main/INFO]: Immediate reason: [NEG_HARD_DEP c2me 0.2.0+alpha.11.100+1.20.6 {breaks optifabric @ [*]}, …]
+  [main/ERROR]: Incompatible mods found!
+  ```
+
+  整个实例**连 `Loading <N> mods:` 都没到**。
+- 结论:**要用 c2me 只能装替代产物**(mod id `optifabric_reforged`,`wip/1.20.6-reforged` 分支),本产物与它**只能装一个**。替代产物 + c2me 的实测、它自带的兼容处理,以及那一个仍然修不掉的 `method_17224`,都写在**那条分支的** `docs/REFORGED_BUILD.md` 里。
+
+### 这一版修的东西仍然有意义
+
+`LambdaMethodRefFix` 是**真修复**,只是它的价值不在于"让这一份产物配上 c2me"(配不上,见上):
+
+- 它把 `class_3898` 里 **59 个**被 javac 改名的成员改回游戏给它们的名字(c2me 三个 `@Overwrite` 要找的 `method_17252`/`method_19487`/`method_20579` 都在里面),并把注册它们的方法句柄一起改指过去;在**替代产物**上实测这三个注入全部应用(见 `collision-1206\REPORT.md`)。
+- 它顺带消掉了整类"改名型"冲突:名字被占住之后,`RestoreVanillaMethodsFix` 不再往旁边塞一份 vanilla 拷贝,类自己的 bootstrap 句柄始终指向一个存在的成员。
+- 对不带 c2me 的用法它同样生效(见下面的验证)。
+
 ### 验证
 
-pristine 缓存 + 新 jar:主界面 → 世界开始加载,`c2me-opts-scheduling` 的三个 `@Overwrite`(`method_17252`/`method_19487`/`method_20579`)全部应用 —— **本次修的就是这一个崩溃**;随后停在 `c2me-threading-worldgen` 的 `method_17224` 上,与上表一致。不带 c2me 的 OptiFabric + OptiFine 照常进世界。`1.21.x` 线上早有同类 fixer(`LambdaMethodRefFix`),这里是它在 1.20.6 线上的对应物。
+- **本产物 + c2me**:解析阶段就结束,`NEG_HARD_DEP c2me 0.2.0+alpha.11.100+1.20.6 {breaks optifabric @ [*]}` → `Incompatible mods found!`,**记录为预期且已文档化**(不是本次引入的回归)。
+- **本产物不带 c2me**:pristine `.optifine` 缓存 + 这一份新 jar → 主界面 → 进世界,`/ERROR` 0 条。
+- 离线校验与 1.1.2 相同:补丁管线、fixer 表与丢 `ClassInfo` 缓存那一步逐字节未变,1.0.0 记下的 **425 / 425 通过**、ASM 数据流验证器 **0 问题** 仍然对应这一份产物。
+- `1.21.x` 线上早有同类 fixer(`LambdaMethodRefFix`),这里是它在 1.20.6 线上的对应物。
 
 ## 1.1.2+mc1.20.6 — 把 sodium 同时声明进 conflicts 与 breaks(breaks 是闸门,conflicts 只是警告)
 

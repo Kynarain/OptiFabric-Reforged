@@ -31,3 +31,6 @@ dist/
 build-log.txt
 *.log
 
+# Upload drafts written by the release checklist (same rule as the 1.21.x and 26.x lines)
+release/tmp/
+
