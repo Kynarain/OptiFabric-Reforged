@@ -125,6 +125,42 @@ OptiFabric + OptiFine 在 1.21.1 上**不装** TF 也一样停在标题界面之
 - 本版的实测是在**同一提交**构建的 jar 上做的,与随发布上传的产物**只差 `fabric.mod.json` 里的版本串**
   (已逐条目比对)。
 
+### 逐版本实测(普通启动,每个版本一次,不带 TF)
+
+这一节是随本版发布的十个 jar 各自的启动记录,每个版本都是一次**普通启动**(没有 `-Dmixin.debug*`)、
+一个自己的实例副本、一个新建的 `.optifine` 缓存,`-Xmx2048M`,`PASS` 指日志出现 `Sound engine started`。
+**只有 1.21.1 那一行带 Twilight Forest**;其余九版只装了本 jar + 对应版本的 Fabric API + 对应版本的 OptiFine。
+
+| MC | 结果 | 到标题界面 | `/ERROR` | `Cannot @Coerce` | `InvalidInjectionException` | `Mixin apply … failed` | `Mixin transformation … failed` | `LVTGeneratorError` | `SugarApplicationException` | `expected N invocation(s)` | `Minecraft has crashed` | `invalid IMPLICIT discriminator` | `[Server thread]` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.21 | 到标题界面 | 19.7 s | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1.21.1(TF) | 到标题界面 | 54.9 s | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1.21.3 | 到标题界面 | 30.8 s | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1.21.4 | 到标题界面 | 44.7 s | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1.21.6 | 到标题界面 | 36.3 s | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1.21.7 | 到标题界面 | 54.1 s | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1.21.8 | 到标题界面 | 43.5 s | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1.21.9 | 到标题界面 | 78.2 s | **3** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1.21.10 | 到标题界面 | 24.0 s | **2** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1.21.11 | 到标题界面 | 36.8 s | **3** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+1.21.9 / 1.21.10 / 1.21.11 的那几条 `/ERROR` **逐条都是离线环境**,与 mixin 无关,原文照录:
+
+```
+[Download-2/ERROR]: Failed to fetch user properties        <- 离线:401
+[Download-2/ERROR]: Failed to fetch Realms feature flags   <- 离线:401
+[IO-Worker-1/ERROR]: Couldn't connect to realms            <- 离线:连不上 Realms
+```
+
+**同一次扫描还测到一件本版没有声明过的事,记在这里而不是删掉**:2.2.5 那条 `class_11228$class_11230` 的接口修复
+(`AddInterfaceFix`)**在这一轮 1.21.9 / 1.21.10 / 1.21.11 上确实又触发了**,三版都打出
+`Added net/fabricmc/fabric/mixin/client/rendering/DrawAccessor to net/minecraft/class_11228$class_11230 …`,
+而且三版都到标题界面、`Cannot @Coerce` 全 0;1.21 到 1.21.8 上它安静无事(那几版没有这个类)。
+
+还测到:`class_776.method_3353` 与 `class_778.method_3374` 两处在本表中的**每一版**都触发(它们的形状在 1.21 到
+1.21.11 都在),而 `class_915` / `class_5944` 只在 1.21.1 触发 —— 与报告里"这两处在 1.21.6 / 1.21.8 不触发"的说法一致,
+本表把它扩到了十个版本。掩码(判别符)仍然只在 1.21.1 触发:它的切片指令是 1.21.1 的。
+
 ## 2.2.6 的改动
 
 **本版在 2.2.5 的接口修复之上,再修一处 OptiFine 重编译缺陷**:1.21.1 上 ShoulderSurfing 的 `CameraMixin`
