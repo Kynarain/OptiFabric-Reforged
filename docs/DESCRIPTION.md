@@ -42,6 +42,50 @@ At the earliest point of startup (the loader's `preLaunch`), OptiFabric will:
 
 1. Install a 1.20.6 client with **Fabric Loader 0.19.3 or newer**.
 2. Put **OptiFabric** and **your own OptiFine 1.20.6 jar** into `.minecraft/mods/`.
+
+<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
+     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
+> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
+> start the game once by hand.
+>
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
+> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
+> 文件夹;然后手动启动一次游戏。
+
+
+<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
+     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
+> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
+> start the game once by hand.
+>
+> **OptiFabric \u4e0d\u80fd\u5047\u8bbe\u542f\u52a8\u5668\u4f1a\u66ff\u4f60\u88c5 OptiFine**,\u56e0\u4e3a\u5f88\u591a\u542f\u52a8\u5668\u53ea\u80fd\u9009 **OptiFine _or_ Fabric**,\u4e0d\u80fd\u4e24\u4e2a\u90fd\u8981:
+> \u5148\u88c5\u597d **Fabric + OptiFabric**;\u5230 <https://optifine.net/downloads> \u4e0b\u8f7d OptiFine;\u628a\u90a3\u4e2a jar \u653e\u8fdb `mods`
+> \u6587\u4ef6\u5939(\u6216\u628a\u5b83\u7684\u8def\u5f84\u7c98\u8fdb\u5c4f\u5e55\u4e0a\u7684\u8f93\u5165\u6846,\u70b9\u300c\u4ece\u672c\u5730\u6587\u4ef6\u5b89\u88c5\u300d);\u7136\u540e\u624b\u52a8\u542f\u52a8\u4e00\u6b21\u6e38\u620f\u3002
+
+<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
+     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
+> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
+> start the game once by hand.
+>
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _或_ Fabric**,不能两个都要:
+> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
+> 文件夹;然后手动启动一次游戏。
+<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
+     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
+> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
+> start the game once by hand.
+>
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _或_ Fabric**,不能两个都要:
+> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
+> 文件夹;然后手动启动一次游戏。
    The file is named like `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` — dropping it in is enough, you do **not** need to run its installer first.
 3. Start the game. The OptiFine version appears in the top left of the title screen when it works.
 
@@ -141,6 +185,38 @@ OptiFine 是为原版(以及 Forge)编写的:它的补丁针对**官方混淆名
 
 1. 用 **Fabric Loader 0.19.3 或更高**安装一个 1.20.6 客户端。
 2. 把 **OptiFabric** 和**你自备的 OptiFine 1.20.6 jar** 一起放进 `.minecraft/mods/`。
+
+<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
+     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
+> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
+> start the game once by hand.
+>
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
+> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
+> 文件夹;然后手动启动一次游戏。
+
+<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
+     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
+> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
+> start the game once by hand.
+>
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _或_ Fabric**,不能两个都要:
+> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
+> 文件夹;然后手动启动一次游戏。
+<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
+     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
+> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
+> start the game once by hand.
+>
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _或_ Fabric**,不能两个都要:
+> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
+> 文件夹;然后手动启动一次游戏。
    OptiFine 1.20.6 的文件名形如 `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar`,**直接放进去即可**,不需要先运行它的安装器。
 3. 启动游戏。标题界面左上角出现 OptiFine 版本号就说明生效了。
 

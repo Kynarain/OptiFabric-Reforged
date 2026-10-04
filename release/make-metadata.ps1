@@ -7,9 +7,17 @@
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File release\make-metadata.ps1
 #   powershell -NoProfile -ExecutionPolicy Bypass -File release\make-metadata.ps1 -Version 1.1.4
+#   powershell -NoProfile -ExecutionPolicy Bypass -File release\make-metadata.ps1 -Version 1.1.3-reforged `
+#       -Product OptiFabric-Reforged -Tag -reforged        # the alternative product on this branch
 param(
 	[string]$Version = "",
-	[string]$McVersion = "1.20.6"
+	[string]$McVersion = "1.20.6",
+	# The jar-name prefix of the product whose drafts are being written. The alternative build on this branch
+	# publishes `OptiFabric-Reforged-<version>+mc<MC>.jar` under the id `optifabric_reforged`, so it needs both
+	# this and its own CHANGELOG section (the first heading of CHANGELOG.md on this branch).
+	[string]$Product = "OptiFabric",
+	# Appended to the draft file names so the two products' drafts do not overwrite each other.
+	[string]$Tag = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,9 +26,10 @@ $changelogPath = Join-Path $root "CHANGELOG.md"
 $tmp = Join-Path $PSScriptRoot "tmp"
 
 if ($Version -eq "") {
-	# The current version is the first "## <version>+mc<...>" heading of the changelog.
-	$match = [regex]::Match([System.IO.File]::ReadAllText($changelogPath), '(?m)^## ([0-9]+(?:\.[0-9]+)*)')
-	if (-not $match.Success) { throw "no '## <version>' heading in $changelogPath" }
+	# The current version is the first "## <version>+mc<...>" heading of the changelog, suffix and all
+	# (`1.1.3` on main, `1.1.3-reforged` on this branch).
+	$match = [regex]::Match([System.IO.File]::ReadAllText($changelogPath), '(?m)^## ([0-9][0-9A-Za-z.\-]*?)\+mc')
+	if (-not $match.Success) { throw "no '## <version>+mc<MC>' heading in $changelogPath" }
 	$Version = $match.Groups[1].Value
 }
 
@@ -45,7 +54,7 @@ $newline = $cr + $lf
 # line breaks into the JSON. See the CRLF-vs-'+' note in this file's history.
 $modrinth = @(
 	'{',
-	('    "name":  "OptiFabric-{0}",' -f $full),
+	('    "name":  "{0}-{1}",' -f $Product, $full),
 	('    "version_number":  "{0}",' -f $full),
 	('    "changelog":  "{0}",' -f $escaped),
 	'    "dependencies":  [',
@@ -72,7 +81,7 @@ $curseforge = @(
 	'{',
 	('    "changelog":  "{0}",' -f $escaped),
 	'    "changelogType":  "markdown",',
-	('    "displayName":  "OptiFabric-{0}",' -f $full),
+	('    "displayName":  "{0}-{1}",' -f $Product, $full),
 	'    "releaseType":  "release",',
 	'    "gameVersions":  [',
 	('                         "{0}",' -f $McVersion),
@@ -82,10 +91,10 @@ $curseforge = @(
 
 New-Item -ItemType Directory -Force $tmp | Out-Null
 $encoding = New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::WriteAllText((Join-Path $tmp "modrinth-$McVersion.json"), $modrinth, $encoding)
-[System.IO.File]::WriteAllText((Join-Path $tmp "curseforge-$McVersion.json"), $curseforge, $encoding)
+[System.IO.File]::WriteAllText((Join-Path $tmp "modrinth-$McVersion$Tag.json"), $modrinth, $encoding)
+[System.IO.File]::WriteAllText((Join-Path $tmp "curseforge-$McVersion$Tag.json"), $curseforge, $encoding)
 
-foreach ($name in @("modrinth-$McVersion.json", "curseforge-$McVersion.json")) {
+foreach ($name in @("modrinth-$McVersion$Tag.json", "curseforge-$McVersion$Tag.json")) {
 	$path = Join-Path $tmp $name
 	$bytes = [System.IO.File]::ReadAllBytes($path)
 	$bom = "no"

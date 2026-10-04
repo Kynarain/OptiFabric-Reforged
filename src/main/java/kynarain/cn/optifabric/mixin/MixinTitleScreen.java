@@ -1,17 +1,20 @@
 /*
  * Ported from OptiFabric (https://github.com/Chocohead/OptiFabric), MPL-2.0.
- * Adapted for Minecraft 1.20.6 / Fabric Loader 0.19.x.
+ * Adapted for Minecraft 1.20.6 and 1.21.11 / Fabric Loader 0.19.x.
  *
  * Changes from upstream:
  *   - MinecraftClient#openScreen was removed in 1.20.6, setScreen is used instead;
  *   - the Fabric screen API integration (compat.fabricscreenapi.Events) and the Text/DrawContext
  *     compatibility shims upstream needed are gone; the 1.20.6 Yarn API is used directly;
  *   - the dead "render(MatrixStack...)" target was dropped, 1.20.6 renders screens into a DrawContext;
- *   - the download prompt runs before the error gate: a jar that is simply older than the newest build
- *     this release knows loads without any error at all, and "nothing in mods/" is an error state, so
- *     the prompt has to be decided first. When it does not take the screen over, the error gate below
- *     still runs, which is what keeps the "OptiFine could not be found" dialog reachable after the
- *     prompt has been dismissed for this session.
+ *   - the two buttons that used to open a folder or a page copy a path or a link to the game's own clipboard
+ *     instead: opening one goes through the operating system, which is a shell execute, and this release had
+ *     to remove every process launch for the platform's review.
+ *
+ * This is the 2.1.0 presentation: a problem with the OptiFine jar sets an OptifabricError message and throws a
+ * non-fatal failure, and this mixin shows that message on the title screen (with the trace for an internal
+ * error) and nothing else. There is no OptiFine screen class, no text box, no install button and no link
+ * button - the message itself is the whole UI, exactly as it was in 2.1.0.
  */
 
 package kynarain.cn.optifabric.mixin;
@@ -37,14 +40,13 @@ import net.minecraft.util.math.MathHelper;
 
 import net.fabricmc.loader.api.FabricLoader;
 
-import kynarain.cn.optifabric.mod.MissingOptifineScreen;
 import kynarain.cn.optifabric.mod.OptifabricError;
-import kynarain.cn.optifabric.mod.OptifineSupport;
+import kynarain.cn.optifabric.mod.OptifinePrompt;
 import kynarain.cn.optifabric.mod.OptifineVersion;
 
 /**
- * Shows why OptiFine could not be loaded instead of silently starting without it, and prints the
- * OptiFine version in the bottom left corner once it is running.
+ * Shows why OptiFine could not be loaded instead of silently starting without it, and prints the OptiFine
+ * version in the bottom left corner once it is running.
  */
 @Mixin(TitleScreen.class)
 public abstract class MixinTitleScreen extends Screen {
@@ -59,72 +61,43 @@ public abstract class MixinTitleScreen extends Screen {
 
 	@Inject(method = "init", at = @At("RETURN"))
 	private void init(CallbackInfo info) {
-		// The download prompt owns the jar states it exists for - nothing in mods/ at all, and an OptiFine
-		// that is older than the newest build this release knows. It is decided from the jar itself, not from
-		// OptifabricError: an older build of the *same* Minecraft release loads without any error at all
-		// (OptifineVersion only complains about a jar for another release), and the user still has to be told
-		// that a newer one exists. So this has to run before the error gate below.
-		OptifineSupport.Build expected = OptifineSupport.forMc(FabricLoader.getInstance().getRawGameVersion());
-		MissingOptifineScreen.Mode prompt = MissingOptifineScreen.modeFor(OptifineVersion.jarType, expected, OptifineVersion.version);
+		// 2.1.0's rule, restored in front of its own dialog: a missing jar already set the error in the finder,
+		// and an installed-but-older preview reaches the same dialog through this gate, once per build (the build
+		// is remembered in config/optifabric-mismatch-ack.txt). Nothing here is a screen of its own, and
+		// SAME / NEWER / any final build never get past it.
+		OptifinePrompt.gate();
 
-		if (prompt != null && MissingOptifineScreen.shouldPrompt(prompt, OptifineVersion.version)) {
-			System.out.println((prompt == MissingOptifineScreen.Mode.MISSING
-					? "[OptiFabric] OptiFine is not installed - showing the download screen"
-					: "[OptiFabric] The installed OptiFine build is not the one this Minecraft version expects - showing the download screen")
-					+ " (installed " + (OptifineVersion.version == null ? "nothing" : OptifineVersion.version)
-					+ ", recommended " + expected.file + ")");
-			client.setScreen(new MissingOptifineScreen(prompt, expected, OptifineVersion.version));
-
-			// Mode B (an older build) is a one-time recommendation: remember the build as soon as the prompt is
-			// shown, so a later launch with the same jar does not nag again. Mode A must appear on every launch
-			// and never consults the acknowledgement file, so it is deliberately not written here.
-			if (prompt == MissingOptifineScreen.Mode.MISMATCH) {
-				MissingOptifineScreen.acknowledge(OptifineVersion.version);
-			}
-
-			return;
-		}
-
-		// Everything below is the error dialog, and it is only for a real error.
 		if (!OptifabricError.hasError()) return;
 
 		String actionButtonText, helpButtonText;
 		BooleanConsumer action;
-		switch (OptifineVersion.jarType) {
-		case SOMETHING_ELSE: //Valid jar states, we shouldn't be here
-		case OPTIFINE_INSTALLER:
-		case OPTIFINE_MOD:
-			throw new IllegalStateException("No error to show!");
+		// A jar state that is valid in itself (OPTIFINE_MOD, OPTIFINE_INSTALLER, SOMETHING_ELSE) with an error
+		// set means OptiFabric could not bring that OptiFine in at all. Asserting "no error to show" for those
+		// states threw out of the title screen, which is exactly what must not happen to a user whose OptiFine
+		// is newer than this OptiFabric release.
+		// Every button here is local: it copies a URL or a path to the game's own clipboard (or the stack trace,
+		// as before) and never starts a process.
+		String modsPath = new File(FabricLoader.getInstance().getGameDirectory(), "mods").getAbsolutePath();
+		String logsPath = new File(FabricLoader.getInstance().getGameDirectory(), "logs").getAbsolutePath();
+		String readme = "https://github.com/Kynarain/OptiFabric/blob/mc1.21.11/README.md";
+		String issues = "https://github.com/Kynarain/OptiFabric/issues";
 
+		switch (OptifineVersion.jarType) {
 		case MISSING: //Errors relating to the OptiFine jar, link the mods folder
 		case CORRUPT_ZIP:
 		case INCOMPATIBLE:
 		case DUPLICATED:
-			actionButtonText = "Open mods folder";
-			helpButtonText = "Open help";
-			action = help -> {
-				if (help) {
-					Util.getOperatingSystem().open("https://github.com/Kynarain/OptiFabric/blob/main/README.md");
-				} else {
-					Util.getOperatingSystem().open(new File(FabricLoader.getInstance().getGameDirectory(), "mods"));
-				}
-			};
+			actionButtonText = "Copy mods folder path";
+			helpButtonText = "Copy help link";
+			action = help -> client.keyboard.setClipboard(help ? readme : modsPath);
 			break;
 
 		case INTERNAL_ERROR: //Something wrong with OptiFabric itself
 		default: {
 			String stack = OptifabricError.getErrorLog();
-			actionButtonText = stack != null ? "Copy stack-trace" : "Open logs folder";
-			helpButtonText = "Open issues";
-			action = help -> {
-				if (help) {
-					Util.getOperatingSystem().open("https://github.com/Kynarain/OptiFabric/issues");
-				} else if (stack != null) {
-					client.keyboard.setClipboard(stack);
-				} else {
-					Util.getOperatingSystem().open(new File(FabricLoader.getInstance().getGameDirectory(), "logs"));
-				}
-			};
+			actionButtonText = stack != null ? "Copy stack-trace" : "Copy logs folder path";
+			helpButtonText = "Copy issues link";
+			action = help -> client.keyboard.setClipboard(help ? issues : stack != null ? stack : logsPath);
 			break;
 		}
 		}
@@ -138,7 +111,7 @@ public abstract class MixinTitleScreen extends Screen {
 		if (OptifabricError.hasError()) return;
 
 		float fadeTime = doBackgroundFade ? (Util.getMeasuringTimeMs() - backgroundFadeStart) / 1000F : 1F;
-		float fadeColor = doBackgroundFade ? MathHelper.clamp(fadeTime - 1F, 0F, 1F) : 1F;
+		float fadeColor = MathHelper.clamp(fadeTime - 1F, 0F, 1F);
 
 		int alpha = MathHelper.ceil(fadeColor * 255F) << 24;
 		if ((alpha & 0xFC000000) != 0) {
