@@ -221,7 +221,7 @@ public final class C2meCompat {
 				+ " please start the game again by hand.");
 		System.out.println("[OptiFabric]   OptiFabric 改动了一项需要重启才生效的设置:请手动重新启动游戏。");
 		System.out.println("[OptiFabric]   this launch is stopped instead, so the configuration that cannot work"
-				+ " is never used; OptiFabric does not start any process (no restart, no CreateProcessW) and"
+				+ " is never used; OptiFabric does not start any process (no restart, no process launch) and"
 				+ " fetches nothing from the network. With [" + SECTION + "] " + KEY + " = false on the next"
 				+ " start, 1.20.6 + C2ME + OptiFine enters worlds with 0 errors.");
 		Files.write(marker, ("C2meCompat wrote " + CONFIG_PATH + " and stopped the launch once at "
