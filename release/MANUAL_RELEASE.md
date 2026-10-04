@@ -19,6 +19,35 @@
 > because "multiTex" is null` at `net.optifine.shaders.ShadersTex.initDynamicTextureNS`。所以正文应写成"本移植不支持这两版的光影",
 > 而不是"这两版起不来"。Official 列表里这两版已是最新构建。
 
+
+> **写正文时的 PowerShell 转义坑(2.2.4 修过一次,必须记住)**:正文就是 `release\notes\mc<MC>.md` 本身(`publish.ps1` 用
+> `--notes-file`,没有中间变量),所以**正文坏了就是笔记文件坏了**。2.2.4 的十份笔记是在 **Windows PowerShell 5.1 的双引号
+> 字符串**里写的:字符串里的 `` `f `` 与 `` `v `` 落进文件后不再是 `f`、`v`,而是 U+000C(form feed)与 U+000B(vertical tab),
+> 于是 `fabric-rendering-v1` 成了 ``abric-rendering-v1``、`verify-version.ps1` 成了 ``erify-version.ps1``。这两个字符随后
+> **逐字节**进了十个已发布的 Release 正文与二十个 Modrinth / CurseForge changelog;修复提交是 `f987e0f`(只改这两个字节,
+> `1.21.x` 与 `release/1.21.x-2.2.4` 都已收录)。
+>
+> **怎么写**:把整段正文直接写进文件(编辑器写盘即可),再用 `--notes-file` / 读文件的方式发出去;非要在 PowerShell 里
+> 拼字符串,就用**单引号字符串**或 here-string(单引号版本 `@` 与 `@` 之间的内容是字面量;双引号版本**照样**转义)。
+> 反引号转义(`` `f `` `` `v `` `` `n `` `` `t `` `` `a `` `` `b `` `` `0 `` `` `e `` `` `r ``)在双引号里一律变成控制字符 / 换行;要写 Markdown 的行内代码,
+> 用单引号或双写 `` `` ``。
+>
+> **写盘后立刻验字节**,别等发出去再查:
+>
+> ```powershell
+> # 逐字节扫一遍:C0 控制字符里只允许 TAB(0x09)与 LF(0x0A);CR(0x0D)按行尾一并允许
+> $b = [IO.File]::ReadAllBytes("release\notes\mc1.21.11.md")
+> ($b | Where-Object { $_ -lt 32 -and $_ -ne 9 -and $_ -ne 10 -and $_ -ne 13 }).Count   # 必须是 0
+>
+> # 正文与笔记文件逐字节相等(正文按 LF 规范化;本线笔记的工作区是 CRLF、blob 是 LF)
+> $note = ([IO.File]::ReadAllText("release\notes\mc1.21.11.md", [Text.Encoding]::UTF8)) -replace "`r`n", "`n"
+> gh release view "v2.2.4+mc1.21.11" --json body --jq .body > "$env:TEMP\body.txt"
+> $body = ([IO.File]::ReadAllText("$env:TEMP\body.txt", [Text.Encoding]::UTF8)) -replace "`r`n", "`n"
+> $body -ceq $note   # 必须是 True
+> ```
+>
+> 2.2.4 的修复就是这么复核的:十个正文重新拉回来与笔记逐字符相等,二十个 changelog 字段里 U+000B / U+000C / U+0000 各 0 个。
+
 ## 逐版数据
 
 > **顺序**:先 `.\gradlew build`,把新 jar 复制进 `dist\`(并更新本表的版本号列),再跑 `.\release\version.ps1 -Line 1.21.x -Mc <MC版本> -RecordDigest`;

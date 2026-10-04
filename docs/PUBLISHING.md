@@ -156,3 +156,35 @@ git push origin "v2.2.4+mc1.21.11"
    确认十行的数字各自没串**;
 6. `.\release\publish.ps1 -DryRun` 重新生成 `release\tmp\` 草稿(那里面是上一版的快照,升版后必须重跑),
    再打 tag、发 Release、上传三个平台;顺便刷新 `release-upload\<线>-<版本>\`。
+## 七、写正文时的 PowerShell 转义坑(2.2.4 修过一次,必须记住)
+
+正文的来源是 `release\notes\mc<MC>.md`,脚本用 `--notes-file` 直接读文件(`publish.ps1` 里 `$gh` 那一行),
+所以**正文坏了就是笔记文件坏了**。2.2.4 的十份笔记是在 **Windows PowerShell 5.1 的双引号字符串**里写的:
+字符串里的 `` `f `` 与 `` `v `` 落进文件后不再是 `f`、`v`,而是 **U+000C(form feed)** 与 **U+000B(vertical tab)** ——
+`fabric-rendering-v1` 变成 ``abric-rendering-v1``、`verify-version.ps1` 变成 ``erify-version.ps1``。
+这两个字符随后**逐字节**进了十个已发布的 Release 正文和二十个 Modrinth / CurseForge changelog;
+修复提交是 `f987e0f`(只改这两个字节,`1.21.x` 与 `release/1.21.x-2.2.4` 都已收录,正文与元数据另发了一遍)。
+
+**规矩**:
+
+- 正文一律**先写进文件**,再让平台读文件;不要用双引号字符串拼正文;
+- 非要在 PowerShell 里拼,用**单引号字符串**或 here-string(单引号版本 `@` 与 `@` 之间的内容是字面量;
+  双引号版本**照样**转义)。反引号转义(`f` `v` `n` `t` `a` `b` `0` `e` `r`)在双引号里一律变成控制字符 / 换行;
+- **`.md` 一律 UTF-8 无 BOM + CRLF**(git 里 `text=auto`,blob 是 LF、工作区是 CRLF,两边都算对);
+  `.ps1` 一律 UTF-8 **带 BOM** —— 丢了 BOM 会被 Windows PowerShell 当 ANSI 读,脚本直接加载失败(见 `release\publish.ps1` 第一行);
+- **写盘后立刻验字节**(别等发出去再查):
+
+  ```powershell
+  # C0 控制字符里只允许 TAB(0x09)、LF(0x0A)与 CR(0x0D);结果必须是 0
+  $b = [IO.File]::ReadAllBytes("release\notes\mc1.21.11.md")
+  ($b | Where-Object { $_ -lt 32 -and $_ -ne 9 -and $_ -ne 10 -and $_ -ne 13 }).Count
+
+  # 已发布的正文与笔记逐字符相等(正文按 LF 规范化)
+  $note = ([IO.File]::ReadAllText("release\notes\mc1.21.11.md", [Text.Encoding]::UTF8)) -replace "`r`n", "`n"
+  gh release view "v2.2.4+mc1.21.11" --json body --jq .body > "$env:TEMP\body.txt"
+  $body = ([IO.File]::ReadAllText("$env:TEMP\body.txt", [Text.Encoding]::UTF8)) -replace "`r`n", "`n"
+  $body -ceq $note   # 必须是 True
+  ```
+
+- 同一套字节检查也要用在 `release-upload\<线>-<版本>\metadata\modrinth-*.json` 与 `curseforge-*.json` 上:
+  JSON 里的 changelog 会把控制字符写成转义(`\u000b` / `\u000c`),所以**按转义形式一起查**,不要只查原始字节。
