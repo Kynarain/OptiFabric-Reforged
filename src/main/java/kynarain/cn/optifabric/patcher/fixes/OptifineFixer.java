@@ -223,6 +223,27 @@ public class OptifineFixer {
 				new CallSiteRedirectFix("net/minecraft/client/renderer/feature/BlockFeatureRenderer",
 						"renderBlockModelSubmits", null, "optifabric$blockModels",
 						"the hook has to inject into a copy nobody calls, and the real method still has to draw block models"));
+
+		//net/minecraft/client/renderer/GameRenderer -- the LocalSlotLayoutFix port (see threefix\REPORT.md).
+		//This is the 1.21.x class_757 / method_3192 entry by its official 26.x names: OptiFine recompiles
+		//GameRenderer.render and its javac puts the locals it added where they appear in its source, which shifts
+		//the game's own locals up, so a handler that reads them by slot order (Architectury's MixinGameRenderer on
+		//1.21.x) or by absolute slot sees a different layout than it was compiled against:
+		//
+		//  InjectionError: LVT in net/minecraft/client/renderer/GameRenderer::renderLevel(...)V has incompatible
+		//  changes at opcode 286 in callback distanthorizons->@Inject::renderLevel
+		//
+		//The fixer below pairs the two local variable tables per scope and puts the game's own entries back into
+		//the slots the game declares them in. Its descriptor is left out on purpose - it differs between releases,
+		//and the fixer then works off the descriptor OptiFine's own class carries.
+		registerFix("net/minecraft/client/renderer/GameRenderer",
+				new LocalSlotLayoutFix(null, "render", "renderLevel"));
+
+		//...and the same method on the class that owns it on this release. 26.2 keeps the level pass in
+		//LevelRenderer and its method is renderLevel; 26.1.2 has the same two names, so one registration serves
+		//both releases of the line (a name OptiFine's class does not carry is a no-op).
+		registerFix("net/minecraft/client/renderer/LevelRenderer",
+				new LocalSlotLayoutFix(null, "renderLevel"));
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {

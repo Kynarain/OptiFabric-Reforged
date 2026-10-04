@@ -1,9 +1,144 @@
 # 更新日志
 
-> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.2.4+mc26.2`、`2.2.2+mc26.2`、
+> 本文件按时间倒序,收录本仓库**两条线**的各版本:本分支的 **26.x**(`2.2.5+mc26.2`、`2.2.4+mc26.2`、`2.2.2+mc26.2`、
 > `2.2.1+mc26.2`、`2.2.0+mc26.2`、`2.1.1+mc26.2`、`2.1.0+mc26.2`、`2.0.0+mc26.1.2`、`1.2.0+mc26.1.2`)与 **1.21.x**(`1.1.0` – `1.1.2`,十个 MC
-> 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.4`)
-> 与 **26.1.2**(`2.2.4`),所以这一线也有了"逐 MC 版本的版本号"。
+> 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.5`)
+> 与 **26.1.2**(`2.2.5`),所以这一线也有了"逐 MC 版本的版本号"。
+
+## 2.2.5+mc26.2 — 26.x 线的第十版(移植 1.21.x 线重写过的 `LocalSlotLayoutFix`:把游戏自己的局部变量放回游戏声明的槽位)
+
+> **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
+> 「修 fixer、修兼容性 → 修订号」。这一版**不移除任何支持、也不新增支持范围**,加的是 1.21.x 线已经用了一个版本的
+> 那个局部变量布局修复器(它在那条线上的实测见 `tf-fix\REPORT.md`)。`2.2.4 → 2.2.5`,两个 MC 版本各出一个 jar。
+
+### 改了什么
+
+**症状(用户可见)**:`distanthorizons`(Distant Horizons `3.3.3-26.2`)+ Fabric API + 本模组 + OptiFine
+`preview_OptiFine_26.2_HD_U_K2_pre1` 在 **26.2** 上**启动阶段就崩,连主界面都到不了**,报错落在 DH 自己那个 `@Inject` 上:
+
+    [main/ERROR]: Critical injection failure: LVT in net/minecraft/client/renderer/GameRenderer::renderLevel(
+    Lnet/minecraft/client/DeltaTracker;)V has incompatible changes at opcode 286 in callback
+    DistantHorizons.fabric.mixins.json:client.MixinGameRenderer from mod distanthorizons->@Inject::renderLevel(
+    Lnet/minecraft/client/DeltaTracker;Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;FF
+    Lnet/minecraft/client/player/LocalPlayer;Lnet/minecraft/util/profiling/ProfilerFiller;Z
+    Lnet/minecraft/client/renderer/state/OptionsRenderState;Lnet/minecraft/client/renderer/state/level/CameraRenderState;
+    Lorg/joml/Matrix4fc;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/vertex/PoseStack;)V.
+    Caused by: java.lang.RuntimeException: Mixin transformation of net.minecraft.client.renderer.GameRenderer failed
+
+`2.2.3` 与 `2.2.4` 两个出厂 jar 上都是这一行(本版两个都重跑过,见下)。
+
+**根因**:OptiFine 会**重编译它补丁的那些方法**,而它的 javac 把**它自己新增的局部变量**放在源码里出现的位置 ——
+于是**游戏自己的局部变量被整体往上挤**。Mixin 读局部变量表有两种方式,这一处两种都会坏:
+
+1. **按槽位顺序**:`CallbackInjector` 用 `getFirstNonArgLocalIndex(args)` 往上取前若干个非空局部变量来建回调的描述符,
+   顺序一旦对不上,整个类变换失败并报上面那条 `LVT … has incompatible changes at opcode N`;
+2. **按绝对槽位**:MixinExtras 的 `@Local(index = N)` 糖经 `Locals.getLocalsAt(...)` 取 `locals[N]`,那个槽位上是别的
+   类型时糖根本建不起来(`SugarApplicationException: Unable to find matching local!`)。
+
+**修复(本版)**:把 1.21.x 线重写过的 `LocalSlotLayoutFix` 移植过来 —— 新文件
+`patcher/fixes/LocalSlotLayoutFix.java`(37,453 字节,SHA-256
+`85EF437444F637EC15DC63CA810A9348998FEBE751F1F9F4509113E12E103BB1`,**逐字节**取自 1.21.x 线的侧分支
+`tf-localscope` 的 `1bf3e4b`,一个字节都没改),在 `OptifineFixer.registerOfficialNameFixes()` 里按**这一线的官方名**
+注册两条(`desc` 照 1.21.x 留空:两个版本的描述符并不相同,留空以后按 OptiFine 那份类自带的描述符办事):
+
+    registerFix("net/minecraft/client/renderer/GameRenderer",
+            new LocalSlotLayoutFix(null, "render", "renderLevel"));
+    registerFix("net/minecraft/client/renderer/LevelRenderer",
+            new LocalSlotLayoutFix(null, "renderLevel"));
+
+它的做法是**按作用域**把两张局部变量表配对(指令下标两边不可比,局部变量名两边也不可比;可比的是「按槽位顺序排列的
+描述符序列」,用最长公共子序列对齐),然后把**游戏自己的**槽位放回游戏声明的编号,OptiFine 自己的槽位搬到两个方法
+各自局部区间的末尾。一个槽**整体搬、绝不拆到两个目标**(拆开会让某条 `GOTO` 越过写操作的那条路径读到未初始化的局部
+变量,ASM 的数据流验证器会拒绝),同时活着的两个槽不会合并;帧由管线本来就在用的 `FrameComputingWriter` 重算。
+**它不删 OptiFine 的任何代码、也不加任何指令**,只是把同一个写操作写到另一个槽号上。
+
+因此 `@Local(index = N)` 那一类失败**整类消失**(不再取决于某个 sugar 恰好落在第几个槽位)。本线这次实测到的是第 1 种
+(DH 的按顺序注入)。
+
+**这一线上没有第二处管局部变量布局的代码,不会重复施加**:`git grep -E 'localVariables|maxLocals|getFirstNonArgLocalIndex|LocalVariableTable'`
+在 2.2.4 的提交 `1891b1b` 上只命中 `FrapiTesselateBridgeFix`(它只**读** `method.localVariables` 找一个槽号,而且只注册在
+`SectionCompiler` 上,不改布局);`LevelRenderer` 上原有的两条注册(`RestoreVanillaMethodsFix` /
+`DropVanillaAbsentOverloadsFix`)操作的方法是 `extractBlockOutline`,与 `renderLevel` 无关;`GameRenderer` 上原本
+一条注册都没有;全局的 `MissingOverrideFix` 只**新增**转发方法,不碰局部变量表;`MixinClassMetadata` 管的是 Mixin 的
+类元数据缓存,与槽位无关。
+
+### 实测
+
+干净临时 worktree(`r225\wt`,`1891b1b` + 这一个文件 + 这一处注册)、自己的实例副本、**每次运行前清空 `.optifine`
+缓存**(OptiFabric 每次启动都会重跑修复器,缓存里那份已经被补丁过的会被二次施加)、Java 25、Loader `0.19.5`、
+各自的 OptiFine 预览版;`PASS` 一律指**主界面**,只有写明的那几行进了世界。`Cannot @Coerce` / `InvalidInjectionException` /
+`Mixin apply … failed` / `LVTGeneratorError` **每个手臂都是 0**(下表只列非零的计数器)。
+
+**26.2:`distanthorizons` 复现与候选**(4 个 jar:DH `3.3.3-26.2`、Fabric API `0.160.0+26.2`、本模组、OptiFine
+`K2_pre1` → `Loading 51 mods`)
+
+| 手臂 | jar(SHA-256) | 结果 | 首次致命行 |
+|---|---|---|---|
+| 出厂 2.2.3 | `07B91508…` | **FAIL,13 秒** | 上面那条 `LVT … opcode 286` |
+| 出厂 2.2.4 | `8D67F552…` | **FAIL,21 秒** | 同一行 |
+| **本版(2.2.4 + 这一处移植)** | `ED181EE9…` | **PASS,主界面**(33 秒) | 无 |
+
+计数器(2.2.3 / 2.2.4 / 本版):`ERROR=6/6/6`、`Critical injection failure=2/2/`**`0`**、
+`Mixin transformation of … failed=6/6/`**`0`**、`LVTGeneratorError=0/0/0`。
+
+**26.2 宽集合**(18 个 jar:C2ME `0.4.2-alpha.0.55+26.2`、moreculling、particle_core、bobby、ferrite-core、
+entityculling、krypton、BadOptimizations、Chunky、lithium、lomka、cloth-config、modmenu、fzzy_config、
+fabric-language-kotlin、Fabric API、OptiFine、本模组 → `Loading 118 mods`)
+
+| 手臂 | jar | 结果 | 计数器 |
+|---|---|---|---|
+| 出厂 2.2.4(对照) | `8D67F552…` | **PASS,到主界面并进世界**(32 s / 41 s) | `ERROR=6`,其余四项 0 |
+| **本版** | `ED181EE9…` | **PASS,到主界面并进世界**(16 s / 20 s) | `ERROR=6`,其余四项 0 |
+
+**26.1.2**(这一处移植**从未在 26.1.2 上跑过**,本版第一次):20 个 jar(C2ME `0.4.0-alpha.0.62`、moreculling、
+particle_core、bobby、ferrite-core、entityculling、krypton、BadOptimizations、packetfixer、Chunky、lithium、lomka、
+cloth-config、TRansition/TRender、fabric-language-kotlin、fzzy_config、Fabric API `0.155.3+26.1.2`、OptiFine
+`K1_pre2`、本模组 → `Loading 118 mods`)
+
+| 手臂 | jar | 结果 | 计数器 |
+|---|---|---|---|
+| 出厂 2.2.4(对照) | `F08706DC…` | **PASS,到主界面并进世界**(30 s / 37 s) | `ERROR=4`,其余四项 0 |
+| **本版** | `E498EF2D…` | **PASS,到主界面并进世界**(18 s / 22 s) | `ERROR=4`,其余四项 0 |
+
+26.1.2 **没有 `distanthorizons` 的手臂**:DH 至今只有 26.2 的构建(它的发布列表里 `3.1.0-b-26.2` 起全部只标
+`26.2`),没有可用的 26.1.2 jar。
+
+**修复器确实跑了吗?跑到了什么?**(这些行进的是**启动器 stdout**,26.x 上不进 `latest.log`)
+
+26.2:两条都打出来了,第二条就是这一处修复:
+
+    [OptiFabric] net/minecraft/client/renderer/GameRenderer.render needs no local slots moved: the game's own locals are
+    already in the slots the game declares them in (paired 5 of 5 of OptiFine's entries with 5 of the game's; …)
+    [OptiFabric] Realigned the locals of net/minecraft/client/renderer/GameRenderer.renderLevel(Lnet/minecraft/client/DeltaTracker;)V
+    onto the slots the game declares them in: 18 of OptiFine's 24 table entries are the game's own (of 20), the other 6 are
+    OptiFine's own or could not be paired (slots 2->22, 3->2, 4->3, 5->4, 6->5, 7->6, 8->7, 9->8, 10->9, 11->10, 12->23,
+    13->11, 14->12, 15->13, 16->14, 17->15, 18->16, 19->17, 20->18, 21->24)
+
+`GameRenderer.render` 那一条是**修复器主动不动**的检查:它的两张表本来就对齐,修复器不瞎搬。
+
+26.1.2:同一对方法、另一套数字(这一版第一次跑):
+
+    [OptiFabric] Realigned the locals of net/minecraft/client/renderer/GameRenderer.renderLevel(Lnet/minecraft/client/DeltaTracker;)V
+    onto the slots the game declares them in: 19 of OptiFine's 25 table entries are the game's own (of 21), the other 6 are
+    OptiFine's own or could not be paired (slots 2->23, 3->2, 4->3, 5->4, 6->5, 7->6, 8->7, 9->8, 10->9, 11->10, 12->24, …)
+
+出厂 jar 上**没有**这些行(它根本没有这个修复器),这就是"哪一边跑的"的判据。
+
+### 边界(不要读过头)
+
+- **PASS 一律指主界面**,除了宽集合那两行(进了**一个**世界,`logged in with entity id`,约 20–40 秒就停);
+  **没有光影包、没有压测、没有联机、没有 GUI 操作**;宽集合那一个存档是**复制进去的**固定存档,不是新生成的;
+- 每个手臂**只跑一次**(26.2 的 DH 候选与 26.1.2 的宽集合各一次,26.2 的宽集合候选一次);
+- 上面两组「出厂 2.2.4 vs 本版」就是对照:两者只差这一个文件与这一处注册,模组集合逐字节相同(每个手臂的
+  `*.mods-manifest.json` 记了全部 jar 的尺寸与 SHA-256);
+- **`continuity` 与 `immediatelyfast` 没有被这一版修好**,`threefix\REPORT.md` 已实测:`continuity` 是 OptiFabric
+  自己的类接管/元数据状态那一路(`Scanned 0 target(s)`),`immediatelyfast` 的失败点在 OptiFine **自己重编译出来的
+  方法体**里(一个 redirector 找不到调用点),两者都不是槽位问题,本版与 2.2.4 上的表现逐字相同。**不要**把这一版读成
+  "三个模组都修好了";
+- 1.21.x 线那一处(`@Local(index = 24)`,即 Twilight Forest 撞上的那条)已被这个重写修好(见 `tf-fix\REPORT.md`),
+  但 **Twilight Forest 本身仍然起不来**:它换成了 OptiFine 自己那份帧表里一个隐式 `Iterator` 判别符的歧义,不是槽位
+  能解决的;
+- 26.2 上光影照旧不可用(那个 OptiFine 构建自己取消了光影包加载),本版没有碰它。
 
 ## 2.2.4+mc26.2 — 26.x 线的第九版(把 Mixin 类元数据的 cache drop 收窄到顶层类:2.2.1–2.2.3 的"装了 OptiFine 就起不来"再修一次,这次去掉的是原因)
 
