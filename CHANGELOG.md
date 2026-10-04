@@ -1,5 +1,49 @@
 # 更新日志
 
+## 1.1.4+mc1.20.6 — 按平台要求移除运行时下载与进程启动;改为「本地文件安装」,并同时提供 GitHub-only 的 `-full` 构建
+
+### 为什么改:平台的审核意见(原文与译文)
+
+CurseForge 的审核**正是**因为这两点拒收了提交,原文:
+
+> 该代码在运行时从外部来源下载 jar 文件,并通过 Windows 内核进程调用重新启动游戏,这可能存在安全风险。请移除运行时下载和进程启动功能。
+
+译文:The code downloads a jar file from an external source at runtime and restarts the game through a
+Windows kernel process call; this may pose a security risk. Remove the runtime download and the
+process-spawning functionality.
+
+这是**平台规则**:上架的那一份产物不能有运行时下载,也不能启动进程。所以本版把这两件事从**默认产物**
+(`OptiFabric-1.1.4+mc1.20.6.jar`)里删掉,并新增一条只放在 GitHub 上的 `-full` 构建保留它们。
+
+### 移除了什么
+
+- **删掉 `OptifineDownloader`**(HTTP 客户端、官网下载、写 jar、JNA `CreateProcessW` / `ProcessHandle` /
+  `ProcessBuilder` 重启、自测入口)与 `build.gradle` 里的 JNA 依赖;
+- **`Util.getOperatingSystem().open(...)` 删掉**:标题界面错误对话框的按钮改为**复制链接/路径到剪贴板**;
+- **`MissingOptifineScreen` 不再下载**:官网地址作为**文本**显示,按钮改为「复制官网链接」。
+
+### 新增:本地文件安装(不联网、不启动进程)
+
+粘贴**已下载 OptiFine jar 的路径** → 「从本地文件安装」→ `OptifineLocalInstall` 校验后**复制**进 `mods/`:
+必须存在且可读、必须是带 OptiFine `Config.class` 的 zip、`MC_VERSION` 必须与当前实例一致、`mods/` 里不能已有
+另一个 OptiFine、同名文件**绝不覆盖**;粘进网址时**不下载**,只提示先去官网下载。
+
+安装成功后屏幕与日志都写「OptiFabric 不会自行重启:请手动重新启动游戏以加载 OptiFine。」
+
+### 两条产物
+
+| 产物 | 内容 | 去处 |
+|---|---|---|
+| `OptiFabric-1.1.4+mc1.20.6.jar` | **无**运行时下载、**无**进程启动 | CurseForge / Modrinth / GitHub |
+| `OptiFabric-1.1.4+mc1.20.6-full.jar` | 保留自动下载(只从 optifine.net)与自动重启 | **仅** GitHub |
+
+两者 mod id 相同;**只能装一个**。
+
+### 没有改什么
+
+`class_3898` 的 lambda 改名修复、支持表、提示规则(没有 OptiFine → 每次启动;更老的 preview → 每个构建一次;
+final → 从不提示)与已知限制全部原样保留。
+
 ## 1.1.3+mc1.20.6 — `class_3898` 的 lambda 名字还回去(并说清 c2me 在这一份产物上到底行不行)
 
 ### 修了什么
