@@ -602,12 +602,23 @@ public class MissingOptifineScreen extends Screen {
 
 		if (this.mode == Mode.MISSING) {
 			// What is wrong is already in the heading text, so this sentence is an explanation: it may go.
-			lines.add(new Line(t("OptiFabric is loaded, but no OptiFine jar was found in the mods folder. The game started without it.",
-					"OptiFabric 已加载,但 mods 文件夹里没有找到 OptiFine,游戏已在没有它的情况下启动。"), COLOR_DIM, false));
+			// Where the search actually looked, and not only "the mods folder": OptiFabric also reads a
+			// launcher-installed OptiFine version and the launcher's shared mods folder (see OptifineSearch),
+			// so a user whose OptiFine is one of those must be able to see that it was searched for.
+			lines.add(new Line(t("OptiFabric is loaded, but no OptiFine was found. The game started without it.",
+					"OptiFabric 已加载,但没有找到 OptiFine,游戏已在没有它的情况下启动。"), COLOR_DIM, false));
+			lines.add(new Line(t("Looked for OptiFine in: " + searchedPlaces(),
+					"查找 OptiFine 的位置:" + searchedPlaces()), COLOR_DIM, false));
 		} else {
 			// The two halves of "what is installed against what this release wants" are the key line here.
 			lines.add(new Line(t("Installed: " + installed + " / Recommended: " + this.build.buildName(),
 					"已安装:" + installed + " / 建议:" + this.build.buildName()), COLOR_DIM, true));
+
+			// The wrong-build prompt names the place the wrong build was found in, so a user with more than one
+			// OptiFine installed knows which one this release is complaining about.
+			String source = sourceLine();
+
+			if (source != null) lines.add(new Line(source, COLOR_DIM, false));
 		}
 
 		// Both modes say the same thing: what this release recommends is the *latest* build for it, and the
@@ -907,6 +918,28 @@ public class MissingOptifineScreen extends Screen {
 		client.keyboard.setClipboard(text);
 		System.out.println("[OptiFabric] copied the " + what + " to the clipboard: " + text);
 		setStatus(confirmation + " " + text, COLOR_OK);
+	}
+
+	/**
+	 * The place the installed OptiFine was found in, as one sentence, or null when nothing was found: the
+	 * missing case names every folder that was searched instead (see {@link #searchedPlaces()}).
+	 */
+	private static String sourceLine() {
+		if (OptifineVersion.optifineSource == null) return null;
+
+		String path = OptifineVersion.optifineJar == null ? "" : " (" + OptifineVersion.optifineJar.getAbsolutePath() + ")";
+
+		return t("Found in the " + OptifineVersion.optifineSource + path,
+				"找到的位置:" + OptifineVersion.optifineSource + path);
+	}
+
+	/** Every folder the OptiFine search reads, for the "we looked here" line of the missing case. */
+	private static String searchedPlaces() {
+		if (OptifineVersion.searchedLocations == null || OptifineVersion.searchedLocations.isEmpty()) {
+			return modsDir().getAbsolutePath();
+		}
+
+		return String.join(" | ", OptifineVersion.searchedLocations);
 	}
 
 	private static File modsDir() {
