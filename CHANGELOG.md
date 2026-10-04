@@ -1,5 +1,89 @@
 # 更新日志
 
+## 2.2.4+mc1.21 … 2.2.4+mc1.21.11 — 重写 `LocalSlotLayoutFix`:补丁方法的局部变量按**作用域**配对回游戏声明的槽位
+
+> 这一版覆盖全部 10 个产物(1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11),
+> 行为一致,而且**只改一个文件**:`src/main/java/kynarain/cn/optifabric/patcher/fixes/LocalSlotLayoutFix.java`
+> (+488 / −90)。注册方式没动(仍是 `registerFix("class_757", new LocalSlotLayoutFix(null, "method_3192"))` 与
+> `registerFix("class_761", new LocalSlotLayoutFix(null, "method_22710"))`,`desc = null`),没有按类打补丁、没有新增修复器。
+> **修订号递增的原因是向下兼容的问题修正**:它去掉的是一整类失败,不新增能力,也不改任何对外的名字或注册。
+
+### 修复:一个模组里的 `@Local(index = N)` / `Unable to find matching local` 这一整类失败
+
+`LocalSlotLayoutFix` 原先**按槽位**判断:把 OptiFine 自己多出来的局部变量往后推,推不回去游戏被挪走的那些。
+于是补丁后的字节里,游戏声明在槽位 N 的局部变量可能落在别的槽位上,MixinExtras 的 `@Local(index = N)` 就找不到它:
+
+```
+SugarApplicationException: Failed to validate sugar @Local(index = 24) class_4587 on method port_lib$renderEntityOutline(…)
+Caused by: SugarApplicationException: Unable to find matching local!
+    at LocalSugarApplicator.validate(LocalSugarApplicator.java:44)
+```
+
+更糟的是它不是报错而是**放弃整个方法**:`class_761.method_22710` 曾因此被整条跳过,原话是
+`would need 19 local slots moved, which is more than this fixer understands (8); leaving the method alone`。
+
+### 修复:`class_757.method_3192` 的局部变量现在全部对齐回游戏声明的位置
+
+同一原因,这个方法的 18 个游戏自己的表项原先只回去了一部分;现在 **18/18** 都回到游戏声明的槽位。凡是靠
+`@Local(index = N)` 或按顺序读局部变量的混入,拿到的布局从此与游戏自己编译出来的一致。
+
+### 怎么改的
+
+- **配对粒度从"槽位"改成"作用域(局部变量表项)"**:两个方法的指令下标不可比(1636 ↔ 2673 条指令)、局部变量名也不可比
+  (游戏侧的 jar 带的是 Mojang 混淆名,OptiFine 侧带的是它自己的编译树上的名字),唯一可比的是**两张表按槽位排下来的
+  描述符序列** —— 用最长公共子序列把两张表对齐,每对被配上的表项就是"OptiFine 这一项对应的游戏局部变量",
+  配不上的就是 OptiFine 自己的;
+- **整个槽位一起搬**:某个槽位里的表项都是游戏的,就搬回游戏声明它的槽位(`method_22710` 里 `27->24` 就是把
+  `PoseStack` 放回去,`@Local(index = 24)` 因此能解析);配不上的槽位搬到两个方法各自范围之外的尾部,于是它永远不会是
+  处理器看到的前几个局部变量;
+- **一个槽位绝不拆给两个目标**,这不是保守而是实测出来的缺陷:OptiFine 的 `class_761.method_22710` 里槽位 36 在
+  指令 1079..1098 与 1130..1167 两段都装着 `class_4597`,而 1097 处的 `GOTO 1130` **跳过**了 1129 的写入:
+  后一段读到的是一个从未被写过的值,只是因为前一段的值还在同一个槽位里才成立。早先一版拆过槽位的实现就留下了这个
+  未初始化读,**JVM 自己的校验器放行**,ASM 的数据流校验在指令 1165 处报 `Expected an object reference, but found .`;
+- **只有生命周期不重叠的槽位才共用一个号**:一个槽位若带着任何表项没描述的读或写(javac 并不描述它分配的每个临时量,
+  OptiFine 的 `method_22710` 有十五处在两个表项都没覆盖的偏移上写槽位 34),就按"整个方法都活着"算,单独占一个号;
+  `maxLocals` 相应变大,帧仍由管线里的 `FrameComputingWriter` 重算;
+- **任何一步放弃都不改字节**:整套方案先算完再动手,接收者与参数永不移动。旧的"按槽位"方案作为 `moveBySlot` 保留,
+  只在某一侧**完全没有局部变量表**(拿不到作用域)时才走。
+
+### 离线校验(1.21.1,重写前后各跑一遍,数字逐项相同)
+
+`test-downloads\verify-version.ps1 -Version 1.21.1 -ModVersion 2.2.3`,修复器 stash 前后各一次:
+
+| 指标 | 重写前 | 重写后 |
+| --- | --- | --- |
+| 补丁类 prepared | 425(0 skipped,0 failed) | 425(0 skipped,0 failed) |
+| 补丁类 verified / failed | 425 / 0 | 425 / 0 |
+| ASM 校验问题(补丁类) | 0 | 0 |
+| OptiFine 类 verified / failed | 783 / 0 | 783 / 0 |
+| RefmapScan MISSING | 0 | 0 |
+| LambdaScan DANGLING | 0 | 0 |
+| 修复器自己的判断 | `class_761.method_22710` **放弃**(19 槽) | `class_761` **对齐**;`class_757.method_3192` 把游戏 18 个表项**全部**放回去 |
+
+### 真机结果(1.21.1)
+
+`OptiFabric-2.2.4+mc1.21.1.jar` + `OptiFine_1.21.1_HD_U_J1.jar` + `fabric-api-0.116.17+1.21.1.jar`:
+**到了主界面(15 s)并进入了世界**;修复器自己的 stdout 对该版本的两个方法都打了 `Realigned the locals of`
+(`class_761.method_22710`:41 / 64 个表项被配对回游戏自己的 47 个,含 `27->24`;`class_757.method_3192`:18 / 21),
+`SugarApplicationException` 与 `Unable to find matching local` 在整份日志里 **0 次**。其余九个版本见本次发布说明里的
+冒烟测试表:**只到主界面/进世界这一层**,没有光影包、没有压测。
+
+### 已知限制 / 边界(别把这一版读大)
+
+- **The Twilight Forest + OptiFabric + OptiFine 在 1.21.1 上仍然起不来**,本版**没有**、也**不能**让它受支持:
+  让 TF 卡住的是另一个阻塞点 —— `porting_lib_blocks` 的 `client.LevelRendererMixin` 里那个带隐式 `Iterator`
+  判别符的 `@ModifyVariable`,`@At("STORE")` 在 **OptiFine 自己的**方法体里有**两个同时活着的** `Iterator` 槽位
+  (OptiFine 自己的帧表里本来就写着两条),而游戏原版方法里只有一个。**改槽位号无法改变这个歧义**
+  (重排前是 `32:Iterator, 34:Iterator`,重排后是 `26:Iterator, 54:Iterator`,条数一样);
+- **证据只到主界面/进世界这一层**:一次启动、一个实例、一个存档,没有光影包、没有压测、没有长时间游玩,
+  也没有逐个模组跑兼容矩阵;
+- **没有重新验证本版对 2.2.3 那些修复的影响**:那些修复器与本次改动的目标方法不重叠(见各版本的发布说明)。
+
+### 更正:2.2.3 的发布说明把这一处写反了
+
+2.2.3 的说明里写过"`LocalSlotLayoutFix` 是**按作用域**而不是**按槽位**重映射,`class_761.method_22710` 的 19 个候选槽位
+超过它的 `MAX_MOVES`(8),所以放弃该方法"。**前两处说反了**:那一版那个修复器**是按槽位**判断的,放弃的原因也不是
+`MAX_MOVES` 这个常量,而是"要搬的槽位超过它理解的上限(8)"。这句只是历史说明写错,不影响 2.2.3 产物本身;本版把它改回准确。
 ## 2.2.3+mc1.21 … 2.2.3+mc1.21.11 — 七处修复:OptiFine 重编译改掉的调用点、lambda 名与合成字段,以及 FRAPI 的渲染器注册
 
 > 这一版覆盖全部 10 个产物（1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11）,

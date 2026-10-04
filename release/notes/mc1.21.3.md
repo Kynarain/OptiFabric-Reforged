@@ -4,6 +4,53 @@
 
 状态:**已实测正常(含抗锯齿)**
 
+## 2.2.4 的改动
+
+**本版只改一个文件**:LocalSlotLayoutFix 重写(+488 / −90)。注册方式没动(仍是 desc = null),没有按类打补丁,
+也没有新增修复器;这是把它原先那套「按槽位」排布换成了「按作用域」配对。
+
+**为什么值得换**:它去掉的是一整类失败 —— 模组里 @Local(index = N) / Unable to find matching local 的 MixinExtras
+糖失败。原先这个修复器按槽位逐个判断,只能把 OptiFine 自己多出来的局部变量往后推,**推不回**游戏被挪走的那些;
+而 class_761.method_22710 曾因此被整条跳过(原话:would need 19 local slots moved, which is more than this fixer
+understands (8); leaving the method alone),Porting Lib 的 client.LevelRendererMixin 随即在
+@Local(index = 24) 上抛 SugarApplicationException: Unable to find matching local!。同一原因,
+class_757.method_3192 的游戏表项原先也只回去一部分。
+
+**怎么改的**:按**作用域(局部变量表项)**而不是按槽位配对 —— 两个方法的指令下标与局部变量名都不可比,
+唯一可比的是两张表按槽位排下来的描述符序列,于是用最长公共子序列对齐,再**整槽位**搬运:某个槽位的表项都是游戏的,
+就搬回游戏声明它的槽位(method_22710 里 27->24 就是把 PoseStack 放回去,@Local(index = 24) 因此能解析);
+配不上的槽位搬到两个方法范围之外的尾部。**一个槽位绝不拆给两个目标**(实测:OptiFine 的 method_22710 里槽位 36
+在 1079..1098 与 1130..1167 两段都装着 class_4597,而 1097 处的 GOTO 1130 跳过了 1129 的写入,拆开就留下一个
+未初始化读,ASM 的数据流校验会报 Expected an object reference, but found .);只有生命周期不重叠的槽位才共用一个号。
+**任何一步放弃都不改字节**,旧的按槽位方案保留给「某一侧完全没有局部变量表」的情况。
+
+**离线零回归**(1.21.1,重写前后各跑一遍 erify-version.ps1 -Version 1.21.1,数字逐项相同):425 个补丁类 prepared、
+425 verified、0 failed、0 个 ASM 校验问题;783 个 OptiFine 类 verified、0 failed;Refmap 缺失 0、LambdaScan DANGLING 0。
+只有修复器自己的判断变了:class_761.method_22710 从「放弃」变成「对齐」,class_757.method_3192 把游戏 18 个表项全部放回。
+
+**本版实测(冒烟测试:本版 jar + 与该版本匹配的 OptiFine + 与该版本匹配的 Fabric API,每次都用全新的 .optifine 缓存)**:
+
+- `IN-WORLD`(标题界面 19 s、进世界 22 s)。两个方法都对齐:`class_761.method_22710` 26 / 29,`class_757.method_3192` 19 / 22。证据:`r214\logs\smoke-1.21.3\`
+
+**边界(别把这一版读大)**:
+
+- **The Twilight Forest + OptiFabric + OptiFine 在 1.21.1 上仍然起不来**,本版**没有**、也**不能**让它受支持。
+  让 TF 卡住的是**另一个**阻塞点:porting_lib_blocks 的 client.LevelRendererMixin 里那个带隐式 Iterator
+  判别符的 @ModifyVariable,@At(`"STORE`") 在 **OptiFine 自己的**方法体里有**两个同时活着的** Iterator 槽位
+  (OptiFine 自己的帧表里本来就写着两条),而游戏原版方法里只有一个。**改槽位号无法改变这个歧义** ——
+  重排前是 32:Iterator, 34:Iterator,重排后是 26:Iterator, 54:Iterator,条数一样。所以本版**不声称** TF 可用;
+- **证据只到主界面/进世界这一层**:一次启动、一个实例、一个存档,没有光影包、没有压测、没有长时间游玩,
+  也没有逐个模组跑兼容矩阵。1.21.6 / 1.21.7 的 OptiFine 预览构建本身「开光影就崩」,那是 OptiFine 自己的缺陷,
+  与本版无关,本次也没有去开光影;
+- **1.21.9 / 1.21.10 / 1.21.11 的失败不在本版**:这三版本轮没到标题界面,死在 abric-rendering-v1 的
+  GuiRendererMixin(Cannot @Coerce … class_11228 → …DrawAccessor),而**已发布的 2.2.3** jar
+  在同一套模组里死在同一处。这三版的修复器都跑到了并给出了正确判断,但「到主界面」这一条**本轮未成立**;
+- **离线回归只对 1.21.1 跑过**:425 / 425 / 0 与 783 / 0 是 1.21.1 的数字,其余九版本轮没有跑扫描器套件。
+
+**更正**:2.2.3 的发布说明把这一处写反了 —— 说过「LocalSlotLayoutFix 是**按作用域**而不是**按槽位**重映射,
+class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放弃该方法」。**前两处说反了**:
+那一版那个修复器是按槽位判断的,放弃的原因也不是 MAX_MOVES 这个常量。本版把这段历史说明改回准确。
+
 ## 2.2.3 的改动
 
 **七处修复**:OptiFine 重编译改掉了四个类里的调用点、lambda 名与合成字段名,以及 FRAPI 的渲染器注册方式。
