@@ -289,6 +289,27 @@ public class OptifineFixer {
 		// the end of the local range exactly as for class_757 above. No descriptor either, for the same reason.
 		registerFix("class_761", new LocalSlotLayoutFix(null, "method_22710"));
 
+		//net/minecraft/client/render/LevelRenderer once more, and the same method again: Porting Lib's
+		//porting_lib_blocks LevelRendererMixin (client.LevelRendererMixin, shipped nested inside the Twilight
+		//Forest jar) wraps the block-entity Iterator in method_22710 with an implicit @ModifyVariable:
+		//  @ModifyVariable(method = "renderLevel", at = @At("STORE"),
+		//     slice = @Slice(from = @At(INVOKE, target = "…CompiledSection.getRenderableBlockEntities()Ljava/util/List;"),
+		//                    to   = @At(INVOKE, target = "…OutlineBufferSource.endOutlineBatch()V")))
+		//  private static Iterator port_lib$wrapBlockEntityIterator(Iterator iterator)
+		//The discriminator counts every local whose descriptor is java/util/Iterator from slot 1 onwards, and on
+		//the patched class it finds two or three of them - "Found 2 candidate variables but exactly 1 is
+		//required" / "Found 3 …" at the twelve ASTOREs inside that slice. Every one of those injection points is
+		//then dropped, which fails the whole class with "expected 1 invocation(s) but 0 succeeded" during
+		//OptiFine's own Reflector bootstrap and kills the client before the title screen. The game's own method
+		//has no Iterator-typed table entry in that region at all: the candidates are entries Locals generates
+		//from the code when the LocalVariableTable has nothing in range for those slots, which is why they are
+		//named var26/var29 after their slots and why retyping the shipped table cannot reach them (see
+		//ImplicitDiscriminatorMaskFix). It runs after LocalSlotLayoutFix because it shadows slots by appending
+		//to the very table that fixer reorders.
+		registerFix("class_761", new ImplicitDiscriminatorMaskFix("method_22710", "Ljava/util/Iterator;",
+				"net/minecraft/class_846$class_849.method_3642()Ljava/util/List;",
+				"net/minecraft/class_4618.method_23285()V"));
+
 		//net/minecraft/client/gui/render/GuiRenderer$Draw (fabric-rendering-v1's DrawAccessor, coerced to by
 		//GuiRendererMixin). This one is not a local-layout problem and not a missing method: it is the hierarchy
 		//the @Coerce check reads. GuiRendererMixin's handler fixNonQuadIndexing declares its 6th parameter as
