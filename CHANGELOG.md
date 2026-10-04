@@ -33,12 +33,24 @@ process-spawning functionality.
 - **`Util.getOperatingSystem().open(...)` 删掉**:错误对话框按钮改为**复制链接/路径到剪贴板**;
 - **`MissingOptifineScreen` 不再下载**:官网地址作为**文本**显示,按钮改为「复制官网链接」。
 
-### 新增:本地文件安装(不联网、不启动进程)
+### 提示界面:一句话,不要一张表(便利版也一样)
 
-粘贴**已下载 OptiFine jar 的路径** → 「从本地文件安装」→ `OptiFineLocalInstall` 校验后**复制**进 `mods/`:
-必须存在且可读、必须是带 OptiFine `Config.class` 的 zip、`MC_VERSION` 必须与当前实例一致、`mods/` 里不能已有
-另一个 OptiFine、同名文件**绝不覆盖**;粘进网址时**不下载**,只提示先去官网下载。
+初版把「本地文件安装」做成了一张带输入框和按钮的屏幕,东西太多,两条分支现在都回到 **2.1.0 的形态**:标题界面上直接画四行字,
+没有输入框、没有按钮、没有第二个屏幕 —— 用户按标题界面自己的按钮或关窗口就行。
 
+**这四行(中英各一份,按游戏语言选)**:标题(`OptiFine 未安装` / `OptiFine is not installed`)、
+**唯一一条操作指示**(点名 mods 文件夹的绝对路径)、一句平台规则(「OptiFabric 不会在运行时下载 OptiFine:平台要求模组
+不得在游戏运行时下载文件。」/ "OptiFabric does not download OptiFine at runtime: the platform requires that a mod must
+not fetch files while the game runs.")、一句怎么离开(「使用本提示后面的标题界面按钮,或关闭游戏。」/ "Use the title
+screen behind this message, or close the game.")。同一段文字**逐字写进日志**,并附官网地址。
+
+**随这一版删掉的东西**:本地 jar 路径输入框、「从本地文件安装」按钮、`OptifineLocalInstall` 与 `OptifineJarCheck`
+两个类及其全部校验/结果文案、「复制官网链接」按钮、「重新检查」按钮,以及「为什么不再下载」的那一整段多段说明。
+
+**便利版保留的便利功能**:自动从 optifine.net 下载与自动重启(见下与「两条产物」),这两项只在 `-full` 产物里。
+
+**提示规则一字未改**:没有 OptiFine → **每次启动**都提示;装了更老的 preview → **每个构建提示一次**
+(`config/optifabric-mismatch-ack.txt`);SAME / NEWER / final → **从不提示**。
 ### 两条产物
 
 | 产物 | 内容 | 去处 |
