@@ -23,7 +23,7 @@
 
 ```powershell
 .\gradlew build --offline
-# 产物:build\libs\OptiFabric-1.1.2+mc1.20.6.jar
+# 产物:build\libs\OptiFabric-1.1.3+mc1.20.6.jar
 ```
 
 - 版本号来自 `gradle.properties` 的 **`mod_version`**(注意:这一线不叫 `mod_version_base`,也不按 MC 版本分叉)。

@@ -10,7 +10,7 @@
 
 | Minecraft | 产物 | OptiFine 构建 | Java |
 |---|---|---|---|
-| 1.20.6 | `OptiFabric-1.1.2+mc1.20.6.jar` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
+| 1.20.6 | `OptiFabric-1.1.3+mc1.20.6.jar` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
 
 - mod id `optifabric`,仅客户端,要求 **Fabric Loader ≥ 0.19.3**。
 - 一个 jar 只对应一个版本:jar 里打包着该版本的 `official → intermediary` 映射表(混淆名每版不同,用错版本会把 OptiFine 重映射坏),`fabric.mod.json` 里的 `minecraft` 依赖也精确到该版本。
@@ -28,7 +28,7 @@
 
 | OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 |
 |---|---|---|
-| `1.1.2+mc1.20.6` | 1.20.6 | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` |
+| `1.1.3+mc1.20.6` | 1.20.6 | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` |
 
 当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是弹出一个界面告诉你缺哪个文件:
 上面有「下载 OptiFine」按钮,从 OptiFine **官网**(`optifine.net`,也是本模组唯一会去下载的地方)取回它,旁边就是打开 mods 文件夹;
@@ -59,7 +59,7 @@ Windows 上「立即重启」走 JNA 的 `GetCommandLineW` + `CreateProcessW`(�
 .\gradlew build
 ```
 
-产物为 `build/libs/OptiFabric-1.1.2+mc1.20.6.jar`。
+产物为 `build/libs/OptiFabric-1.1.3+mc1.20.6.jar`。
 
 开发环境不受支持:`gradlew runClient` 会被明确拒绝,因为开发环境的命名空间是 `named`,需要额外的 contextual mapping 层。
 
@@ -97,6 +97,7 @@ mods/<OptiFine>.jar
 ## 已知限制
 
 - **与 Sodium 不兼容**:两者都是渲染器,`fabric.mod.json` 已声明 `conflicts` 与 `breaks`。`no_fog`、`thallium`、`xradiation`、`ryoamiclights` 同样声明为不兼容。完整清单、这些条目的来源,以及加载器到底会不会拦,见下面「[声明的不兼容](#声明的不兼容以及加载器会不会拦)」。
+- **c2me 在 1.20.6 上装不进这个产物**:c2me 自己的元数据写着 `breaks: { "optifabric": "*" }`,而加载器**会执行 `breaks`**,于是游戏在**模组解析阶段**就被硬拒载(`NEG_HARD_DEP c2me … {breaks optifabric @ [*]}`),连一个类都不会加载 —— **本模组这边没有任何代码或配置能绕开它**。要用 c2me 只能装替代产物(`wip/1.20.6-reforged` 分支的 `optifabric_reforged`);即便那样,c2me 的线程化世界生成(`c2me-threading-worldgen`)也与 OptiFine 改过的 `class_3898` 不兼容,替代产物自带一个兼容处理在启动时把那一项关掉。实测、代价与两个必须知道的坑见 [`docs/FAQ.md`](docs/FAQ.md) 第四节。
 - **RyoamicLights 的具体冲突**:OptiFine 把原版视频设置界面(`class_446`)**整类替换成自己的实现,连父类都换掉**,而 RyoamicLights 的 mixin 注入在原版父类上,于是变换失败(`Delegate constructor lookup failed`)。这是 OptiFine 自身的行为,不是补丁造成的。删掉它不会损失功能 —— OptiFine 自带动态光源(视频设置 → 品质 → 动态光源)。更一般地,凡是往 OptiFine 整类替换的界面类里注入的模组都可能同样失败。
 - **OptiFine 看不到 Fabric 模组内部的资源**:日志里会出现成片的 `[OptiFine] Unknown resource pack type: ...ModNioResourcePack`,属于 OptiFine 侧的限制,不影响启动与运行。
 - **光影包与 OptiFine 版本不匹配时会报 `[Shaders] Invalid program name: ...`**(例如 Photon 的 `dh_water`、`gbuffers_particles*`),属于光影包自身问题。
@@ -104,7 +105,7 @@ mods/<OptiFine>.jar
 
 ### 声明的不兼容,以及加载器会不会拦
 
-本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。`1.1.2` 产物声明的是:
+本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。`1.1.3` 产物声明的是:
 
 | 声明 | 条目 |
 |---|---|
