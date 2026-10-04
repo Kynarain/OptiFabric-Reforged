@@ -363,6 +363,21 @@ public class OptifineFixer {
 		//for class_775 above: OptiFine's rendering stays in use, the wrap applies to a value nothing reads, and the
 		//class transforms instead of dying with "expected 1 invocation(s) but 0 succeeded. Scanned 0 target(s)".
 		registerFix("class_761", new InjectionCallPointFix("class_2680", "method_26213", "()I", "method_23793"));
+
+		//net/minecraft/client/renderer/block/ModelBlockRenderer, the third class in a row where Porting Lib asks for
+		//the getLightEmission call inside a method OptiFine's javac rewrote. porting_lib_blocks' ModelBlockRendererMixin
+		//is a MixinExtras @ModifyExpressionValue on that call inside method_3374 (tesselateBlock):
+		//  @ModifyExpressionValue(method = "tesselateBlock",
+		//     at = @At(INVOKE, target = "Lnet/minecraft/world/level/block/state/BlockState;getLightEmission()I"))
+		//In the game that call is right at the top of the method, at instruction 17, and is the first thing OptiFine's
+		//recompile dropped: its version resolves the light through its own LightCacheOF/RenderEnv path and never asks
+		//the block state. The mixin therefore scans "0 target(s)" and fails the class with require = 1, which surfaces
+		//as "Mixin transformation of net.minecraft.class_778 failed" while class_776 is being constructed and kills the
+		//client during "Initializing game", a few seconds after the class_776 repair above lets the run get there.
+		//Same repair, same reasons as class_761 above: the call is re-created in front of OptiFine's body, its receiver
+		//loaded from the method's own state parameter, and its result discarded, so OptiFine's body and rendering stay
+		//exactly as they are and the handler simply becomes inert instead of failing the class.
+		registerFix("class_778", new InjectionCallPointFix("class_2680", "method_26213", "()I", "method_3374"));
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
