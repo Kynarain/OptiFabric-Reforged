@@ -37,6 +37,18 @@
  * OptiFine delegates through a *factory* on other releases (1.21.1: this(provider, Identifier.ofVanilla(id),
  * type)), which is the same problem with another shape: the wrapped call exists, but before this(), where Mixin
  * refuses an instance handler. findDelegation recognises both shapes and inlines either of them.
+ *
+ * The inlined copy also has to reproduce the *instance state* the game's own constructor has established when
+ * the re-created call runs (see parameterState). On 1.21.1 the game does
+ *
+ *     this.name = name;                                              // ShaderProgram.field_29494, from the String
+ *     Identifier location = Identifier.ofVanilla("shaders/core/" + name + ".json");
+ *
+ * so Fabric API's ShaderProgramMixin - which wraps that ofVanilla call and builds an Identifier from
+ * {@code this.name} in its handler - finds the field already set. OptiFine derives the field *from* the
+ * identifier instead, so in the inlined copy the only store to it sits after the call: the handler is handed
+ * null and Identifier.of(null) throws. That is what broke the first resource reload (and with it world entry)
+ * for any mod that registers a core shader; see the fixer's parameters note for the measurement.
  */
 package kynarain.cn.optifabric.patcher.fixes;
 
@@ -49,6 +61,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.IincInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
@@ -178,16 +191,93 @@ public class DelegatingConstructorFix implements ClassFixer {
 		AbstractInsnNode superCall = findSuperCall(owner, copy);
 		if (superCall == null) return null;
 
+		InsnList initialisation = parameterState(minecraft, stringDesc, slot, delegation);
 		InsnList creation = createValue(minecraft, stringDesc, slot, newSlot, delegation);
 		if (creation == null) return null;
 
-		copy.instructions.insert(superCall, creation);
+		int fields = initialisation.size() / 3;
+
+		if (fields > 0) {
+			System.out.println("[OptiFabric] The inlined " + stringDesc + " fills " + fields + " field(s) from its String"
+					+ " parameter before the re-created call, as the game's own constructor does");
+		}
+
+		// The game's own stores go first, then the created value, so that the state a mixin handler reads at
+		// the re-created call is the state it reads in the game's class. See parameterState.
+		initialisation.add(creation);
+		copy.instructions.insert(superCall, initialisation);
 
 		copy.desc = replaceParameter(target.desc, slot);
 		copy.signature = null; //the generic signature describes the old parameter
 		copy.maxLocals = newSlot + 1; //max stack is recomputed by the frame computing writer
 
 		return copy;
+	}
+
+	/**
+	 * The fields the game's own constructor fills from its String parameter <em>before</em> it creates the value
+	 * it hands to the other constructor, as an instruction list that can go straight into the inlined copy.
+	 *
+	 * A handler a mixin puts on the re-created call reads the instance the call is made on, so the inlined copy
+	 * has to present the same state the game's class presents at that instruction. On 1.21.1 that is
+	 * {@code ShaderProgram.field_29494}:
+	 *
+	 * <pre>
+	 * game    : this.name = name;                                        // field_29494, from the String parameter
+	 *           Identifier location = Identifier.ofVanilla("shaders/core/" + name + ".json");   &lt;- wrapped
+	 * OptiFine: Identifier shaderLocation = Identifier.of(name);         &lt;- this is where the call ends up once
+	 *           this.name = namespace.equals("minecraft") ? path : toString();  //  the body is inlined, and the
+	 *           shaderLocation = shaderLocation.withPath(p -&gt; "shaders/core/" + p + ".json");  // field is null there
+	 * </pre>
+	 *
+	 * Fabric API's ShaderProgramMixin wraps the ofVanilla call and its handler calls
+	 * {@code FabricShaderProgram.rewriteAsId(id, this.field_29494)}, which runs {@code Identifier.of(that)} -
+	 * so in the inlined shape it is handed null and throws, inside the first resource reload, before any
+	 * injected world can be opened. Repeating the game's store puts the field's real value there: the handler's
+	 * rewrite then reduces to the identity and the body's own derivation of the field and the location is
+	 * unchanged (both agree on "namespace:path" for a program the mod registered by Identifier).
+	 *
+	 * The scan stops at the factory call: a store the game makes afterwards is not state that exists at the
+	 * wrapped call. When the game's constructor stores nothing from the String parameter, nothing is emitted
+	 * and this fixer behaves exactly as it did before.
+	 */
+	private static InsnList parameterState(ClassNode minecraft, String stringDesc, int slot, Delegation delegation) {
+		InsnList stores = new InsnList();
+		if (minecraft == null) return stores;
+
+		int stringSlot = parameterSlot(stringDesc, STRING);
+		if (stringSlot < 0) return stores;
+
+		MethodNode vanilla = findConstructor(minecraft, stringDesc);
+		if (vanilla == null) return stores;
+
+		MethodInsnNode factory = findFactory(minecraft, stringDesc, delegation.createdType);
+		if (factory == null) return stores;
+
+		for (AbstractInsnNode insn = vanilla.instructions.getFirst(); insn != null && insn != factory; insn = insn.getNext()) {
+			if (!(insn instanceof FieldInsnNode store) || store.getOpcode() != Opcodes.PUTFIELD) continue;
+
+			AbstractInsnNode value = store.getPrevious();
+			AbstractInsnNode receiver = value == null ? null : value.getPrevious();
+
+			if (!(value instanceof VarInsnNode load) || load.getOpcode() != Opcodes.ALOAD || load.var != stringSlot) continue;
+			if (!(receiver instanceof VarInsnNode self) || self.getOpcode() != Opcodes.ALOAD || self.var != 0) continue;
+
+			stores.add(new VarInsnNode(Opcodes.ALOAD, 0));
+			stores.add(new VarInsnNode(Opcodes.ALOAD, stringSlot));
+			stores.add(new FieldInsnNode(Opcodes.PUTFIELD, store.owner, store.name, store.desc));
+		}
+
+		return stores;
+	}
+
+	/** The game's own constructor with this descriptor, or null. */
+	private static MethodNode findConstructor(ClassNode minecraft, String stringDesc) {
+		for (MethodNode method : minecraft.methods) {
+			if ("<init>".equals(method.name) && method.desc.equals(stringDesc)) return method;
+		}
+
+		return null;
 	}
 
 	/**
