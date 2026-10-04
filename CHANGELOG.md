@@ -66,22 +66,31 @@ launcher 的 quick-play(后者没有量过,是第一个该试的方向)。**边�
   (`client.keyboard.setClipboard`);
 - **`MissingOptifineScreen` 不再下载**:官网地址作为**文本**显示(必显行,并写进日志),按钮改为「复制官网链接」。
 
-### 新增:本地文件安装(仍然不联网、不启动进程)
+### 提示界面:一句话,不要一张表
 
-屏幕上多了一个输入框:把**你已经下载好的 OptiFine jar 的路径**粘进去,点「从本地文件安装」,`OptifineLocalInstall`
-校验后把它**复制**进 `mods/`(只做本地文件 I/O):
+初版把「本地文件安装」做成了一张带输入框和按钮的屏幕,东西太多。现在回到 **2.1.0 的形态**:标题界面上直接画四行字,
+没有输入框、没有按钮、没有第二个屏幕,也就没有需要"离开"的东西 —— 用户按标题界面自己的按钮或关窗口就行。
 
-| 校验 | 不通过时的提示 |
-|---|---|
-| 必须存在、是可读的普通文件 | `找不到文件 …` / `… 不是可读文件。` |
-| 必须是带 OptiFine `Config.class` 的 zip(本线十个构建在 `notch/` 下) | `… 不是 OptiFine jar(里面没有 net/optifine/Config.class)。` |
-| 能读出 `MC_VERSION` 时必须与当前实例的 MC 一致 | `… 是给别的 Minecraft 版本的 OptiFine;这个实例跑的是 …` |
-| `mods/` 里不能已经有另一个 OptiFine | `mods 文件夹里已经有另一个 OptiFine(…)。只能放一个,请先移除它。` |
-| 同名文件已存在时**绝不覆盖** | 可用 OptiFine → `… 已经在 mods 文件夹里,没有复制任何文件。`;否则 → `请先改名或删除` |
+**这四行(中英各一份,按游戏语言选)**:
 
-**粘贴的是网址时不下载**:`http://` / `https://` / 任何含 `://` 的文本会被拒绝,并提示先用浏览器从官网下载、
-再粘贴本地路径。安装成功后屏幕与日志都写「OptiFabric 不会自行重启:请手动重新启动游戏以加载 OptiFine。」
+- 标题:`OptiFine 未安装` / `OptiFine is not installed`(装的是更老的 preview 时,标题改成"已安装的 OptiFine 不是
+  这个 Minecraft 版本期望的构建(建议:…)" / "The installed OptiFine build is not the one this Minecraft version
+  expects (recommended: …)");
+- **唯一一条操作指示**,点名文件夹:「请自己到官网 https://optifine.net/downloads 下载 `<文件>`,把 jar 放进这个 mod
+  旁边的 mods 文件夹(`<绝对路径>`)。」/ "Download `<file>` yourself from https://optifine.net/downloads and put the
+  jar in the mods folder next to this mod (`<absolute path>`).";
+- 一句平台规则:「OptiFabric 不会在运行时下载 OptiFine:平台要求模组不得在游戏运行时下载文件。」/ "OptiFabric does
+  not download OptiFine at runtime: the platform requires that a mod must not fetch files while the game runs.";
+- 一句怎么离开:「使用本提示后面的标题界面按钮,或关闭游戏。」/ "Use the title screen behind this message, or close
+  the game."
 
+同一段文字**逐字写进日志**(`[OptiFabric] prompt MISSING: …`),并附官网地址,便于事后核对或发支持请求。
+
+**随这一版删掉的东西**:屏幕上的本地 jar 路径输入框、「从本地文件安装」按钮、`OptifineLocalInstall` 与 `OptifineJarCheck`
+两个类及其全部校验/结果文案、「复制官网链接」按钮、「重新检查」按钮,以及「为什么不再下载」的那一整段多段说明。
+
+**提示规则一字未改**:没有 OptiFine → **每次启动**都提示;装了更老的 preview → **每个构建提示一次**
+(`config/optifabric-mismatch-ack.txt`);SAME / NEWER / final → **从不提示**。
 ### 两条产物:默认(上架)与 `-full`(仅 GitHub)
 
 | 产物 | 内容 | 去处 |

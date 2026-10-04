@@ -70,11 +70,11 @@ At the earliest point of startup (the loader's `preLaunch`), OptiFabric will:
 > **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
 > **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
 > OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> the box on this screen and press **Install from file**); then start the game once by hand.
+> start the game once by hand.
 >
 > **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
 > 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹(或把它的路径粘进屏幕上的输入框,点「从本地文件安装」);然后手动启动一次游戏。
+> 文件夹;然后手动启动一次游戏。
 
    The OptiFine file is named like `OptiFine_1.21.11_HD_U_J9.jar` — dropping it in is enough, you do **not** need to run its installer first.
    **When upgrading from 1.x, delete the old `OptiFabric-<version>+mc1.21.x.jar` first** — 2.0.0 renamed the mod id to `optifabric_reforged` (display name *OptiFabric Reforged*), and with both ids present Fabric loads both copies and OptiFine gets patched twice.
@@ -213,11 +213,11 @@ OptiFine 是为原版(以及 Forge)编写的:它的补丁针对**官方混淆名
 > **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
 > **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
 > OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> the box on this screen and press **Install from file**); then start the game once by hand.
+> start the game once by hand.
 >
 > **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
 > 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹(或把它的路径粘进屏幕上的输入框,点「从本地文件安装」);然后手动启动一次游戏。
+> 文件夹;然后手动启动一次游戏。
 
    OptiFine 的文件名形如 `OptiFine_1.21.11_HD_U_J9.jar`,**直接放进去即可**,不需要先运行它的安装器。
    **从 1.x 升级时先删掉旧的 `OptiFabric-<版本>+mc1.21.x.jar`** —— 2.0.0 把 mod id 改成了 `optifabric_reforged`(显示名 OptiFabric Reforged),两个 id 同时存在时 Fabric 会同时加载两份、OptiFine 会被打两遍补丁。
