@@ -352,6 +352,17 @@ public class OptifineFixer {
 		//the same rename-back shape as class_329, class_761 and class_638, so it gets the same fixer - registered
 		//before the two class_702 entries below because it has to occupy the name first.
 		registerFix("class_702", new LambdaMethodRefFix());
+
+		//The second half of what that same mixin needs, and an independent failure: its other handler
+		//  @WrapOperation(method = "getLightColor(…)", at = @At(INVOKE, target = "BlockState.getLightEmission()I"))
+		//  private static int port_lib$customLight(BlockState, Operation<Integer>, BlockAndTintGetter, BlockState, BlockPos)
+		//asks for the getLightEmission call inside class_761.method_23793, and OptiFine's recompiled body does not
+		//have it: it reduced the method to a four-instruction forwarder to its own getPackedLightmapCoords, which
+		//asks the block state for getLightValue (an OptiFine addition) instead. The game's own method does call
+		//method_26213, so the call is re-created in front of OptiFine's body with its own vanilla opcode, exactly as
+		//for class_775 above: OptiFine's rendering stays in use, the wrap applies to a value nothing reads, and the
+		//class transforms instead of dying with "expected 1 invocation(s) but 0 succeeded. Scanned 0 target(s)".
+		registerFix("class_761", new InjectionCallPointFix("class_2680", "method_26213", "()I", "method_23793"));
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
