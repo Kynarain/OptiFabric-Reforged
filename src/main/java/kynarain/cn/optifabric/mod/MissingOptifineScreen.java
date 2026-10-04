@@ -1,5 +1,5 @@
 /*
- * New in the 1.21.x port of OptiFabric (which is MPL-2.0, see LICENSE.txt). This file has no upstream
+ * New in the 1.20.6 port of OptiFabric (which is MPL-2.0, see LICENSE.txt). This file has no upstream
  * counterpart.
  */
 package kynarain.cn.optifabric.mod;
@@ -12,9 +12,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Locale;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -109,10 +111,13 @@ public class MissingOptifineScreen extends Screen {
 	private final String installedBuild;
 
 	/**
-	 * The box for the path of an OptiFine jar the user has already downloaded. It is a text box and not a URL
-	 * box on purpose: nothing typed into it is ever fetched, it is only opened as a local file.
+	 * The box for the path of an OptiFine jar the user has already downloaded, or - on this convenience build
+	 * only - the URL of one to download. In this build a URL is fetched from OptiFine's own site; the store
+	 * build's copy of this screen refuses a URL and asks the user to download the file themselves.
 	 */
 	private TextFieldWidget pathField;
+	/** The install button, so a running download can make it dead instead of queueing a second one. */
+	private ButtonWidget installButton;
 	/**
 	 * Draw-time layout, recomputed by {@link #init()}; {@link #render} only reads it. Every one of these is
 	 * derived from this screen's own {@code height}, so a short window moves them up instead of losing them.
@@ -133,6 +138,8 @@ public class MissingOptifineScreen extends Screen {
 
 	private volatile String status;
 	private volatile int statusColor = COLOR_DIM;
+	/** True while a download runs on its worker thread; the install button is dead until it is done. */
+	private volatile boolean busy;
 	/** Set by an action once the state the buttons are built from has changed. */
 	private volatile boolean relayoutRequested;
 	/** True once the jar the user just installed was found: OptiFine only loads after a start by hand. */
@@ -310,7 +317,7 @@ public class MissingOptifineScreen extends Screen {
 	private List<Row> rows() {
 		List<Row> rows = new ArrayList<>();
 
-		rows.add(new Row(t("Install from file", "从本地文件安装"), this::installFromFile));
+		rows.add(new Row(t("Install from file or URL", "从本地文件或网址安装"), this::installFromFile));
 		rows.add(new Row(t("Copy official link", "复制官网链接"), this::copyOfficialLink));
 
 		if (this.restartNeeded) {
@@ -351,16 +358,24 @@ public class MissingOptifineScreen extends Screen {
 		}
 
 		this.pathField = new TextFieldWidget(this.textRenderer, left, this.fieldY, buttonWidth, BUTTON_HEIGHT,
-				Text.literal(t("Path to an OptiFine jar you downloaded", "已下载的 OptiFine jar 路径")));
+				Text.literal(t("Path of a downloaded OptiFine jar, or its URL", "已下载 OptiFine jar 的路径,或它的网址")));
 		this.pathField.setMaxLength(1024);
 		this.pathField.setText(typedPath);
 		this.addDrawableChild(this.pathField);
+
+		this.installButton = null;
 
 		for (int i = 0; i < rows.size(); i++) {
 			Row row = rows.get(i);
 			ButtonWidget button = ButtonWidget.builder(Text.literal(row.label), pressed -> row.action.run())
 					.dimensions(left, this.firstButtonY + i * BUTTON_STEP, buttonWidth, BUTTON_HEIGHT)
 					.build();
+
+			// The install button is the first row, and it is the one that goes dead while a download runs.
+			if (i == 0) {
+				button.active = !this.busy;
+				this.installButton = button;
+			}
 
 			this.addDrawableChild(button);
 		}
@@ -635,12 +650,12 @@ public class MissingOptifineScreen extends Screen {
 
 	private String idleStatus() {
 		if (this.mode == Mode.MISSING) {
-			return t("Download " + this.build.file + " in your browser, then paste its path into the box and press Install from file.",
-					"用浏览器下载 " + this.build.file + ",把它的路径粘贴到下面的输入框,再点「从本地文件安装」。");
+			return t("Paste the path of a " + this.build.file + " you downloaded, or its URL, into the box and press Install from file or URL.",
+					"把你下载好的 " + this.build.file + " 的路径或网址填进下面的输入框,再点「从本地文件或网址安装」。");
 		}
 
-		return t("Install the latest build from a file you have already downloaded, or Continue anyway to play as it is.",
-				"用你已经下载好的文件安装最新版,或点「仍要继续」直接进游戏。");
+		return t("Install the latest build from a file you have already downloaded (or its URL), or Continue anyway to play as it is.",
+				"用你已经下载好的文件(或它的网址)安装最新版,或点「仍要继续」直接进游戏。");
 	}
 
 	private String dismissLabel() {
@@ -707,21 +722,116 @@ public class MissingOptifineScreen extends Screen {
 	}
 
 	/**
-	 * {@code 从本地文件安装}: takes the path in the box, checks the file and copies it into {@code mods/}.
-	 * Local file I/O only - a URL typed here is reported, never fetched (see {@link OptifineLocalInstall}).
+	 * {@code 从本地文件或网址安装}: a path is installed locally (exactly as the store build does it), a URL is
+	 * downloaded from OptiFine's own site - the only source this build ever asks. Local file I/O for a path,
+	 * one HTTP fetch for a URL, and nothing else.
 	 */
 	private void installFromFile() {
+		if (this.busy) return;
+
 		String typed = this.pathField == null ? "" : this.pathField.getText().trim();
 
-		System.out.println("[OptiFabric] install from a local file: \"" + typed + "\"");
+		System.out.println("[OptiFabric] install from \"" + typed + "\"");
+
+		if (OptifineLocalInstall.looksLikeUrl(typed)) {
+			startDownload(typed);
+
+			return;
+		}
 
 		OptifineLocalInstall.Result result = OptifineLocalInstall.install(typed, this.build);
 
 		// A jar is in the mods folder now, but the OptiFine this launch loaded is not it: only a start by hand
-		// can pick it up, and this mod starts nothing (no process, no restart).
+		// can pick it up. This build can also offer to restart the game for the user (see the download path).
 		this.restartNeeded = result.status == OptifineLocalInstall.Status.INSTALLED;
 		setStatus(installMessage(result), installColor(result.status));
 		this.relayoutRequested = true;
+	}
+
+	/** The convenience build's extra path: fetch the URL the user typed. Runs on a daemon worker thread. */
+	private void startDownload(String url) {
+		File mods = modsDir();
+
+		this.busy = true;
+		if (this.installButton != null) this.installButton.active = false;
+		setStatus(t("Downloading from " + url + " ...", "正在从 " + url + " 下载 ..."), COLOR_DIM);
+
+		Thread worker = new Thread(() -> runDownload(url, mods), "OptiFabric-OptiFine-download");
+		worker.setDaemon(true);
+		worker.start();
+	}
+
+	/** Runs on the worker thread; only the volatile fields and the log are touched here. */
+	private void runDownload(String url, File mods) {
+		try {
+			OptifineDownloader.Outcome outcome = OptifineDownloader.download(url, this.build, mods, new OptifineDownloader.Progress() {
+				@Override
+				public void stage(String key, String detail) {
+					switch (key) {
+					case "page":
+						setStatus(t("Fetching the download page...", "正在获取下载页..."), COLOR_DIM);
+						break;
+					case "save":
+						setStatus(t("Saving into the mods folder...", "正在写入 mods 文件夹..."), COLOR_DIM);
+						break;
+					default:
+						break;
+					}
+				}
+
+				@Override
+				public void bytes(long received, long total) {
+					String count = total > 0 ? mb(received) + " / " + mb(total) : mb(received);
+
+					setStatus(t("Downloading ", "正在下载 ") + count, COLOR_DIM);
+				}
+			});
+
+			this.restartNeeded = true;
+
+			if (outcome.alreadyPresent) {
+				setStatus(t(outcome.file.getName() + " is already there.", outcome.file.getName() + " 已经存在,无需下载。"), COLOR_OK);
+			} else {
+				setStatus(t("Downloaded " + outcome.file.getName() + " from " + outcome.source,
+						"已从 " + outcome.source + " 下载 " + outcome.file.getName()), COLOR_OK);
+			}
+
+			// A successful download must not restart the game unannounced: ask, and let "Restart now" do it.
+			showRestartPrompt();
+		} catch (Throwable t) {
+			System.out.println("[OptiFabric] OptiFine download failed: " + t);
+			t.printStackTrace();
+			setStatus(t("Download failed: ", "下载失败:") + String.valueOf(t.getMessage()), COLOR_ERROR);
+		} finally {
+			this.busy = false;
+			this.relayoutRequested = true;
+		}
+	}
+
+	/**
+	 * After a download: ask instead of restarting unannounced. This is the convenience build's second extra
+	 * feature; the store build has no restart at all (it prints "start the game again by hand" instead).
+	 */
+	private void showRestartPrompt() {
+		if (this.client == null) return;
+		MinecraftClient client = this.client;
+		client.execute(() -> {
+			Text title = Text.literal(t("Download complete", "下载已完成"));
+			Text message = Text.literal(t("Restart the game to make OptiFine take effect?",
+					"是否重启游戏使 OptiFine 生效?"));
+			Text yes = Text.literal(t("Restart now", "立即重启"));
+			Text no = Text.literal(t("Continue to main menu", "继续返回主菜单"));
+			client.setScreen(new ConfirmScreen(ok -> {
+				if (ok) {
+					// "Restart now": start the replacement process, then end this one - otherwise both would run
+					// at once. This is the -full build's convenience feature; the store build never does this.
+					OptifineDownloader.restart();
+					client.scheduleStop();
+				} else {
+					client.setScreen(new TitleScreen());
+				}
+			}, title, message, yes, no));
+		});
 	}
 
 	/** What the status line says about one installation attempt, in the language the game is set to. */
@@ -837,6 +947,10 @@ public class MissingOptifineScreen extends Screen {
 	private void setStatus(String text, int color) {
 		this.statusColor = color;
 		this.status = text;
+	}
+
+	private static String mb(long bytes) {
+		return String.format(Locale.ROOT, "%.1f MB", bytes / 1048576.0);
 	}
 
 	// ------------------------------------------------------------------ language
