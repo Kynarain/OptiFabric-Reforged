@@ -604,9 +604,10 @@ public class MissingOptifineScreen extends Screen {
 		// The official URL as text, and required: this is the whole replacement for the old download button, so
 		// it has to survive any window height. Nothing is fetched from it - the user reads or copies it.
 		lines.add(new Line(t("Download it yourself from " + OptifineSupport.OFFICIAL_DOWNLOAD_PAGE
-				+ " and put the jar in the mods folder, or paste the path of a jar you already downloaded into"
+				+ " and put the jar in the mods folder next to this mod (" + modsDir() + "), or paste the path of a jar"
+				+ " you already downloaded into"
 				+ " the box below and press Install from file.",
-				"请自己到官网 " + OptifineSupport.OFFICIAL_DOWNLOAD_PAGE + " 下载并把 jar 放进 mods 文件夹,"
+				"请自己到官网 " + OptifineSupport.OFFICIAL_DOWNLOAD_PAGE + " 下载,把 jar 放进这个 mod 旁边的 mods 文件夹(" + modsDir() + "),"
 						+ "也可以把已下载 jar 的路径粘贴到下面的输入框,再点「从本地文件安装」。"),
 				COLOR_OK, true));
 

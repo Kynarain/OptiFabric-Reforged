@@ -1,5 +1,53 @@
 # 更新日志
 
+## 1.1.4-reforged+mc1.20.6 — 按平台要求移除运行时下载与进程启动;C2ME 垫片改为「打印指引并结束本次启动」;同时提供 GitHub-only 的 `-full` 构建
+
+### 为什么改:平台的审核意见(原文与译文)
+
+CurseForge 的审核**正是**因为这两点拒收了提交,原文:
+
+> 该代码在运行时从外部来源下载 jar 文件,并通过 Windows 内核进程调用重新启动游戏,这可能存在安全风险。请移除运行时下载和进程启动功能。
+
+译文:The code downloads a jar file from an external source at runtime and restarts the game through a
+Windows kernel process call; this may pose a security risk. Remove the runtime download and the
+process-spawning functionality.
+
+这是**平台规则**,所以本版把这个产物的两处能力删掉:OptiFine 的运行时下载(同 `main` 线的移除),以及
+**C2ME 垫片的自动重启**。
+
+### C2ME 垫片的行为变化(唯一的功能性改动)
+
+`config/c2me.toml` 的写入逻辑一字未改(只动 `[threadedWorldGen] enabled`,先备份,显式 `true` 不覆盖,
+`-Doptifabric.noC2meCompat=true` 可关)。改的是写完之后的动作:
+
+- 旧:用 `CreateProcessW` / `ProcessHandle` 重启游戏一次(一次性标记文件防循环);
+- 新:**打印双语指引后结束本次启动**(`System.exit(0)`,退出码 0,不启动任何进程),一次性标记文件保留。
+  日志里写「OptiFabric 改动了一项需要重启才生效的设置:请手动重新启动游戏。」,中文同句;第二次启动读到
+  `enabled = false`,正常进世界(实测 0 错误)。
+
+### 移除了什么
+
+- **删掉 `OptifineDownloader`**(HTTP 客户端、官网下载、写 jar、JNA `CreateProcessW` / `ProcessHandle` /
+  `ProcessBuilder` 重启、自测入口)与 `build.gradle` 里的 JNA 依赖;
+- **`C2meCompat` 不再重启**(见上);
+- **`Util.getOperatingSystem().open(...)` 删掉**:错误对话框按钮改为**复制链接/路径到剪贴板**;
+- **`MissingOptifineScreen` 不再下载**:官网地址作为**文本**显示,按钮改为「复制官网链接」。
+
+### 新增:本地文件安装(不联网、不启动进程)
+
+粘贴**已下载 OptiFine jar 的路径** → 「从本地文件安装」→ `OptiFineLocalInstall` 校验后**复制**进 `mods/`:
+必须存在且可读、必须是带 OptiFine `Config.class` 的 zip、`MC_VERSION` 必须与当前实例一致、`mods/` 里不能已有
+另一个 OptiFine、同名文件**绝不覆盖**;粘进网址时**不下载**,只提示先去官网下载。
+
+### 两条产物
+
+| 产物 | 内容 | 去处 |
+|---|---|---|
+| `OptiFabric-Reforged-1.1.4-reforged+mc1.20.6.jar` | **无**运行时下载、**无**进程启动 | CurseForge / Modrinth / GitHub |
+| `OptiFabric-Reforged-1.1.4-reforged+mc1.20.6-full.jar` | 保留自动下载与自动重启(含 C2ME 垫片的自动重启) | **仅** GitHub |
+
+两者 mod id 相同;**只能装一个**。
+
 ## 1.1.3-reforged+mc1.20.6 — 替代产物:自动关掉 c2me 的线程化世界生成(装好就能进世界)
 
 ### 新功能
