@@ -1,10 +1,10 @@
-# OptiFabric 2.2.7+mc1.21.7
+# OptiFabric 2.2.8+mc1.21.7
 
 **Minecraft 1.21.7** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar`
 
 状态:**不开光影可正常启动(2026-09-13 实机确认);启用光影会在启动阶段崩溃 —— 该版 OptiFine 预览构建自身缺陷,本移植不提供光影支持(见文末"已知限制")**
 
-## 2.2.7 的改动
+## 2.2.8 的改动
 
 **本版把 Twilight Forest 那条链剩下的五处 OptiFine 重编译损失一起修掉**,1.21.1 上 TF 4.8.734 现在能到标题界面。
 改动集中在三个文件:`ImplicitDiscriminatorMaskFix.java`(新文件,+268)、`InjectionCallPointFix.java`(+64/−6)、
@@ -97,17 +97,17 @@ TF `twilightforest-fabric-1.21.1-4.8.734.jar` + `fabric-api-0.116.17+1.21.1.jar`
 | `invalid IMPLICIT discriminator` | 0 |
 | `[Server thread]` | 0 |
 
-**这一版是"到标题界面",不是"能玩";而"挡住它的不是 TF"这句现在作废**:2.2.7 拿掉了启动崩溃、把 TF 送到标题界面,
+**这一版是"到标题界面",不是"能玩";而"挡住它的不是 TF"这句现在作废**:2.2.8 拿掉了启动崩溃、把 TF 送到标题界面,
 但 **TF 能不能进世界已经量过了,答案是不能**。
 
 先说那句作废的观测是怎么来的:**"同一套 OptiFabric + OptiFine 不装 TF 也一样停在标题界面之后"出自一个带 Mixin
 debug 开关的台架**;debug 开关在这里会把"静默没生效的注入"变成致命错误,同一原因当天已经造成过一次撤回。
-**普通启动的复核与它相反**:不带 TF 的那一套(`fabric-api 0.116.17+1.21.1` + 本 jar `2.2.7+mc1.21.1` +
+**普通启动的复核与它相反**:不带 TF 的那一套(`fabric-api 0.116.17+1.21.1` + 本 jar `2.2.8+mc1.21.1` +
 `OptiFine_1.21.1_HD_U_J1`)**能进世界,4/4 次**(标题界面之后 25.7 / 29.0 / 32.2 s 入场,每一次 `level.dat` 的
 修改时间都前移,日志里有 `Starting integrated minecraft server version` 与 `logged in with entity id`);
 更早一次同样的裸装也是 3/3 进世界。所以**本版收回"挡住它的不是 TF"这个说法**。
 
-带 TF 的那一套(上面那一串再加 `twilightforest-fabric-1.21.1-4.8.734`)在 2.2.7 上**到标题界面**(300 s 那次
+带 TF 的那一套(上面那一串再加 `twilightforest-fabric-1.21.1-4.8.734`)在 2.2.8 上**到标题界面**(300 s 那次
 46.8 s,600 s 那次 25.8 s),致命计数器**逐条为 0**(`Cannot @Coerce`、`InvalidInjectionException`、
 `Mixin apply … failed`、`Mixin transformation of … failed`、`LVTGeneratorError`、`SugarApplicationException`、
 `Minecraft has crashed`);那次复核的 `/ERROR` 只有一条,是环境的(`Failed reading REFMAP JSON … 'mapper' is
@@ -121,7 +121,7 @@ RenderSystem.limitDisplayFPS`)。也就是说客户端一直闲在标题界面,*
 **进世界之前的空档**,不是"世界加载到一半卡住",也和本版别处记的那段"标题界面之后停住"(世界已经开着、停在
 世界/区块那一侧)不是同一个形状。
 
-**所以本版只能说到这儿**:2.2.7 修掉了启动崩溃、把 TF 送到标题界面;TF 能不能进世界现在已经量过了,答案是不能,
+**所以本版只能说到这儿**:2.2.8 修掉了启动崩溃、把 TF 送到标题界面;TF 能不能进世界现在已经量过了,答案是不能,
 形状如上;**本版没有修它,也不声称修了它** —— 它是谁的责任、为什么不动,本轮**没有量**,这里一个字都不写。
 
 ### 与 2.2.6 / 2.2.4 的产物差别
@@ -562,6 +562,6 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.7+mc1.21.7.jar` — 890135 字节
+`OptiFabric-2.2.8+mc1.21.7.jar` — 890135 字节
 
 `SHA-256: 3E804929D978CB280F0CE178636449EF63B131F415E2C044E834C54B554C727D`
