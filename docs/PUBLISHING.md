@@ -6,6 +6,11 @@
 > 另有 `wip/1.20.6-reforged` 分支出的**替代产物** `OptiFabric-Reforged-1.1.3-reforged+mc1.20.6.jar`
 > (mod id `optifabric_reforged`,与上面那个**只能装一个**;它按自己的 `mod_version` 走,发布与否是另一个决定) —
 > 见 [`REFORGED_BUILD.md`](REFORGED_BUILD.md)。
+> 它自己的元数据草稿与取件目录按同一套规则、带 `-reforged` 后缀:
+> `.\release\make-metadata.ps1 -Version 1.1.3-reforged -Product OptiFabric-Reforged -Tag -reforged`
+> → `release\tmp\{modrinth,curseforge}-1.20.6-reforged.json`,取件目录
+> `C:\Users\kynar\IdeaProjects\OptiFabric\release-upload\1.20.6-reforged-<版本>\`(jar + `metadata\`)。
+> 该分支上的 `.\release\make-metadata.ps1` 不带参数时生成的也是**它自己**的产品(第一条 CHANGELOG 小节就是它的)。
 > 更新的两条线(1.21.x、26.x)在各自的 worktree/分支上独立开发,各线的 jar **不能互相替代**。
 >
 > **发布标签是 `v<版本>+mc<MC版本>`**(已发:`v1.1.0+mc1.20.6`、`v1.1.1+mc1.20.6`、`v1.1.2+mc1.20.6`)。

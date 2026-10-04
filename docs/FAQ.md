@@ -80,14 +80,14 @@
 
 **为什么**:c2me 自己的 `fabric.mod.json` 里写着 `"breaks": { "tic_tacs": "*", "optifabric": "*" }`,而 **Fabric Loader 0.19.5 会执行 `breaks`** —— 不是警告,是硬拒载(`NEG_HARD_DEP`,机制见上面第三节)。这条判断发生在 `preLaunch` **之前**、任何模组代码**之前**,所以**本模组这边没有代码、没有配置、也没有运行时开关能绕开它**:拒载发生时我们根本没机会运行。
 
-**要 c2me 就只能换产物**:`wip/1.20.6-reforged` 分支出的 **`optifabric_reforged`** 版本换掉了 mod id,c2me 那条 `breaks: optifabric` 不再命中,游戏能起来。两个 1.20.6 产物**只能装一个**;改 id 的代价(哪些第三方声明不再生效)写在**那条分支自己的** `docs/REFORGED_BUILD.md` 里,本分支不含该文件。
+**要 c2me 就只能换产物**:`wip/1.20.6-reforged` 分支出的 **`optifabric_reforged`** 版本换掉了 mod id,c2me 那条 `breaks: optifabric` 不再命中,游戏能起来。两个 1.20.6 产物**只能装一个**;改 id 的代价(哪些第三方声明不再生效)写在 [`REFORGED_BUILD.md`](REFORGED_BUILD.md) 里(那是这一支自己的文档)。
 
 **即便换了产物,这两件事也必须知道(都是实测)**:
 
-1. **c2me 的线程化世界生成进不了世界。** `c2me-threading-worldgen` 要注入 OptiFine 重编译过的 `class_3898`(`ThreadedAnvilChunkStorage`)的 `method_17224`,而 OptiFine 为这一个成员留下的字节**自相矛盾**:lambda 的描述符、注册点压进栈的实参、方法体自己读的槽位,三者对不上,**不可能**在保持游戏签名的同时自洽 —— 我们只能把名字改回去,不能重排参数。替代产物因此在启动时把 c2me 的 `config/c2me.toml` 里的 `[threadedWorldGen] enabled` 写成 `false`(**只动这一个键**,先备份原文件),这样进世界 0 错误;代价只有"并行/异步的世界生成调度"这一项,c2me 另外 19 个模块照常工作。详见 `c2me-modules\REPORT.md`。
+1. **c2me 的线程化世界生成进不了世界。** `c2me-threading-worldgen` 要注入 OptiFine 重编译过的 `class_3898`(`ThreadedAnvilChunkStorage`)的 `method_17224`,而 OptiFine 为这一个成员留下的字节**自相矛盾**:lambda 的描述符、注册点压进栈的实参、方法体自己读的槽位,三者对不上,**不可能**在保持游戏签名的同时自洽 —— 我们只能把名字改回去,不能重排参数。替代产物因此在启动时把 c2me 的 `config/c2me.toml` 里的 `[threadedWorldGen] enabled` 写成 `false`(**只动这一个键**,先备份原文件),这样进世界 0 错误;代价只有"并行/异步的世界生成调度"这一项,c2me 另外 19 个模块照常工作。详见 `c2me-modules\REPORT.md`。**顺序上还有一件事**:`preLaunch` 在 c2me 读配置**之后**才运行(Loader 先准备 mixin 配置、再调用 `preLaunch`),所以垫片在"这一次 c2me 已经把模块解析成开"时会用**同一条命令行自己重启一次游戏**,然后才进世界 —— 装好后的第一次启动会重启一次,之后都是普通启动。不想让它动手就加 `-Doptifabric.noC2meCompat=true`(实测:同一个实例加上它,进世界就崩在 `method_17224`)。
 2. **那一项的默认值是算出来的,不是写死的。** `enabled` 的默认 = `globalExecutorParallelism >= 3`,而 `globalExecutorParallelism` 又由 CPU 数与 `-Xmx` 算出来。所以在**小堆**(例如 `-Xmx2G`)上 c2me 会自己把这一项关掉,你可能从来看不到崩溃 —— 那是**运气,不是兼容**。任何自己把它打开(`enabled = true`)的人,进世界必崩:替代产物遇到显式的 `true` **只警告、不覆盖**(那是使用者的选择)。
 
-**本分支(已发布的那一个)有没有这个兼容处理**:没有,也不需要 —— 它根本走不到那一步(见本节开头)。
+**已发布的那个产物(`main`)有没有这个兼容处理**:没有,也不需要 —— 它根本走不到那一步(见本节开头);有兼容处理的是替代产物这一支。
 
 ## 五、正常但看起来很吓人的日志
 
