@@ -221,6 +221,20 @@ public class OptifineFixer {
 		//field_61871 and field_64469, and a shadow it cannot locate fails the whole mixin.
 		registerFix("class_1092$1", new SyntheticFieldFix());
 
+		//net/minecraft/client/renderer/block/BlockRenderDispatcher$1 - javac's synthetic switch map for the
+		//RenderShape switch in method_3353, the method the class_776 entry below restores. OptiFine's recompiled
+		//class declares that map as $SwitchMap$net$minecraft$world$level$block$RenderShape, while the body restored
+		//into method_3353 reads it under the game's own name field_4172, so the field has to carry both names:
+		//without this registration the game's name is not on the class at all and the first block entity a mod
+		//renders dies on the render thread with
+		//  java.lang.NoSuchFieldError: Class net.minecraft.class_776$1 does not have member field 'int[] field_4172'
+		//  at net.minecraft.class_776.method_3353(class_776.java:97)
+		//  at twilightforest.client.renderer.block.CandelabraRenderer.render(CandelabraRenderer.java:38)
+		//and takes the client down with it. Measured in a world, standing where the candelabra is, with the six jars
+		//the line ships - see the report. The rename half of the same fix is what puts the game's name on the
+		//declaration, which is the part mods shadow; the extra field is what keeps OptiFine's own reads working.
+		registerFix("class_776$1", new SyntheticFieldFix());
+
 		//net/minecraft/client/render/block/LiquidBlockRenderer (fabric-rendering-fluids-v1)
 		//The recompile dropped the Biome colour call this mixin wraps. OptiFine's own fluid rendering stays
 		//untouched: an inert call site is put back in front of the method so the mixin finds its point.
