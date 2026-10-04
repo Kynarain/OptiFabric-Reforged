@@ -598,9 +598,9 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 - 真机:1.1.1 已由用户在自己的 1.21.11 实例确认(启动、资源重载、切光影包、开关抗锯齿都正常,`[ERROR]` 0 条);
   1.1.2 用同一个实例再跑一遍资源重载,`Resource not found: minecraft:post_effect/*` **0 条**。
 
-`OptiFabric-2.2.8+mc1.21.11.jar` — 915280 字节
+`OptiFabric-2.2.8+mc1.21.11.jar` — 919307 字节
 
-`SHA-256: 7A1FEF73B507F997F8EA865DD7EC4E38137B2F5C1FB5AF32CF0AE4C854CE6A8A`
+`SHA-256: 12B53157A869F254B47B340EE7F625B6C5558FA6297704A0A8F8A1F8C828269F`
 ---
 
 ## 这一版有两条产物(装之前请看这一段)
@@ -608,9 +608,23 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 - `OptiFabric-2.2.8+mc1.21.11.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
   运行时**不下载任何东西**,也**不启动任何进程**(平台的规则不允许模组在游戏运行时下载文件或启动进程)。
   OptiFine 要你自己从官网 <https://optifine.net/downloads> 下载,把 jar 放进这个 mod 旁边的 `mods` 文件夹;
-  装好之后**手动重新启动游戏一次**(本产物不会自动重启)。提示只在标题界面上写这几行字,没有任何按钮或输入框。
+  装好之后**手动重新启动游戏一次**(本产物不会自动重启)。找不到 OptiFine 时游戏仍会走到标题界面,并按 **2.1.0 的老办法**
+  弹出一个确认对话框说明原因(标题 `There was an error loading OptiFabric!`,正文就是 2.1.0 那三行原话,只把写死的 Minecraft
+  版本换成正在运行的版本);对话框的两个按钮**只做复制**(mods 文件夹路径 / 帮助链接,内部错误时是堆栈或 `logs` 路径),
+  **不打开文件夹、不打开网页、不启动任何进程**。装了**比本产物认识的最新构建更旧的预览版**时,同一个对话框**每个构建只弹
+  一次**(已提示的构建记在 `config/optifabric-mismatch-ack.txt`);同版、更新版与任何正式版**从不提示**。
 - `OptiFabric-2.2.8+mc1.21.11-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
   「自动重启」这两项。除了这两项,它与默认产物是同一版修复。
 
-两条产物的 **mod id 相同**,所以配置与世界通用,但**只能装其中一个**。默认产物构建自 `5aa1329`,
-`-full` 产物构建自 `26fce66`(`-full` 没有单独的 tag,与默认产物共用同一个 release)。
+两条产物的 **mod id 相同**,所以配置与世界通用,但**只能装其中一个**。默认产物构建自 `2be6400`,
+`-full` 产物构建自 `fe1818b`(`-full` 没有单独的 tag,与默认产物共用同一个 release)。
+
+> **上架 jar 的合规声明**(逐 jar 机器核对,扫描表见 `cf-resume\cp-table.md`):
+>
+> This build neither downloads anything nor starts any process at runtime. `java.net.URL`/`URLClassLoader` are
+> used only to read a local `file:` jar that the user placed in `mods/`; there is no HTTP client, no
+> `ProcessBuilder`/`ProcessHandle`/`Desktop`/`CreateProcess`, and no `com.sun.jna`.
+>
+> 也就是:运行时**不下载任何东西**、**不启动任何进程**;`java.net.URL`/`URLClassLoader` 只用于读取用户自己放进 `mods/`
+> 的本地 `file:` jar。每个上架 jar 的下载 / 进程 / 启动 token 都是 **0**;`-full` 那些 jar 是这次扫描的**正对照**
+> (它们确实带着下载器与自动重启,所以只放在 GitHub 上)。
