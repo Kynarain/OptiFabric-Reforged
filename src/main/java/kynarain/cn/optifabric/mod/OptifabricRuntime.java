@@ -46,6 +46,13 @@ public final class OptifabricRuntime {
 			return;
 		}
 
+		// The GitHub-only -full behaviour, and the only difference that is not the downloader's own code: with
+		// no OptiFine in this instance the official jar is fetched into mods\ and this JVM is replaced by a
+		// fresh launch of the same game, so the client never comes up without OptiFine. It happens before
+		// anything is patched, it is never on a screen, and it exists in this build only - the build submitted
+		// to CurseForge and Modrinth carries no OptifineDownloader class at all.
+		if (OptifineDownloader.downloadMissingOptifine(FabricLoader.getInstance().getRawGameVersion(),
+				FabricLoader.getInstance().getGameDirectory())) return;
 		try {
 			OptifineVersion.findOptifineJar(); // Fails loudly (and helpfully) when OptiFine is absent
 
