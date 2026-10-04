@@ -52,6 +52,8 @@ public class OptifineVersion {
 		Path launcherRoot = OptifineSearch.launcherRoot(gameDir);
 		File modsDir = new File(gameDir.toFile(), "mods");
 
+		version = null;
+		minecraftVersion = null;
 		optifineJar = null;
 		optifineSource = null;
 		searchedLocations = OptifineSearch.searchedLocations(gameDir, launcherRoot);
@@ -96,11 +98,12 @@ public class OptifineVersion {
 		}
 
 		jarType = JarType.MISSING;
-		OptifabricError.setError("OptiFabric could not find the OptiFine jar for Minecraft %s. Looked in:\n%s\n\n"
-				+ "Download OptiFine for Minecraft %s and put the jar in the mods folder next to this mod, or paste its"
-				+ " path into the Install from file box on the screen that follows.",
-				FabricLoader.getInstance().getRawGameVersion(), String.join("\n", searchedLocations),
-				FabricLoader.getInstance().getRawGameVersion());
+		OptifabricError.setError("OptiFabric could not find the OptiFine jar in the mods folder:\n%s\n\n"
+				+ "Download OptiFine for Minecraft %s and place it in that folder next to this mod. OptiFabric looks"
+				+ " for it in this instance's mods folder, in the launcher's shared mods folder and in a launcher-"
+				+ "installed OptiFine version; it never downloads OptiFine itself, because the platform requires that"
+				+ " a mod must not fetch files while the game runs.",
+				String.join("\n", searchedLocations), FabricLoader.getInstance().getRawGameVersion());
 		throw new FileNotFoundException("Could not find optifine jar");
 	}
 
