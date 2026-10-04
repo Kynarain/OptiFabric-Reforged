@@ -98,6 +98,26 @@ launcher 的 quick-play(后者没有量过,是第一个该试的方向)。**边�
   `config/optifabric-mismatch-ack.txt`);
 - SAME / NEWER / 任何正式版 → **从不提示**。
 
+### 合规声明(逐 jar 机器核对)
+
+> This build neither downloads anything nor starts any process at runtime. `java.net.URL`/`URLClassLoader` are
+> used only to read a local `file:` jar that the user placed in `mods/`; there is no HTTP client, no
+> `ProcessBuilder`/`ProcessHandle`/`Desktop`/`CreateProcess`, and no `com.sun.jna`.
+
+每个**上架 jar** 的下载 / 进程 / 启动 token 都是 **0**(HTTP 客户端、`Socket`/`InetAddress`/`URLConnection`/
+`openStream`、`ProcessBuilder`、`ProcessHandle`、`java/lang/Process`、`Desktop`、`CreateProcess`、`ShellExecute`、
+`com.sun.jna` 全部为 0);`-full` 那些 jar 是这次扫描的**正对照** —— 它们确实带着下载器(JNA 的 `CreateProcessW`、
+`ProcessBuilder`、`ProcessHandle`、`com.sun.jna`)。逐 jar 表见 `cf-resume\cp-table.md`。
+
+`java.net.URL` / `java.net.URLClassLoader` 两个 token 在**两种产物里都有**,这正是声明里允许的那一条:它们只用于读取
+用户自己放进 `mods/` 的本地 `file:` jar。
+
+**`System.exit` 那一行要按方法看,不能按 token 看**:`System/exit` 这个 token 在 class 文件里**根本不存在** —— 一次调用
+是常量池里 `java/lang/System` 加 `exit:(I)V` 的 Methodref,所以早先按这个 token 扫出来的「0」是**选错 token 的假象**。
+用 `javap` 逐方法解析后,每个上架 jar 的退出原语只有这两处:`patcher/LambdaRebuilder#main` 的 `System.exit(1)`
+(那个类的离线命令行入口,只有直接运行它才会走到),以及 reforged 线 `mod/C2meCompat#apply` 的 `System.exit(0)`
+(垫片自己结束本次启动,**不启动任何进程**、不联网)。上架 jar **没有 `Runtime.halt`**;`Runtime.halt(0)` 只出现在
+`-full` 的下载器与 `-full` 的垫片里。
 ### 两条产物:默认(上架)与 `-full`(仅 GitHub)
 
 | 产物 | 内容 | 去处 |
