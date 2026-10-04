@@ -44,29 +44,33 @@ import java.util.regex.Pattern;
  * is acceptable and must not be reported as wrong; {@link #order} is the explicit ordering that question is
  * answered with, and it is deliberately not a string comparison.
  *
- * <h2>Where OptiFine comes from</h2>
- * From OptiFine's own site, downloaded by the user: {@link #OFFICIAL_DOWNLOAD_PAGE} is the only URL this mod
- * names, and it names it as text ({@link OptifineSupport.Build#file} is the file to look for there). This mod
- * ships <b>no</b> third-party OptiFine URL, <b>fetches nothing</b> and has no downloader any more - the
- * platform's review requires that a mod must not download files while the game runs, and the URL template the
- * old download field was pre-filled with went with it.
+ * <h2>Where the download comes from</h2>
+ * Only from the official site: {@link #OFFICIAL_TEMPLATE} for the jar and
+ * {@link #OFFICIAL_DOWNLOAD_PAGE} for the page a user browses by hand. This mod ships <b>no</b> third-party
+ * OptiFine URL and never redirects a download to one - a user may paste a URL of their own into the field
+ * (and {@link OptifineSupport.Build#expand} will fill in the placeholders for them), but that choice is
+ * theirs alone.
  *
  * <h2>The two path fields</h2>
  * {@link Build#type} and {@link Build#patch} are stored the way the release notes write the build: a
  * {@code HD_U_K2} type plus a {@code pre1} patch for a preview, or the type alone with an empty patch for a
- * final build. They are what the table's {@link Build#file} is spelled from, and they keep a row readable
- * next to those release notes.
+ * final build. {@link Build#pathType()} and {@link Build#pathPatch()} split them the way a site that spells a
+ * final build with its letter split off would ({@code HD_U} + {@code K2}); an already-split preview type is
+ * left alone.
  */
 public final class OptifineSupport {
-	/** OptiFine's own download listing: the page the prompt tells the user to download from, by hand. */
+	/** The official source the download field is pre-filled with; {@code {file}} is the table's file name. */
+	public static final String OFFICIAL_TEMPLATE = "https://optifine.net/adloadx?f={file}";
+
+	/** OptiFine's own download listing, for the "get it yourself" path when a download fails. */
 	public static final String OFFICIAL_DOWNLOAD_PAGE = "https://optifine.net/downloads";
 
 	/** Shown for a release whose OptiFine build cannot load shader packs at all. */
 	public static final String NOTE_NO_SHADERS = "no-shaders";
 
 	private static final List<Build> BUILDS = List.of(
-			// One row per Minecraft release this line covers: the build the prompt recommends and names the
-			// file of. Both releases have a preview and no final build on optifine.net, so both rows name
+			// One row per Minecraft release this line covers: the build the prompt recommends and the download
+			// button fetches. Both releases have a preview and no final build on optifine.net, so both rows name
 			// their newest preview - and the day OptiFine publishes a final for either of them, that row's file
 			// changes to the final and this table is the one place to change. Every other build of the same
 			// release is still recognised: order() simply compares it as older, same or newer.
@@ -126,6 +130,41 @@ public final class OptifineSupport {
 			String name = file.endsWith(".jar") ? file.substring(0, file.length() - 4) : file;
 
 			return name.startsWith("preview_") ? name.substring("preview_".length()) : name;
+		}
+
+		/** {@code {type}} of a user-supplied URL template - see the class comment. */
+		public String pathType() {
+			if (!patch.isEmpty()) return type;
+
+			int split = type.lastIndexOf('_');
+
+			return split < 0 ? type : type.substring(0, split);
+		}
+
+		/** {@code {patch}} of a user-supplied URL template - see the class comment. */
+		public String pathPatch() {
+			if (!patch.isEmpty()) return patch;
+
+			int split = type.lastIndexOf('_');
+
+			return split < 0 ? type : type.substring(split + 1);
+		}
+
+		/** {@code https://optifine.net/adloadx?f=<file>}: the official page carrying the download token. */
+		public String officialUrl() {
+			return expand(OFFICIAL_TEMPLATE);
+		}
+
+		/**
+		 * Replaces {@code {mc}}, {@code {file}}, {@code {type}} and {@code {patch}} in a URL the user typed.
+		 * A URL without a placeholder is returned as it stands, which is what "treat it as a direct URL" needs.
+		 * No template of this mod's own goes through here: the field starts as {@link #officialUrl()}.
+		 */
+		public String expand(String template) {
+			return template.replace("{mc}", mc)
+					.replace("{file}", file)
+					.replace("{type}", pathType())
+					.replace("{patch}", pathPatch());
 		}
 
 		@Override

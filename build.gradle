@@ -11,7 +11,11 @@ plugins {
 // is a 404; 26.1.2 only publishes the placeholder net.fabricmc:intermediary:0.0.0).
 def targetMc = project.minecraft_version.toString()
 
-version = "${project.mod_version_base}+mc${targetMc}"
+// This is the GitHub-only convenience build: the same version and the same fixers as the store build, with
+// "-full" appended so both jars can sit in one release and neither can be mistaken for the other. The store
+// build (the plain name) is the one published to the mod platforms; this one is the only one that keeps the
+// automatic download and the automatic restart.
+version = "${project.mod_version_base}+mc${targetMc}-full"
 group = project.maven_group
 
 base {
@@ -41,8 +45,11 @@ dependencies {
     compileOnly "org.ow2.asm:asm-commons:${project.asm_version}"
     compileOnly "org.ow2.asm:asm-analysis:${project.asm_version}"
 
-    // No JNA: it was only there for the Windows self-restart (Kernel32.GetCommandLineW/CreateProcessW), which
-    // this release no longer has. Nothing in this mod starts a process or loads a native library.
+    // JNA is provided at runtime by Minecraft itself (it is what the Windows self-restart uses). compileOnly
+    // keeps it out of the jar. 5.17.0 is the version Minecraft 26.2 declares; the 5.x API used here is stable.
+    // This is the convenience build only: the store build has no restart and no JNA.
+    compileOnly "net.java.dev.jna:jna:5.17.0"
+    compileOnly "net.java.dev.jna:jna-platform:5.17.0"
 }
 
 // The release itself requires Java 25.
