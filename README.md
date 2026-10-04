@@ -78,6 +78,18 @@ Intermediate files live in `<game dir>/.optifine/<OptiFine version>/`:
 
 1. Get the OptiFine build for **exactly** your Minecraft version (see the table below) — OptiFabric reads `MC_VERSION` from `optifine/Config` and refuses to start otherwise. Do **not** run OptiFine's installer.
 2. Put this mod's jar **and** OptiFine's jar into that Fabric instance's `mods/` folder. Do not install two OptiFine jars (the game reports `DUPLICATED`), and do not mix in a jar from the 1.21.x line.
+
+<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
+     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
+> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
+> the box on this screen and press **Install from file**); then start the game once by hand.
+>
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
+> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
+> 文件夹(或把它的路径粘进屏幕上的输入框,点「从本地文件安装」);然后手动启动一次游戏。
+
 3. Launch the **Fabric** profile — not a launcher-made profile that injects OptiFine itself.
 4. The first start is noticeably slower (it runs the whole patch pipeline); later starts use the cache. A title screen showing OptiFine's version and OptiFine entries in video settings mean it worked.
 
