@@ -1,4 +1,4 @@
-# OptiFabric 2.2.4+mc1.21.9
+# OptiFabric 2.2.5+mc1.21.9
 
 **Minecraft 1.21.9** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar`
 
@@ -325,6 +325,6 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.4+mc1.21.9.jar` — 904572 字节
+`OptiFabric-2.2.5+mc1.21.9.jar` — 904572 字节
 
 `SHA-256: 04461707A91AD2241649B35FDEF9C121FDF5F82FA2FDD5F7CCACBCB20DE3E822`
