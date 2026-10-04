@@ -1,4 +1,4 @@
-��动发布清单(1.20.6 线,每个版本一个发布条目)
+﻿�动发布清单(1.20.6 线,每个版本一个发布条目)
 
 > 本文件只讲 **1.20.6 线**(`main`):整条线**只出一个 jar**,mod id 是 `optifabric`。
 > 同仓库还有 1.21.x 与 26.x 两条线,各线的 jar **不能互相替代**;此外 `wip/1.20.6-reforged` 分支上还有
@@ -23,7 +23,7 @@
 | 1.1.1 | `1.1.1+mc1.20.6` / `v1.1.1+mc1.20.6` | `dist\OptiFabric-1.1.1+mc1.20.6.jar` | 729103 | `F9BBEE732E0C1FFB0FA84CA65DB8E566A555138DBFEC602CB71F7442C1F3DFFD` | `CHANGELOG.md` 1.1.1 节 |
 | 1.1.2 | `1.1.2+mc1.20.6` / `v1.1.2+mc1.20.6` | `dist\OptiFabric-1.1.2+mc1.20.6.jar` | 729105 | `0267DF7B6DDA25424A6FF11060EFC528429B15AE3A844992AE0ED1F94DC85C0C` | `CHANGELOG.md` 1.1.2 节 |
 | **1.1.3** | `1.1.3+mc1.20.6` / `v1.1.3+mc1.20.6` | `dist\OptiFabric-1.1.3+mc1.20.6.jar` | 733927 | `7A65777272624D8A33DC1C6EEF28986FCBDCC40998A175B7119A43101245010C` | `CHANGELOG.md` 1.1.3 节 |
-| **1.1.4** | `1.1.4+mc1.20.6` / `v1.1.4+mc1.20.6` | `dist\OptiFabric-1.1.4+mc1.20.6.jar` | 739267 | `8868D4D6A391A6B299F2CEC9952A04B94A3CB6844CF2DFFDE39BAAD18A57C2FF` | `CHANGELOG.md` 1.1.4 节 |
+| **1.1.4** | `1.1.4+mc1.20.6` / `v1.1.4+mc1.20.6` | `dist\OptiFabric-1.1.4+mc1.20.6.jar` | 718097 | `883F3576790CB53EE12800A33EB4290E9AD90F90685628BC0D2045AF87F8E2E6` | `CHANGELOG.md` 1.1.4 节 |
 | 1.1.4(仅 GitHub:`-full`) | `1.1.4+mc1.20.6` | `dist\OptiFabric-1.1.4+mc1.20.6-full.jar` | 758040 | `FB2BA2ECE258929C5F9FE5B7CEF89E888248110C1F4FF56768769C688FE8B05A` | `CHANGELOG.md` 1.1.4 节 |
 
 `-sources.jar`(一般不发,留档用):
@@ -34,7 +34,7 @@
 | 1.1.1 | `dist\OptiFabric-1.1.1+mc1.20.6-sources.jar` | 92481 | `A12AEE0753935446C8F0F53788F595FF74F80CD4D044B61DF441E08C941EB3E8` |
 | 1.1.2 | `dist\OptiFabric-1.1.2+mc1.20.6-sources.jar` | 92485 | `B8D715A845BF94931FCC61DA96D682BC88158CD0D3E96ED11C2271B4A88A44B6` |
 | **1.1.3** | `dist\OptiFabric-1.1.3+mc1.20.6-sources.jar` | 98407 | `AF1589E3EC5EEB5BCAC320C5F53E3622CB9D82A04E55DF3C4A35FB82CC6B9D7C` |
-| **1.1.4** | `dist\OptiFabric-1.1.4+mc1.20.6-sources.jar` | 103605 | `6675EDD660A9F80E1EA574002D9F65778E33ADD34A9616DA064EB90FBF0D8445` |
+| **1.1.4** | `dist\OptiFabric-1.1.4+mc1.20.6-sources.jar` | 88680 | `541B51C83FFC3030505FEFFAB39F7F4019663CBABF505AE22A252B4EF23EC0B5` |
 
 **交叉核对(1.1.2)**:上表 1.1.2 的 SHA-256 与 `collision-1206\REPORT.md` 里记下的"已发布 1.1.2"
 (`0267DF7B…C85C0C`,729,105 B)逐字符相同,也与 `release-upload\1.20.6-1.1.2\` 里那一份相同 —— 三处一致。
