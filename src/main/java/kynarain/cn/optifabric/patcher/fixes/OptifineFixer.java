@@ -288,6 +288,26 @@ public class OptifineFixer {
 		// game's own local layout is what that index was written against, so OptiFine's extra locals are moved past
 		// the end of the local range exactly as for class_757 above. No descriptor either, for the same reason.
 		registerFix("class_761", new LocalSlotLayoutFix(null, "method_22710"));
+
+		//net/minecraft/client/gui/render/GuiRenderer$Draw (fabric-rendering-v1's DrawAccessor, coerced to by
+		//GuiRendererMixin). This one is not a local-layout problem and not a missing method: it is the hierarchy
+		//the @Coerce check reads. GuiRendererMixin's handler fixNonQuadIndexing declares its 6th parameter as
+		//DrawAccessor and marks it @Coerce, so Mixin's Injector#checkCoerce asks whether the type it actually has
+		//to pass - the Draw record class_11228$class_11230, from the receiver of the wrapped
+		//RenderPass.setIndexBuffer call - can be coerced to DrawAccessor. canCoerce is a supertype test,
+		//  to.hasSuperClass(from, Traversal.ALL, true),
+		//and the answer is yes only once the accessor mixin has put DrawAccessor into that record's hierarchy.
+		//The game's own copy has it: fabric-rendering-v1.mixins.json lists DrawAccessor before GuiRendererMixin,
+		//so Mixin's accessor pass gets there first. The copy OptiFabric serves has no such interface, so the
+		//injection is rejected before it runs and the client dies on the first frame:
+		//  Mixin apply for mod fabric-rendering-v1 failed ... -> net.minecraft.class_11228:
+		//  Cannot @Coerce argument type net.minecraft.class_11228$class_11230 at index 4 to
+		//  net.fabricmc.fabric.mixin.client.rendering.DrawAccessor
+		//Measured on 1.21.9, 1.21.10 and 1.21.11 (all three use this same intermediary number and the same
+		//DrawAccessor). AddInterfaceFix declares the interface on the class and leaves the accessor methods to
+		//Mixin's own ACCESSOR pass - implementing them here as well would fail the class with
+		//"cannot overwrite method ... because @Overwrite is required by the parent configuration" (see that file).
+		registerFix("class_11228$class_11230", new AddInterfaceFix("net/minecraft/class_11228$class_11230"));
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
