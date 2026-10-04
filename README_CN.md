@@ -16,6 +16,7 @@
 在 **Fabric Loader** 下加载 **OptiFine**。把 OptiFine 的 jar 和本模组一起放进 `mods/`,启动时会用 OptiFine 自带的补丁器给原版客户端打补丁、重建被搬走的 lambda、把 OptiFine 从官方混淆名重映射到 intermediary,并把打过补丁的 Minecraft 类交给 Fabric Loader 的类转换器接管,从而让两者共存。**不包含、也不分发 OptiFine 本体。**
 
 本分支是 **1.21.x 线**,覆盖 Minecraft **1.21 – 1.21.11**(OptiFine 出过构建的全部十个版本)。26.x 线(Minecraft 26.2 与 26.1.2)在自己的分支/worktree 上独立开发,两条线的 jar **不能互相替代**。
+完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
 
 ## 📖 概览
 
@@ -226,7 +227,7 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 
 **Architectury 是反过来的例子,值得留着。** 上游声明 architectury 坏,architectury 自己的元数据也声明了 `breaks: optifabric <1.13.0`。而在 1.21.1 上,本移植把它背后真正的冲突修掉了:OptiFine 往 `GameRenderer.render` **中间**插了自己的局部变量,把 Mixin `LocalCapture` 交给处理器的原版槽位整体顶高,`LocalSlotLayoutFix` 则把这些多出来的槽位挪到局部变量区末尾。现在 `architectury-api` `13.0.11` 能通过兼容性扫描(矩阵第 14 行),而改成 `optifabric_reforged` 正是让 architectury 那条声明不再命中的原因。实测记录见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) 与 [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md)。
 
-实测层面的全貌 —— 哪些模组在 OptiFabric 旁边真的会挂、其中哪些是我们的问题 —— 见 [`docs/COMPATIBILITY_CN.md`](docs/COMPATIBILITY_CN.md)。
+实测层面的全貌 —— 哪些模组在 OptiFabric 旁边真的会挂、其中哪些是我们的问题 —— 见 [`docs/COMPATIBILITY_CN.md`](docs/COMPATIBILITY_CN.md);逐行完整列表在仓库根目录的 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
 
 ### 与 indigo 的关系
 
@@ -272,6 +273,7 @@ OptiFabric/
 │   ├── mixin/                       # 本模组自己的两个 mixin
 │   └── util/                        # ASM / mixin / remap / zip 工具
 ├── src/main/resources/              # fabric.mod.json、optifabric.mixins.json、assets/…/icon.png
+├── COMPATIBILITY.md                 # 逐行完整兼容列表(1.21.1 实测)
 ├── docs/                            # DEVELOPMENT.md、COMPATIBILITY.md(+ _CN)、compatibility/(1.21.1 实测数据)……
 ├── release/                         # version.ps1、publish.ps1、notes/、MANUAL_RELEASE.md
 ├── build.gradle · gradle.properties · settings.gradle
