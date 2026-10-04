@@ -1,4 +1,4 @@
-��动发布清单(1.20.6 线,每个版本一个发布条目)
+﻿�动发布清单(1.20.6 线,每个版本一个发布条目)
 
 > 本文件只讲 **1.20.6 线**(`main`):整条线**只出一个 jar**,mod id 是 `optifabric`。
 > 同仓库还有 1.21.x 与 26.x 两条线,各线的 jar **不能互相替代**;此外 `wip/1.20.6-reforged` 分支上还有
@@ -23,7 +23,7 @@
 | 1.1.1 | `1.1.1+mc1.20.6` / `v1.1.1+mc1.20.6` | `dist\OptiFabric-1.1.1+mc1.20.6.jar` | 729103 | `F9BBEE732E0C1FFB0FA84CA65DB8E566A555138DBFEC602CB71F7442C1F3DFFD` | `CHANGELOG.md` 1.1.1 节 |
 | 1.1.2 | `1.1.2+mc1.20.6` / `v1.1.2+mc1.20.6` | `dist\OptiFabric-1.1.2+mc1.20.6.jar` | 729105 | `0267DF7B6DDA25424A6FF11060EFC528429B15AE3A844992AE0ED1F94DC85C0C` | `CHANGELOG.md` 1.1.2 节 |
 | **1.1.3** | `1.1.3+mc1.20.6` / `v1.1.3+mc1.20.6` | `dist\OptiFabric-1.1.3+mc1.20.6.jar` | 733927 | `7A65777272624D8A33DC1C6EEF28986FCBDCC40998A175B7119A43101245010C` | `CHANGELOG.md` 1.1.3 节 |
-| **1.1.4** | `1.1.4+mc1.20.6` / `v1.1.4+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6.jar` | 747957 | `C8FC86A38928796A4AF6B9D04E78BBE97FA0FD0DA2CD4F0E9E90D714B8D664E7` | `CHANGELOG.md` 1.1.4 节 |
+| **1.1.4** | `1.1.4+mc1.20.6` / `v1.1.4+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6.jar` | 726859 | `9CC95E4905F6AE763BEDDFFFA25144AE5B52FF3491DD68DC0AD0D61379B35228` | `CHANGELOG.md` 1.1.4 节 |
 | 1.1.4(仅 GitHub:`-full`) | `1.1.4+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6-full.jar` | 766607 | `664C916AA0E2983E86B6C11C6D3F215934B6A4959D81511A29E944923FC5DD10` | `CHANGELOG.md` 1.1.4 节 |
 
 `-sources.jar`(一般不发,留档用):
@@ -34,7 +34,7 @@
 | 1.1.1 | `dist\OptiFabric-1.1.1+mc1.20.6-sources.jar` | 92481 | `A12AEE0753935446C8F0F53788F595FF74F80CD4D044B61DF441E08C941EB3E8` |
 | 1.1.2 | `dist\OptiFabric-1.1.2+mc1.20.6-sources.jar` | 92485 | `B8D715A845BF94931FCC61DA96D682BC88158CD0D3E96ED11C2271B4A88A44B6` |
 | **1.1.3** | `dist\OptiFabric-1.1.3+mc1.20.6-sources.jar` | 98407 | `AF1589E3EC5EEB5BCAC320C5F53E3622CB9D82A04E55DF3C4A35FB82CC6B9D7C` |
-| **1.1.4** | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6-sources.jar` | 110490 | `860B5DA417947F2C94D4C737A90384484BC82D21F5F4961DAA199CF1624E4102` |
+| **1.1.4** | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6-sources.jar` | 95646 | `1E47B7D2359329299A0CF3316BFFA72F19275744B3DF91AF1D89F60D9CE12EBB` |
 
 **交叉核对(1.1.2)**:上表 1.1.2 的 SHA-256 与 `collision-1206\REPORT.md` 里记下的"已发布 1.1.2"
 (`0267DF7B…C85C0C`,729,105 B)逐字符相同,也与 `release-upload\1.20.6-1.1.2\` 里那一份相同 —— 三处一致。

@@ -217,9 +217,11 @@ public final class C2meCompat {
 				+ (resolved == null ? " (and this shim cannot read back what it resolved)" : "")
 				+ ", so this launch still has c2me-threading-worldgen on: the fixed value can only take effect"
 				+ " on a restart.");
-		System.out.println("[OptiFabric]   OptiFabric changed a setting that takes effect after a restart:"
-				+ " please start the game again by hand.");
-		System.out.println("[OptiFabric]   OptiFabric 改动了一项需要重启才生效的设置:请手动重新启动游戏。");
+		System.out.println("[OptiFabric]   OptiFabric wrote " + CONFIG_PATH + " ([" + SECTION + "] " + KEY
+				+ " = false). That value is read by C2ME before this mod runs, so it takes effect on the next"
+				+ " start: please start the game again by hand.");
+		System.out.println("[OptiFabric]   OptiFabric 已写入 " + CONFIG_PATH + "([" + SECTION + "] " + KEY
+				+ " = false)。C2ME 在本模组之前就已读取该值,所以它要到下次启动才生效:请手动重新启动游戏。");
 		System.out.println("[OptiFabric]   this launch is stopped instead, so the configuration that cannot work"
 				+ " is never used; OptiFabric does not start any process (no restart, no process launch) and"
 				+ " fetches nothing from the network. With [" + SECTION + "] " + KEY + " = false on the next"
