@@ -5,6 +5,53 @@
 > 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.5`)
 > 与 **26.1.2**(`2.2.5`),所以这一线也有了"逐 MC 版本的版本号"。
 
+## 2.2.6+mc26.2 / 2.2.6+mc26.1.2 — 按平台要求移除运行时下载与进程启动;改为「本地文件安装」,并同时提供 GitHub-only 的 `-full` 构建
+
+> 26.x 线的两个产物(`26.2` 与 `26.1.2`)一起升到 2.2.6。**修复逻辑一处未改**。
+
+### 为什么改:平台的审核意见(原文与译文)
+
+CurseForge 的审核**正是**因为这两点拒收了提交,原文:
+
+> 该代码在运行时从外部来源下载 jar 文件,并通过 Windows 内核进程调用重新启动游戏,这可能存在安全风险。请移除运行时下载和进程启动功能。
+
+译文:The code downloads a jar file from an external source at runtime and restarts the game through a
+Windows kernel process call; this may pose a security risk. Remove the runtime download and the
+process-spawning functionality.
+
+这是**平台规则**:上架的那一份产物不能有运行时下载,也不能启动进程。所以本版把这两件事从**默认产物**里删掉,
+并新增一条只放在 GitHub 上的 `-full` 构建保留它们。
+
+### 移除了什么
+
+- **删掉 `OptifineDownloader`**:`java.net.http.HttpClient`、OptiFine 官网两步下载、把 jar 写进 `mods/`、
+  JNA 的 `CreateProcessW` 与非 Windows 的 `ProcessHandle`/`ProcessBuilder` 重启、`-Doptifabric.optifineDownloadTest`;
+- **`build.gradle` 的 JNA 依赖删掉**;
+- **`Util.getPlatform().openUri(...)` / `openFile(...)` 删掉**(它们在 Windows 上会启动进程):标题界面错误对话框
+  改为**复制链接或路径到剪贴板**;
+- **`MissingOptifineScreen` 不再下载**:官网地址作为**文本**显示(必显行 + 日志),按钮改为「复制官网链接」。
+
+### 新增:本地文件安装(不联网、不启动进程)
+
+输入框里粘贴**已下载 OptiFine jar 的路径**,点「从本地文件安装」,`OptifineLocalInstall` 校验后**复制**进 `mods/`:
+文件必须存在且可读、必须是带 OptiFine `Config.class` 的 zip(本线三个位置 `srg/`、`notch/`、`net/optifine/` 都接受)、
+读得到的 `MC_VERSION` 必须与当前实例一致、`mods/` 里不能已有另一个 OptiFine、同名文件**绝不覆盖**。
+粘进网址(`http://` / `https://` / 含 `://`)时**不下载**,只提示先用浏览器从官网下载再粘本地路径。
+
+### 两条产物
+
+| 产物 | 内容 | 去处 |
+|---|---|---|
+| `OptiFabric-Reforged-2.2.6+mc<版本>.jar` | **无**运行时下载、**无**进程启动 | CurseForge / Modrinth / GitHub |
+| `OptiFabric-Reforged-2.2.6+mc<版本>-full.jar` | 保留自动下载(只从 optifine.net)与自动重启 | **仅** GitHub |
+
+两者 mod id 相同;**只能装一个**。
+
+### 没有改什么
+
+提示规则逐字未动(没有 OptiFine → 每次启动;更老的 preview → 每个构建一次;final → 从不提示);
+支持表与两个 MC 版本的 OptiFine 构建名未动;所有 fixer 未动;已知限制原样保留。
+
 ## 2.2.5+mc26.2 — 26.x 线的第十版(移植 1.21.x 线重写过的 `LocalSlotLayoutFix`:把游戏自己的局部变量放回游戏声明的槽位)
 
 > **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
