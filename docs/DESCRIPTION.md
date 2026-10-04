@@ -64,11 +64,11 @@ At the earliest point of startup (the loader's `preLaunch`), OptiFabric will:
 > **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
 > **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
 > OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> the box on this screen and press **Install from file**); then start the game once by hand.
+> start the game once by hand.
 >
 > **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
 > 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹(或把它的路径粘进屏幕上的输入框,点「从本地文件安装」);然后手动启动一次游戏。
+> 文件夹;然后手动启动一次游戏。
 
    The OptiFine file is named like `preview_OptiFine_26.2_HD_U_K2_pre1.jar` — dropping it in is enough, you do **not** need to run its installer first. On 26.1.2, use `OptiFabric-Reforged-2.2.6+mc26.1.2.jar` with `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` instead.
 3. Start the game. The OptiFine version appears on the title screen when it works.
@@ -204,11 +204,11 @@ OptiFine 是为原版(以及 Forge)编写的:它的补丁是照着**某一个具
 > **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
 > **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
 > OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> the box on this screen and press **Install from file**); then start the game once by hand.
+> start the game once by hand.
 >
 > **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
 > 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹(或把它的路径粘进屏幕上的输入框,点「从本地文件安装」);然后手动启动一次游戏。
+> 文件夹;然后手动启动一次游戏。
 
    OptiFine 的文件名形如 `preview_OptiFine_26.2_HD_U_K2_pre1.jar`,**直接放进去即可**,不需要先运行它的安装器。26.1.2 上则改用 `OptiFabric-Reforged-2.2.6+mc26.1.2.jar` + `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`。
 3. 启动游戏。标题界面出现 OptiFine 版本号就说明生效了。

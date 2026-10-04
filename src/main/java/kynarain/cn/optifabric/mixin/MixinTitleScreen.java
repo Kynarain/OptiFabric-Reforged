@@ -2,9 +2,8 @@
  * Ported from OptiFabric (https://github.com/Chocohead/OptiFabric), MPL-2.0.
  * Adapted for Minecraft 26.1.2 / Fabric Loader 0.19.x.
  *
- * 26.x is unobfuscated, so this file names the game by its official names and no mappings sit in between.
- * The 1.21.x line, which has its own branch, carries the same two mixins written against yarn names; this is
- * the 26.x counterpart. What changed:
+ * 26.x is unobfuscated, so this file names the game by its official names and no mappings sit in between. What
+ * changed from the yarn-named 1.21.x counterpart:
  *   net.minecraft.client.gui.screen.TitleScreen / Screen / ConfirmScreen -> ...client.gui.screens.*
  *   net.minecraft.client.gui.DrawContext      -> net.minecraft.client.gui.GuiGraphicsExtractor
  *   net.minecraft.text.Text                   -> net.minecraft.network.chat.Component
@@ -15,27 +14,11 @@
  *   TitleScreen#doBackgroundFade / #backgroundFadeStart -> TitleScreen#fading / #fadeInStart
  *   Text.literal(x).formatted(F)              -> Component.literal(x).withStyle(F)
  *   Graphics#drawTextWithShadow(font, s, x, y, colour) -> GuiGraphicsExtractor#text(font, s, x, y, colour)
- *   Util.getOperatingSystem().open(x)         -> gone: the error dialog's buttons copy their URL or path to the
- *                                                game's own clipboard (KeyboardHandler#setClipboard) instead of
- *                                                opening anything, which would start a process
- *   Util.getMeasuringTimeMs()                 -> Util.getMillis()
- *   MinecraftClient#keyboard                  -> Minecraft#keyboardHandler
+ *   Screen#setScreen                          -> Minecraft#setScreenAndShow (26.2 only has the new name)
+ *   MinecraftClient#getInstance               -> Minecraft#getInstance
  *
- * Changes carried over from the 1.20.6 port: MinecraftClient#openScreen was removed there, setScreen is
- * used instead; the Fabric screen API integration (compat.fabricscreenapi.Events) and the Text/DrawContext
- * compatibility shims upstream needed are gone; the dead "render(MatrixStack...)" target was dropped.
- *
- * 26.2 renamed Minecraft#setScreen to #setScreenAndShow (26.1.2 has both, 26.2 only the new name), so this
- * file calls #setScreenAndShow - which is the one name that compiles on both releases of the 26.x line.
- *
- * The download prompt (MissingOptifineScreen) is the 26.x counterpart of the one the 1.21.x line carries, and
- * it is ported the same way: the jar states it owns - nothing in mods/ at all, and an OptiFine older than the
- * newest build this release knows - are handed to it before the error gate below, because an older build of
- * the *same* Minecraft release loads without any error at all. Everything else in this file is unchanged.
- *
- * NOT yet verified in game: 26.1 replaced "render into a draw context" with "extract a render state" plus a
- * separate renderer, so the version label is now added from extractRenderState instead of render. That is
- * the faithful reading of the new API, but it only holds up once it has been seen on screen.
+ * The missing/wrong-OptiFine notice is no longer a screen of its own: it is four lines drawn on the title screen
+ * (see OptifinePrompt), so there is no path box, no install button and no second screen to leave.
  */
 
 package kynarain.cn.optifabric.mixin;
@@ -61,14 +44,20 @@ import net.minecraft.util.Util;
 
 import net.fabricmc.loader.api.FabricLoader;
 
-import kynarain.cn.optifabric.mod.MissingOptifineScreen;
 import kynarain.cn.optifabric.mod.OptifabricError;
+import kynarain.cn.optifabric.mod.OptifinePrompt;
 import kynarain.cn.optifabric.mod.OptifineSupport;
 import kynarain.cn.optifabric.mod.OptifineVersion;
 
 /**
- * Shows why OptiFine could not be loaded instead of silently starting without it, and prints the
- * OptiFine version in the bottom left corner once it is running.
+ * Draws the missing/wrong-OptiFine notice on the title screen and prints the OptiFine version in the bottom
+ * left corner once it is running.
+ *
+ * <p>The notice has no screen object on purpose. A screen would have to offer a way to leave it, and every such
+ * affordance is either an extra widget this release does not need or a button that copies something; four lines
+ * over the title screen leaves the user exactly where they were, with the title screen's own buttons and the
+ * window's close button. The wording, the folder it names and the "we do not download it" sentence come from
+ * {@link OptifinePrompt}.
  */
 @Mixin(TitleScreen.class)
 public abstract class MixinTitleScreen extends Screen {
@@ -77,58 +66,58 @@ public abstract class MixinTitleScreen extends Screen {
 	@Shadow
 	private long fadeInStart;
 
+	/** The prompt to draw, or null. The mixin owns it because there is no screen object any more. */
+	private OptifinePrompt.Mode prompt;
+	/** The build this Minecraft version expects, for the prompt's text. */
+	private OptifineSupport.Build expected;
+
 	protected MixinTitleScreen() {
 		super(null);
 	}
 
 	@Inject(method = "init", at = @At("RETURN"))
 	private void init(CallbackInfo info) {
-		// The download prompt owns the jar states it exists for - nothing in mods/ at all, and an OptiFine
-		// that is older than the newest build this release knows. It is decided from the jar itself, not from
-		// OptifabricError: an older build of the *same* Minecraft release loads without any error at all
-		// (OptifineVersion only complains about a jar for another release), and the user still has to be told
-		// that a newer one exists. So this has to run before the error gate below.
-		OptifineSupport.Build expected = OptifineSupport.forMc(FabricLoader.getInstance().getRawGameVersion());
-		MissingOptifineScreen.Mode prompt = MissingOptifineScreen.modeFor(OptifineVersion.jarType, expected, OptifineVersion.version);
+		this.expected = OptifineSupport.forMc(FabricLoader.getInstance().getRawGameVersion());
+		OptifinePrompt.Mode wanted = OptifinePrompt.modeFor(OptifineVersion.jarType, this.expected, OptifineVersion.version);
+		boolean show = wanted != null && OptifinePrompt.shouldPrompt(wanted, OptifineVersion.version);
 
-		if (prompt != null) {
-			if (MissingOptifineScreen.shouldPrompt(prompt, OptifineVersion.version)) {
-				System.out.println((prompt == MissingOptifineScreen.Mode.MISSING
-						? "[OptiFabric] OptiFine is not installed - showing the download screen"
-						: "[OptiFabric] The installed OptiFine build is not the one this Minecraft version expects - showing the download screen")
-						+ " (installed " + (OptifineVersion.version == null ? "nothing" : OptifineVersion.version)
-						+ ", recommended " + expected.file + ")");
-				minecraft.setScreenAndShow(new MissingOptifineScreen(prompt, expected, OptifineVersion.version));
+		if (show) {
+			// The same words go to the log: a log is the one place a run's exact wording can be checked after the
+			// fact, and it is what a support request carries.
+			System.out.println("[OptiFabric] OptiFine prompt: " + wanted + " (installed "
+					+ (OptifineVersion.version == null ? "nothing" : OptifineVersion.version)
+					+ ", recommended " + (this.expected == null ? "?" : this.expected.file) + ")");
+			System.out.println("[OptiFabric] prompt " + wanted + ": " + OptifinePrompt.heading(wanted, this.expected));
+			System.out.println("[OptiFabric] prompt " + wanted + ": " + OptifinePrompt.instruction(this.expected));
+			System.out.println("[OptiFabric] prompt " + wanted + ": " + OptifinePrompt.why());
+			System.out.println("[OptiFabric] prompt " + wanted + ": " + OptifinePrompt.howToLeave());
+			System.out.println("[OptiFabric] prompt " + wanted + ":   official download page "
+					+ OptifineSupport.OFFICIAL_DOWNLOAD_PAGE);
+			System.out.println("[OptiFabric] prompt " + wanted + ":   OptiFabric does not download OptiFine; get "
+					+ (this.expected == null ? "OptiFine" : this.expected.file) + " from that page yourself and put it in "
+					+ OptifinePrompt.modsFolder());
 
-				// Mode B (an older build) is a one-time recommendation: remember the build as soon as the prompt is
-				// shown, so a later launch with the same jar does not nag again. Mode A must appear on every launch
-				// and never consults the acknowledgement file, so it is deliberately not written here.
-				if (prompt == MissingOptifineScreen.Mode.MISMATCH) {
-					MissingOptifineScreen.acknowledge(OptifineVersion.version);
-				}
+			if (wanted == OptifinePrompt.Mode.MISMATCH) {
+				OptifinePrompt.acknowledge(OptifineVersion.version);
 			}
-
-			return;
 		}
+
+		this.prompt = show ? wanted : null;
+
+		if (show) return;
 
 		// Everything below is the error dialog, and it is only for a real error.
 		if (!OptifabricError.hasError()) return;
 
 		String actionButtonText, helpButtonText;
 		BooleanConsumer action;
-		// A jar state that is valid in itself (OPTIFINE_MOD, OPTIFINE_INSTALLER, SOMETHING_ELSE) with an error
-		// set means OptiFabric could not bring that OptiFine in at all. A build newer than this release knows
-		// about is one such state: it is left alone above while it loads, and when it does not patch, the
-		// failure dialog below is what the user needs. Asserting "no error to show" for those states threw out
-		// of the title screen - which is exactly what must not happen to a user whose OptiFine is newer than
-		// this OptiFabric release. (The 1.21.x line carries the same change; it is part of this port.)
-		// Every button here is local: it copies a URL or a path to the game's own clipboard (or the stack trace,
-		// as before) and never starts a process. Opening a folder or a page through the operating system is a
-		// shell execute - the same shape as the process launch this release had to remove for the platform's
-		// review - so the labels say "copy" and what used to be opened is now copied.
+		// Every button here is local: it copies a URL or a path to the game's own clipboard (or the stack trace, as
+		// before) and never starts a process. Opening a folder or a page through the operating system is a shell
+		// execute - the same shape as the process launch this release had to remove for the platform's review - so
+		// the labels say "copy" and what used to be opened is now copied.
 		String modsPath = new File(FabricLoader.getInstance().getGameDirectory(), "mods").getAbsolutePath();
 		String logsPath = new File(FabricLoader.getInstance().getGameDirectory(), "logs").getAbsolutePath();
-		String readme = "https://github.com/Kynarain/OptiFabric/blob/mc1.21.11/README.md";
+		String readme = "https://github.com/Kynarain/OptiFabric/blob/26.x/README.md";
 		String issues = "https://github.com/Kynarain/OptiFabric/issues";
 
 		switch (OptifineVersion.jarType) {
@@ -157,10 +146,24 @@ public abstract class MixinTitleScreen extends Screen {
 
 	@Inject(method = "extractRenderState", at = @At("RETURN"))
 	private void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo info) {
+		if (this.prompt != null) {
+			// Four short lines drawn straight onto the title screen: no widgets of their own, nothing to click here,
+			// and the title screen's own buttons stay usable underneath - which is how the user leaves.
+			int y = 8;
+
+			for (String line : new String[] { OptifinePrompt.heading(this.prompt, this.expected),
+					OptifinePrompt.instruction(this.expected), OptifinePrompt.why(), OptifinePrompt.howToLeave() }) {
+				context.text(font, line, 6, y, 0xFFFFFF);
+				y += 12;
+			}
+
+			return;
+		}
+
 		if (OptifabricError.hasError()) return;
 
 		float fadeTime = fading ? (Util.getMillis() - fadeInStart) / 1000F : 1F;
-		float fadeColor = fading ? Mth.clamp(fadeTime - 1F, 0F, 1F) : 1F;
+		float fadeColor = Mth.clamp(fadeTime - 1F, 0F, 1F);
 
 		int alpha = Mth.ceil(fadeColor * 255F) << 24;
 		if ((alpha & 0xFC000000) != 0) {
