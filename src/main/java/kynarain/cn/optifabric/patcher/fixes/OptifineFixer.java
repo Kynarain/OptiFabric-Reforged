@@ -308,6 +308,29 @@ public class OptifineFixer {
 		//Mixin's own ACCESSOR pass - implementing them here as well would fail the class with
 		//"cannot overwrite method ... because @Overwrite is required by the parent configuration" (see that file).
 		registerFix("class_11228$class_11230", new AddInterfaceFix("net/minecraft/class_11228$class_11230"));
+
+		//net/minecraft/client/Camera, for two unrelated mods that inject at the same place: shouldersurfing's
+		//CameraMixin and Porting Lib's porting_lib_client_events CameraMixin, both a @ModifyArg on the
+		//org.joml.Quaternionf.rotationYXZ call inside setRotation. In the game that call is in the two-argument
+		//method_19325(FF)V, which is the overload both refmaps name for "setRotation". OptiFine recompiled Camera
+		//from a release whose setRotation has a third, roll argument: its method_19325(FF)V is a four-instruction
+		//forwarder to its own public setRotation(FFF)V, where the whole body - and so the rotationYXZ call - now
+		//lives. Neither mod's injection point exists in the method it asks for, and both fail the whole class with
+		//"expected 1 invocation(s) but 0 succeeded. Scanned 0 target(s)": this is the class that kills a 1.21.1
+		//launch with ShoulderSurfing, and it is also the class the Twilight Forest run dies on once class_761 is
+		//repaired, so it is not a Twilight Forest problem at all. OptiFine's three-argument method has no other
+		//caller left once the forwarder is replaced, and the vanilla body computes exactly what the forwarder
+		//computed for a roll of zero, so putting it back cannot change behaviour.
+		registerFix("class_4184", new RestoreVanillaMethodsFix(true, "method_19325"));
+
+		//net/minecraft/client/particle/ParticleEngine (Porting Lib's porting_lib_base ParticleEngineMixin, @Inject on
+		//addCustomRenderTypes into method_18125(Lnet/minecraft/class_3999;)Ljava/util/Queue;). In the game that is a
+		//synthetic lambda the class registers for its own render-type queue; OptiFine's recompile emitted it under
+		//javac's lambda name and pointed the bootstrap handle at that, so the name the refmap asks for is gone and
+		//the mixin fails the class with "could not find any targets matching ... in net/minecraft/class_702". This is
+		//the same rename-back shape as class_329, class_761 and class_638, so it gets the same fixer - registered
+		//before the two class_702 entries below because it has to occupy the name first.
+		registerFix("class_702", new LambdaMethodRefFix());
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
