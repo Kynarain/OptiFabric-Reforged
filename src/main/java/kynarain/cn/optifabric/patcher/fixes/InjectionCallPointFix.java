@@ -16,6 +16,11 @@
  * mod keeps OptiFine's behaviour, the mod's hook becomes inert instead of failing the class.
  *
  * The opcode is taken from the vanilla counterpart, so a static, virtual or interface call is reproduced exactly.
+ *
+ * One argument of the re-created call can be named as a static field of the callee's owner instead of being
+ * taken from the method's parameters: javac also inlines <em>arguments</em> away, and when the game passed a
+ * constant like {@code Items.FILLED_MAP} OptiFine's recompile of the method no longer mentions it at all (see
+ * the {@code class_915} registration). Reading that field is exactly what the game did.
  */
 package kynarain.cn.optifabric.patcher.fixes;
 
@@ -26,6 +31,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -38,6 +44,11 @@ public class InjectionCallPointFix implements ClassFixer {
 	private final String calleeName;
 	private final String calleeDesc;
 	private final String[] methods;
+	/** An argument the call needs that is not a parameter of the method: the field holding it, or null. */
+	private final boolean hasArgumentField;
+	private final String argumentFieldOwner;
+	private final String argumentFieldName;
+	private final String argumentFieldDesc;
 
 	/**
 	 * @param calleeOwner the class the missing call goes to, as an intermediary name ({@code class_1163})
@@ -50,6 +61,38 @@ public class InjectionCallPointFix implements ClassFixer {
 		this.calleeName = RemappingUtils.getMethodName(calleeOwner, calleeName, calleeDesc);
 		this.calleeDesc = RemappingUtils.mapMethodDescriptor(calleeDesc);
 		this.methods = methods;
+		this.hasArgumentField = false;
+		this.argumentFieldOwner = null;
+		this.argumentFieldName = null;
+		this.argumentFieldDesc = null;
+	}
+
+	/**
+	 * The same repair for a call one of whose arguments is a static field rather than a parameter of the method.
+	 * A separate static factory, not a second constructor, because Java cannot tell a six-String constructor call
+	 * apart from the five-String one above plus a single method name.
+	 *
+	 * @param argumentFieldOwner the class holding that argument ({@code class_1802} for {@code Items}), intermediary
+	 * @param argumentFieldName  the field in that class, in the runtime namespace ({@code field_8204})
+	 * @param argumentFieldDesc  that field's descriptor, with named classes
+	 * @param method             the single method of the patched class to look in (intermediary name)
+	 */
+	public static InjectionCallPointFix withArgumentField(String calleeOwner, String calleeName, String calleeDesc,
+			String argumentFieldOwner, String argumentFieldName, String argumentFieldDesc, String method) {
+		return new InjectionCallPointFix(calleeOwner, calleeName, calleeDesc, argumentFieldOwner, argumentFieldName,
+				argumentFieldDesc, method);
+	}
+
+	private InjectionCallPointFix(String calleeOwner, String calleeName, String calleeDesc,
+			String argumentFieldOwner, String argumentFieldName, String argumentFieldDesc, String method) {
+		this.calleeOwner = RemappingUtils.getClassName(calleeOwner);
+		this.calleeName = RemappingUtils.getMethodName(calleeOwner, calleeName, calleeDesc);
+		this.calleeDesc = RemappingUtils.mapMethodDescriptor(calleeDesc);
+		this.methods = new String[] { method };
+		this.hasArgumentField = true;
+		this.argumentFieldDesc = RemappingUtils.mapMethodDescriptor(argumentFieldDesc);
+		this.argumentFieldOwner = RemappingUtils.getClassName(argumentFieldOwner);
+		this.argumentFieldName = RemappingUtils.mapFieldName(this.argumentFieldOwner, argumentFieldName, this.argumentFieldDesc);
 	}
 
 	@Override
@@ -65,7 +108,7 @@ public class InjectionCallPointFix implements ClassFixer {
 				if (arguments == null) {
 					System.err.println("[OptiFabric] Cannot re-create the call to " + calleeOwner + '.' + calleeName
 							+ " in " + optifine.name + '.' + name + method.desc
-							+ ": the vanilla method does not have it, or its arguments are not this method's parameters");
+							+ ": the vanilla method does not have it, or its arguments are neither this method's parameters nor the configured field");
 
 					continue;
 				}
@@ -75,13 +118,15 @@ public class InjectionCallPointFix implements ClassFixer {
 				for (AbstractInsnNode insn : arguments) method.instructions.insertBefore(anchor, insn);
 
 				method.instructions.insertBefore(anchor, new MethodInsnNode(opcode, calleeOwner, calleeName, calleeDesc, false));
-				// discard the result: the call exists for the injection point, not for its value
+				// discard the result: the call exists for the injection point ...
 				method.instructions.insertBefore(anchor, new InsnNode(Type.getReturnType(calleeDesc).getSize() == 2
 						? Opcodes.POP2 : Type.getReturnType(calleeDesc).getSort() == Type.VOID ? Opcodes.NOP : Opcodes.POP));
 
 				System.out.println("[OptiFabric] Re-created the injection point " + calleeOwner + '.' + calleeName
 						+ calleeDesc + " in " + optifine.name + '.' + name + method.desc
-						+ " (OptiFine's body is untouched, the result is discarded)");
+						+ " (OptiFine's body is untouched, the result is discarded"
+						+ (hasArgumentField ? "; one argument is read from " + argumentFieldOwner + '.' + argumentFieldName : "")
+						+ ')');
 			}
 		}
 	}
@@ -118,8 +163,9 @@ public class InjectionCallPointFix implements ClassFixer {
 	}
 
 	/**
-	 * Loads for the call, taken from the method's parameters: the receiver for a virtual call, then the arguments.
-	 * Null when one of them is not a parameter of this method - then the call cannot be reconstructed safely.
+	 * Loads for the call: the receiver for a virtual call, then the arguments, in order. Each one is either a
+	 * parameter of this method or the one configured static field. Null when one of them is neither - then the
+	 * call cannot be reconstructed safely and the class is left alone.
 	 */
 	private List<AbstractInsnNode> arguments(MethodNode method, int opcode) {
 		List<Type> wanted = new ArrayList<>();
@@ -130,6 +176,7 @@ public class InjectionCallPointFix implements ClassFixer {
 
 		Type[] parameters = Type.getArgumentTypes(method.desc);
 		boolean instance = (method.access & Opcodes.ACC_STATIC) == 0;
+		boolean fieldUsed = false;
 		List<AbstractInsnNode> out = new ArrayList<>();
 
 		for (Type want : wanted) {
@@ -146,7 +193,12 @@ public class InjectionCallPointFix implements ClassFixer {
 				slot += parameter.getSize();
 			}
 
-			if (!found) return null;
+			if (!found) {
+				if (fieldUsed || !hasArgumentField || !argumentFieldDesc.equals(want.getDescriptor())) return null;
+
+				fieldUsed = true;
+				out.add(new FieldInsnNode(Opcodes.GETSTATIC, argumentFieldOwner, argumentFieldName, argumentFieldDesc));
+			}
 		}
 
 		return out;

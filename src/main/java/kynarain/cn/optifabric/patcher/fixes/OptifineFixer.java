@@ -378,6 +378,65 @@ public class OptifineFixer {
 		//loaded from the method's own state parameter, and its result discarded, so OptiFine's body and rendering stay
 		//exactly as they are and the handler simply becomes inert instead of failing the class.
 		registerFix("class_778", new InjectionCallPointFix("class_2680", "method_26213", "()I", "method_3374"));
+
+		//net/minecraft/client/renderer/entity/ItemFrameRenderer (Porting Lib's porting_lib_items
+		//client.ItemFrameRendererMixin, @WrapOperation on ItemStack.is(Item) inside method_33434 =
+		//getFrameModelResourceLoc). This is the first link in this chain that is not "the call was dropped" but
+		//"the call was inlined": the game asks
+		//  itemStack.method_31574(Items.field_8204)          // ItemStack.is(Items.FILLED_MAP)
+		//and OptiFine's recompile compiled that to
+		//  itemStack.method_7909() instanceof class_1806   // getItem() instanceof MapItem
+		//(FilledMapItem and MapItem both derive from MapItem, so it is the same question asked of the same
+		//object in a different way, and OptiFine's own javac chose the instanceof). The mixin therefore scans
+		//"0 target(s)" and fails the class, which aborts the initial resource load inside class_5619's <clinit>:
+		//  Caught error loading resourcepacks, removing all selected resourcepacks
+		//The client then still reaches the title screen, but with no resource packs at all - measured, see the
+		//report - so this link is user visible even though it is not fatal.
+		//The repair is the class_761/class_778 one with one addition: the call's argument is a static field, not a
+		//parameter of method_33434, so the fixer learned to read that field. Because the re-created call sits in
+		//front of OptiFine's instanceof and is the same boolean question, the wrap's value is the one the branch
+		//would have computed anyway.
+		registerFix("class_915", InjectionCallPointFix.withArgumentField("class_1799", "method_31574",
+				"(Lnet/minecraft/class_1792;)Z", "class_1802", "field_8204", "Lnet/minecraft/class_1792;",
+				"method_33434"));
+
+		//The String constructor of net/minecraft/client/renderer/ShaderProgram, the fourth and last link of this
+		//chain, and a variant of the factory-call collision this fixer was written for rather than a new shape. The
+		//game's <init>(class_5912;Ljava/lang/String;Lnet/minecraft/class_293;)V does not build its identifier
+		//itself: it calls the (class_5912;class_2960;class_293) constructor through this(...), and that one holds
+		//the method_60656 call. OptiFine's recompile inlined the delegated constructor into the String overload, so
+		//its String constructor now contains a method_60654 call of its own - the one below at line 158 - and the
+		//call in the inlined body is not the call Fabric API's ShaderProgramMixin wraps. Its @WrapOperation on
+		//method_60656 inside that constructor then finds no target, and because it is a MixinExtras late injection
+		//the failure surfaces one step away from the injection:
+		//  Caught error loading resourcepacks, removing all selected resourcepacks
+		//  java.lang.NullPointerException: Cannot invoke "String.indexOf(int)" because "stringIn" is null
+		//  at class_2960.method_12838 <- class_2960.method_60654 <- FabricShaderProgram.rewriteAsId
+		//  at class_5944.wrapOperation$bag000$fabric-rendering-v1$modifyId <- class_5944.<init>
+		//Fabric's handler does run on OptiFine's Identifier.of call, receives the null namespace its own
+		//rewriteAsId does not expect and throws; the exception escapes the initial resource load and the client
+		//drops every resource pack. Porting Lib's render types are what reaches it first (its own core-shader
+		//registration), which is why the Twilight Forest run is where it shows up. Same repair, same reason as
+		//method_34579 above: point the call at the factory the game's own method uses.
+		registerFix("class_5944", new VanillaFactoryCallFix("<init>"));
+
+		//net/minecraft/client/renderer/block/BlockRenderDispatcher, and the shape this line calls a forwarder: the
+		//game's method_3353 (renderSingleBlock) holds the whole body and calls class_4696.method_23683 for the
+		//block's render type; OptiFine recompiled the class from a release whose renderSingleBlock takes a
+		//ModelData and a RenderType, so its method_3353 is a ten-instruction forwarder to its own seven-parameter
+		//renderSingleBlock, and the method_23683 call moved in there with the rest of the body. Porting Lib's
+		//porting_lib_base client.BlockRenderDispatcherMixin is a MixinExtras @WrapOperation on that call inside
+		//the method the refmap names, so it scans "0 target(s)" and fails the class:
+		//  Mixin transformation of net.minecraft.class_776 failed
+		//  ... port_lib$customRenderType ... expected 1 invocation(s) but 0 succeeded
+		//which kills the client while class_776 is being constructed (Reflector's FieldLocatorTypes), before the
+		//title screen. OptiFine's own renderSingleBlock has no caller left once the forwarder is replaced - the
+		//same situation as class_4184.method_19325 above - and the vanilla body calls only members this class
+		//still has (method_3349, method_3367, method_3166 and the same six fields), so restoring the body is
+		//exactly the forwarder's behaviour for the arguments it passed. Proved on an edited patch cache before it
+		//was registered: with method_3353 restored the class transforms, the run gets several seconds further and
+		//the next failure is class_778's, not this one.
+		registerFix("class_776", new RestoreVanillaMethodsFix(true, "method_3353"));
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
