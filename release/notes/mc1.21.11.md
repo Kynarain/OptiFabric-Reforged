@@ -598,9 +598,9 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 - 真机:1.1.1 已由用户在自己的 1.21.11 实例确认(启动、资源重载、切光影包、开关抗锯齿都正常,`[ERROR]` 0 条);
   1.1.2 用同一个实例再跑一遍资源重载,`Resource not found: minecraft:post_effect/*` **0 条**。
 
-`OptiFabric-2.2.8+mc1.21.11.jar` — 920892 字节
+`OptiFabric-2.2.8+mc1.21.11.jar` — 915280 字节
 
-`SHA-256: 16C99C15362A5A7B41BFDD114A040FBD8BECE7138078AAE5CF4F9F3BEFF4124B`
+`SHA-256: 7A1FEF73B507F997F8EA865DD7EC4E38137B2F5C1FB5AF32CF0AE4C854CE6A8A`
 ---
 
 ## 这一版有两条产物(装之前请看这一段)
