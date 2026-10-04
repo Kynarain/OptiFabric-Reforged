@@ -1,8 +1,91 @@
-# OptiFabric 2.2.5+mc1.21.1
+# OptiFabric 2.2.6+mc1.21.1
 
 **Minecraft 1.21.1** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `OptiFine_1.21.1_HD_U_J1.jar`
 
 状态:**已实测正常**
+
+## 2.2.6 的改动
+
+**本版在 2.2.5 的接口修复之上,再修一处 OptiFine 重编译缺陷**:1.21.1 上 ShoulderSurfing 的 `CameraMixin`
+一直没能注入进去 —— 它要的注入点在 **OptiFine 重编译过的 `class_4184`(`Camera`)** 里已经不存在了。
+
+### 修好了:ShoulderSurfing 的 `CameraMixin` 在 1.21.1 上第一次真的接上
+
+```
+Injection validation failed: Argument modifier method rotationYXZ(F)F in
+shouldersurfing.fabric.mixins.json:CameraMixin ... expected 1 invocation(s) but 0 succeeded.
+Scanned 0 target(s).
+```
+
+`ShoulderSurfing` 的 `CameraMixin`(以及 Porting Lib 的 `porting_lib_client_events` 里那个同名 mixin)要在
+`setRotation` 里的 `org.joml.Quaternionf.rotationYXZ` 调用上做 `@ModifyArg`,两个 refmap 指的都是**两参数**的
+`setRotation` —— 在游戏里那是 `method_19325(FF)V`,方法体就在里面。OptiFine 是从**带第三个 roll 参数**的那一版
+`Camera` 重编译过来的:它的 `method_19325(FF)V` 只剩四条指令,转发给自己那个三参数的
+`public setRotation(FFF)V`,方法体(以及 `rotationYXZ` 调用)都在那边。于是这条注入在它要找的方法里
+找不到目标(`Scanned 0 target(s)`),**一次都没有成功过**。
+
+修复是把原版方法体放回去:`RestoreVanillaMethodsFix(true, "method_19325")`。转发器被替换之后 OptiFine 那个三参数
+方法没有别的调用者,而 **roll = 0 时原版方法体算出的值与转发器完全相同**,所以这不是改行为,是把被 OptiFine 挪走
+的调用点还给模组。同一个提交还带一处 `class_702`(`ParticleEngine`)的 lambda 名还原(`LambdaMethodRefFix()`),
+它修的是 Porting Lib 的 `ParticleEngineMixin` 找不到 `method_18125` 那一条 —— 与 Twilight Forest 同一条链上的问题,
+单独并不足以让 TF 工作。
+
+### 实测:同一套模组,2.2.4 与 2.2.6 的差别在哪
+
+**本版在一台机器上用同一套模组复跑了两侧**(Fabric API 0.116.17 + OptiFine HD U J1 + ShoulderSurfing 5.2.0 +
+forgeconfigapiport 21.1.6 + cloth-config 15.0.140,**没有 Twilight Forest**)。这条注入的成败取决于 Mixin 的模式,
+所以两侧都在同一模式下比较:
+
+- **`-Dmixin.debug=true`(Mixin 自己的排查模式,注入失败在这里是致命的)**:已发布的 **2.2.4** 在启动期直接退出,
+  日志里是 `Mixin apply for mod shouldersurfing failed … CameraMixin … expected 1 invocation(s) but 0 succeeded.
+  Scanned 0 target(s)`;**本版 2.2.6** 到**标题界面**(18.8 s),`InvalidInjectionException` 与
+  `Mixin apply for mod .* failed` 都是 0。证据:`r225-121x\logs\ss-before-2.2.4-mixindebug\`、
+  `r225-121x\logs\ss-after-2.2.6-mixindebug\`;
+- **普通启动(不加 debug)**:**已发布的 2.2.4 不会崩** —— 同一套模组照样到标题界面(本轮 39 s),日志里
+  **连一条 `Mixin apply` 失败都没有**,`/ERROR` 也是 0。把 Mixin 导出的类(`-Dmixin.debug.export=true`)
+  拆开看就清楚了:`class_4184` 的 `setRotation(FFF)` 上,ShoulderSurfing 自己的 **OptiFabric/OptiFine 兼容**
+  处理器(`shouldersurfing.fabric.compat.mixins.json` → `optifabricreloaded.CameraMixin`,方法名
+  `modify$zpj000$shouldersurfing$rotationYXZOptiFine`)是**接上并被调用**的;而通用 `CameraMixin` 的处理器
+  (`modify$zpe000$shouldersurfing$rotationYXZ`)只被合并进类、**没有任何调用点调用它**,因为它的目标
+  `method_19325(FF)V` 在 OptiFine 的拷贝里只是一个四条指令的转发器、里面没有 `rotationYXZ` 调用。
+  也就是说**这条注入在 2.2.4 上从来没有生效过**,只是在普通启动里 Mixin 不把它当致命错误;
+- **本版 2.2.6 的导出类**:同一个 `method_19325(FF)V` 恢复了原版方法体,通用处理器
+  `modify$zpe000$…rotationYXZ` **现在真的包在 `rotationYXZ` 调用上了**;兼容处理器仍然只包着
+  `setRotation(FFF)` 那一处。两处是**不同的方法**,所以不会把同一个 roll 加两遍。证据:
+  `r225-121x\logs\ss-after-2.2.6-export\`、`r225-121x\export-4184-{224,226}.txt`(两份反汇编)。
+
+所以准确的说法是:**2.2.6 让这条注入第一次真的接上**,而**不是**"2.2.4 会让装了 ShoulderSurfing 的客户端崩" ——
+会在启动期退出的只有开着 Mixin debug 的那一种启动,而排查问题时大家开的正是那一种。
+
+### 本版同时带着 2.2.5 的接口修复(1.21.9 / 1.21.10 / 1.21.11)
+
+2.2.5 补的是被补丁的 `GuiRenderer$Draw`(`class_11228$class_11230`)少声明的那一条 `DrawAccessor` 接口:
+它是一个 **record**,两份拷贝的 `interfaces` 表都是空的,而 fabric-rendering-v1 的 `GuiRendererMixin`
+要用 `@Coerce` 把 record 强制成 `DrawAccessor`。游戏自己那份能过,是因为它的 mixin 配置把 `DrawAccessor`
+排在 `GuiRendererMixin` 之前;本模组交给 JVM 的那份因为替换过类、丢了 Mixin 的类元数据顺序,接口没有落上去。
+本版沿用同一个 `AddInterfaceFix`,细节与证据见下面的「2.2.5 的改动」一节。
+
+### 边界(别把这一版读大)
+
+- **The Twilight Forest 仍然不支持**,本版没有、也不能让它受支持。TF + OptiFabric + OptiFine 在 1.21.1 上
+  仍然进不去:挡住它的**不是**上面那个 `Camera`(那一条本版修了),而是一条**链**——Porting Lib 各个模块的 mixin
+  各自撞上一个独立的 OptiFine 重编译损失,当前停在 `porting_lib_base` 的 `client.BlockRenderDispatcherMixin`
+  对 `class_776`(`expected 1 invocation(s) but 0 succeeded`)。每一个都是本线已经修过很多次的同一种形状,
+  但这条链本轮没有走完;
+- **证据只到标题界面这一层**:每个臂一次启动、三个(Fabric API 那套是五个)jar、一个实例副本,没有光影包、
+  没有压测、没有长时间游玩、没有逐个模组跑兼容矩阵。`PASS` 的定义是**到标题界面**(日志出现
+  `Sound engine started`);只有明确写了「进世界」的行才声称进过世界;
+- **`ShoulderSurfing` 那一侧只在 1.21.1 上验证过**(见上),其余版本没有跑那套模组;
+- **`/ERROR` 计数不是 0**,而且 2.2.4 笔记里那个 `/ERROR 0` **不是证据**:当时测试台的计数正则写作
+  `'\] /?ERROR'`,PowerShell 把 `\]` 原样传了下去,`[Render thread/ERROR]` 这类行从来没有被匹配到过。
+  本轮真正数到的 `/ERROR` 行逐条都是环境问题:测试台自己的 `options.txt` JsonSyntaxException
+  (`Failed to load options` / `MalformedJsonException at line 1 column 3`),以及离线导致的 401
+  (`Failed to fetch user properties`、`Failed to fetch Realms feature flags`)。已发布的 2.2.4 正文没有改写,
+  更正写在这里;
+- **1.21.11 的「进世界」这一条没有复现**:2.2.5 发布后又用**已发布的 2.2.5 jar** 在 1.21.11 上复跑过两次,
+  两次都到标题界面(46 s / 18 s)、修复器照常声明接口、失败计数器全 0,但**没有进世界**(171 s / 400 s 的预算
+  内日志停在 OptiFine 的资源包警告之后),也就是 1.21.11 也会遇到同一段「标题界面之后停住」。所以「进世界」
+  目前只在早先那次运行里成立(27.7 s),本版没有把它当成可稳定复现的结论。
 
 ## 2.2.5 的改动
 
@@ -303,6 +386,6 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.5+mc1.21.1.jar` — 805545 字节
+`OptiFabric-2.2.6+mc1.21.1.jar` — 805545 字节
 
 `SHA-256: 3792B00504BFC7F45597319022358FDA2221F82E9FAD299A3731614806004848`

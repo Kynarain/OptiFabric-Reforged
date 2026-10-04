@@ -8,7 +8,7 @@
 > **tag 归属(两条线都别忘)**:`v<版本>+mc<MC版本>` 这一串只属于本线。仓库的 **Latest 徽章归 26.x 线** —— 它的
 > 当前产物用**裸标签** `v2.2.2`(`v2.1.0` / `v2.2.0` / `v2.2.1` 也是这样,见那一线的 `release/MANUAL_RELEASE.md`)。
 > 所以本线这十个条目都要用 **`make_latest=false`** 创建,否则最后发的那个 jar 会把 Latest 从 26.x 抢过来。
-> 已发的 `v2.2.5+mc1.21` … `v2.2.5+mc1.21.11` 十个 tag 就是按这个口径打的(`git tag --list` 可复核)。
+> 已发的 `v2.2.6+mc1.21` … `v2.2.6+mc1.21.11` 十个 tag 就是按这个口径打的(`git tag --list` 可复核)。
 
 > **一个版本号可以只覆盖一个 MC 版本**:1.1.0 那次把 10 个 jar 放在同一个 `v1.1.0` 条目里;
 > 只改了某一个版本的行为时就单独给那个产物升版、单独发一个条目(1.1.1 就是只修 1.21.11 的抗锯齿后处理链),
@@ -41,7 +41,7 @@
 >
 > # 正文与笔记文件逐字节相等(正文按 LF 规范化;本线笔记的工作区是 CRLF、blob 是 LF)
 > $note = ([IO.File]::ReadAllText("release\notes\mc1.21.11.md", [Text.Encoding]::UTF8)) -replace "`r`n", "`n"
-> gh release view "v2.2.5+mc1.21.11" --json body --jq .body > "$env:TEMP\body.txt"
+> gh release view "v2.2.6+mc1.21.11" --json body --jq .body > "$env:TEMP\body.txt"
 > $body = ([IO.File]::ReadAllText("$env:TEMP\body.txt", [Text.Encoding]::UTF8)) -replace "`r`n", "`n"
 > $body -ceq $note   # 必须是 True
 > ```
@@ -60,7 +60,7 @@
 > 这样的产物名),所以当 `<旧版本>` 恰好也出现在某个更早的小节里时,那一段会被一起改掉 —— 已冻结的发布记录于是
 > 被改写成当前版本。**这个坑已经手工修过五次**(2.1.0 一次,2.2.1 期间两条线各一次,2.2.2 一次,2.2.3 一次)。
 >
-> 只改一个版本号(`-Mc`)**不会**踩到:那时替换串带着 MC 版本(`2.2.5+mc1.21.11`),别的 MC 版本与历史串都碰不到。
+> 只改一个版本号(`-Mc`)**不会**踩到:那时替换串带着 MC 版本(`2.2.6+mc1.21.11`),别的 MC 版本与历史串都碰不到。
 >
 > **每次升版都按这个顺序做**:
 >
@@ -76,16 +76,16 @@
 
 | 版本 | 版本号 / 标签 | jar | 字节 | SHA-256 | 正文 |
 |---|---|---|---|---|---|
-| 1.21 | 2.2.5+mc1.21 / v2.2.5+mc1.21 | dist\OptiFabric-2.2.5+mc1.21.jar | 805466 | 069A984736581952DD533301488B5DED2DE1DFDDE89D38EF9035FC7723681F7E | release/notes/mc1.21.md |
-| 1.21.1 | 2.2.5+mc1.21.1 / v2.2.5+mc1.21.1 | dist\OptiFabric-2.2.5+mc1.21.1.jar | 805545 | 3792B00504BFC7F45597319022358FDA2221F82E9FAD299A3731614806004848 | release/notes/mc1.21.1.md |
-| 1.21.3 | 2.2.5+mc1.21.3 / v2.2.5+mc1.21.3 | dist\OptiFabric-2.2.5+mc1.21.3.jar | 837328 | 643D3E62FDAEB114B117DE88C4F38AA2F81E416D3C9970755AD16D74C20393AA | release/notes/mc1.21.3.md |
-| 1.21.4 | 2.2.5+mc1.21.4 / v2.2.5+mc1.21.4 | dist\OptiFabric-2.2.5+mc1.21.4.jar | 845112 | 9CF0C2C853C28061173FFEDE54FB12274DF8BCFC3637A3A1A61372518497F79C | release/notes/mc1.21.4.md |
-| 1.21.6 | 2.2.5+mc1.21.6 / v2.2.5+mc1.21.6 | dist\OptiFabric-2.2.5+mc1.21.6.jar | 884895 | F7DE4E1772430E9F2D60B39F43C65CDE34B993A6C329746CA9253E1C1D3EE2FB | release/notes/mc1.21.6.md |
-| 1.21.7 | 2.2.5+mc1.21.7 / v2.2.5+mc1.21.7 | dist\OptiFabric-2.2.5+mc1.21.7.jar | 884945 | 53CE6573DD0E36A0E2CBEB4F74B91FE445136E13B224FB8D1646EBC84DD3B204 | release/notes/mc1.21.7.md |
-| 1.21.8 | 2.2.5+mc1.21.8 / v2.2.5+mc1.21.8 | dist\OptiFabric-2.2.5+mc1.21.8.jar | 885017 | 8E233D3B32575B8B06F947B68BA0433CB7D8AA33566A6AEF6BFCEF52F24F1A78 | release/notes/mc1.21.8.md |
-| 1.21.9 | 2.2.5+mc1.21.9 / v2.2.5+mc1.21.9 | dist\OptiFabric-2.2.5+mc1.21.9.jar | 913048 | EACDEAC9F2646686F80F0876A6F11DCB3181C08C91B1EABF682CBBC014F881A7 | release/notes/mc1.21.9.md |
-| 1.21.10 | 2.2.5+mc1.21.10 / v2.2.5+mc1.21.10 | dist\OptiFabric-2.2.5+mc1.21.10.jar | 913066 | 433A68B3AA4FDB6112A45BC3EB419FA5095FE5CD2DBEC8F2362BC9EFB4925C55 | release/notes/mc1.21.10.md |
-| 1.21.11 | 2.2.5+mc1.21.11 / v2.2.5+mc1.21.11 | dist\OptiFabric-2.2.5+mc1.21.11.jar | 930609 | 1B1092865833FE909E7649F1079B4AD8E849A4773CFEFAEE0682B4D262FE6714 | release/notes/mc1.21.11.md |
+| 1.21 | 2.2.6+mc1.21 / v2.2.6+mc1.21 | dist\OptiFabric-2.2.6+mc1.21.jar | 805466 | 069A984736581952DD533301488B5DED2DE1DFDDE89D38EF9035FC7723681F7E | release/notes/mc1.21.md |
+| 1.21.1 | 2.2.6+mc1.21.1 / v2.2.6+mc1.21.1 | dist\OptiFabric-2.2.6+mc1.21.1.jar | 805545 | 3792B00504BFC7F45597319022358FDA2221F82E9FAD299A3731614806004848 | release/notes/mc1.21.1.md |
+| 1.21.3 | 2.2.6+mc1.21.3 / v2.2.6+mc1.21.3 | dist\OptiFabric-2.2.6+mc1.21.3.jar | 837328 | 643D3E62FDAEB114B117DE88C4F38AA2F81E416D3C9970755AD16D74C20393AA | release/notes/mc1.21.3.md |
+| 1.21.4 | 2.2.6+mc1.21.4 / v2.2.6+mc1.21.4 | dist\OptiFabric-2.2.6+mc1.21.4.jar | 845112 | 9CF0C2C853C28061173FFEDE54FB12274DF8BCFC3637A3A1A61372518497F79C | release/notes/mc1.21.4.md |
+| 1.21.6 | 2.2.6+mc1.21.6 / v2.2.6+mc1.21.6 | dist\OptiFabric-2.2.6+mc1.21.6.jar | 884895 | F7DE4E1772430E9F2D60B39F43C65CDE34B993A6C329746CA9253E1C1D3EE2FB | release/notes/mc1.21.6.md |
+| 1.21.7 | 2.2.6+mc1.21.7 / v2.2.6+mc1.21.7 | dist\OptiFabric-2.2.6+mc1.21.7.jar | 884945 | 53CE6573DD0E36A0E2CBEB4F74B91FE445136E13B224FB8D1646EBC84DD3B204 | release/notes/mc1.21.7.md |
+| 1.21.8 | 2.2.6+mc1.21.8 / v2.2.6+mc1.21.8 | dist\OptiFabric-2.2.6+mc1.21.8.jar | 885017 | 8E233D3B32575B8B06F947B68BA0433CB7D8AA33566A6AEF6BFCEF52F24F1A78 | release/notes/mc1.21.8.md |
+| 1.21.9 | 2.2.6+mc1.21.9 / v2.2.6+mc1.21.9 | dist\OptiFabric-2.2.6+mc1.21.9.jar | 913048 | EACDEAC9F2646686F80F0876A6F11DCB3181C08C91B1EABF682CBBC014F881A7 | release/notes/mc1.21.9.md |
+| 1.21.10 | 2.2.6+mc1.21.10 / v2.2.6+mc1.21.10 | dist\OptiFabric-2.2.6+mc1.21.10.jar | 913066 | 433A68B3AA4FDB6112A45BC3EB419FA5095FE5CD2DBEC8F2362BC9EFB4925C55 | release/notes/mc1.21.10.md |
+| 1.21.11 | 2.2.6+mc1.21.11 / v2.2.6+mc1.21.11 | dist\OptiFabric-2.2.6+mc1.21.11.jar | 930609 | 1B1092865833FE909E7649F1079B4AD8E849A4773CFEFAEE0682B4D262FE6714 | release/notes/mc1.21.11.md |
 
 ## 三个平台各自要填什么
 
