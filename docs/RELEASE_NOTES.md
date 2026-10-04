@@ -73,7 +73,7 @@ The id is not cosmetic: mods that declare `"breaks": {"optifabric": "*"}` (Lambd
 
 This line builds **exactly one** Minecraft release: `.\gradlew build` → `OptiFabric-Reforged-<version>+mc26.1.2.jar` (the target comes from `gradle.properties`; there is no version switch in the build). The other line — 1.21.x, obfuscated, ten releases — lives on its own branch and its jars are not interchangeable with this one.
 
-Full changelog: [`CHANGELOG.md`](CHANGELOG.md) · Usage, troubleshooting and known issues: [`README.md`](README.md) · Porting record: [`docs/PORT_26.x.md`](docs/PORT_26.x.md) · Verification tooling: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)
+Full changelog: [`CHANGELOG.md`](../CHANGELOG.md) · Usage, troubleshooting and known issues: [`README.md`](../README.md) · Porting record: [`docs/PORT_26.x.md`](PORT_26.x.md) · Verification tooling: [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)
 
 ### Credits and license
 
