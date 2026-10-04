@@ -41,6 +41,7 @@ import net.minecraft.util.math.MathHelper;
 import net.fabricmc.loader.api.FabricLoader;
 
 import kynarain.cn.optifabric.mod.OptifabricError;
+import kynarain.cn.optifabric.mod.OptifinePrompt;
 import kynarain.cn.optifabric.mod.OptifineVersion;
 
 /**
@@ -60,6 +61,12 @@ public abstract class MixinTitleScreen extends Screen {
 
 	@Inject(method = "init", at = @At("RETURN"))
 	private void init(CallbackInfo info) {
+		// 2.1.0's rule, restored in front of its own dialog: a missing jar already set the error in the finder,
+		// and an installed-but-older preview reaches the same dialog through this gate, once per build (the build
+		// is remembered in config/optifabric-mismatch-ack.txt). Nothing here is a screen of its own, and
+		// SAME / NEWER / any final build never get past it.
+		OptifinePrompt.gate();
+
 		if (!OptifabricError.hasError()) return;
 
 		String actionButtonText, helpButtonText;

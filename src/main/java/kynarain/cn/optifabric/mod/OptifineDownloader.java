@@ -608,4 +608,122 @@ public final class OptifineDownloader {
 			this.source = source;
 		}
 	}
-}
+
+	// ------------------------------------------------------------------ the -full build's automatic download
+
+	/**
+	 * The GitHub-only {@code -full} behaviour, and the only reason that build exists: when this instance has no
+	 * OptiFine, the official jar is fetched into its {@code mods/} folder, this JVM is replaced by a fresh
+	 * launch of the same game, and the client never comes up without OptiFine.
+	 *
+	 * <p>Nothing about it is on a screen - the stages, the file and its SHA-256 go to the log - and it is not
+	 * the platform-facing behaviour: the build submitted to CurseForge and Modrinth ships no
+	 * {@code OptifineDownloader} class at all and asks the user to download OptiFine and put it in
+	 * {@code mods/} themselves, which is the sentence that build's log line and release notes carry.
+	 *
+	 * @param minecraftVersion {@code FabricLoader.getRawGameVersion()} of the running game
+	 * @param gameDir the running instance's game directory
+	 * @return true when the missing jar was dealt with and this JVM is on its way out; false when the caller
+	 *         should carry on and load OptiFine the normal way - which is also what every failure returns, so
+	 *         the normal path reports it with its own message
+	 */
+	public static boolean downloadMissingOptifine(String minecraftVersion, File gameDir) {
+		OptifineSupport.Build build = OptifineSupport.forMc(minecraftVersion);
+
+		if (build == null) return false;
+		if (hasOptifine(minecraftVersion, gameDir)) return false;
+
+		File mods = new File(gameDir, "mods");
+		System.out.println("[OptiFabric] No OptiFine in " + mods + ": this -full build downloads " + build.file
+				+ " from " + OptifineSupport.OFFICIAL_DOWNLOAD_PAGE + " itself. The build submitted to CurseForge"
+				+ " and Modrinth ships no downloader, starts no process and asks the user to fetch that jar by hand");
+
+		Outcome outcome;
+
+		try {
+			outcome = download(build.officialUrl(), build, mods, new LogProgress());
+		} catch (IOException e) {
+			System.out.println("[OptiFabric] Could not download OptiFine: " + e.getMessage());
+			System.out.println("[OptiFabric] Get " + build.file + " from " + OptifineSupport.OFFICIAL_DOWNLOAD_PAGE
+					+ " yourself and put it in " + mods);
+			return false;
+		}
+
+		System.out.println("[OptiFabric] OptiFine is in place: " + outcome.file + " (" + outcome.file.length()
+				+ " bytes, " + (outcome.alreadyPresent ? "already there" : "downloaded") + ")");
+		System.out.println("[OptiFabric] SHA-256 " + outcome.sha256);
+		System.out.println("[OptiFabric] source " + outcome.source);
+
+		if (!restart()) {
+			System.out.println("[OptiFabric] Please start the game again by hand so it comes up with OptiFine");
+			return false;
+		}
+
+		System.out.println("[OptiFabric] Restarted with the jar in place; stopping this JVM");
+		System.out.flush();
+		Runtime.getRuntime().halt(0);
+
+		return true;
+	}
+
+	/** Whether this instance already has an OptiFine of its own: usable, or present but not usable. */
+	private static boolean hasOptifine(String minecraftVersion, File gameDir) {
+		try {
+			if (!OptifineSearch.find(gameDir.toPath(), minecraftVersion).isEmpty()) return true;
+		} catch (Throwable t) {
+			// A jar that cannot be chosen (two copies, or two places offering the same build) is the normal
+			// path's to report; downloading a second jar next to it is exactly what must not happen.
+			return true;
+		}
+
+		return optifineJarInMods(gameDir);
+	}
+
+	/**
+	 * Whether {@code mods/} already holds a jar that declares itself OptiFine. A jar for another Minecraft
+	 * release and a corrupt one count: the normal path has a message for both, and downloading a second jar
+	 * next to either would turn one problem into "you have 2 copies of OptiFine".
+	 */
+	private static boolean optifineJarInMods(File gameDir) {
+		File[] entries = new File(gameDir, "mods").listFiles();
+
+		if (entries == null) return false;
+
+		for (File file : entries) {
+			if (file.isDirectory() || file.isHidden() || file.getName().startsWith(".")) continue;
+			if (!OptifineVersion.hasJarExtension(file.getName())) continue;
+
+			OptifineVersion.JarType type;
+
+			try {
+				type = OptifineVersion.parseJarType(file).type;
+			} catch (IOException e) {
+				return true; // unreadable: leave it to the normal path rather than adding a jar beside it
+			}
+
+			if (type != OptifineVersion.JarType.SOMETHING_ELSE) return true;
+		}
+
+		return false;
+	}
+
+	/** The download's stages and its progress, one line each, so a log says what happened. */
+	private static final class LogProgress implements Progress {
+		private long lastMegabyte = -1;
+
+		@Override
+		public void stage(String key, String detail) {
+			System.out.println("[OptiFabric] download " + key + ": " + detail);
+		}
+
+		@Override
+		public void bytes(long received, long total) {
+			long megabyte = received / (1024L * 1024L);
+
+			if (megabyte == this.lastMegabyte) return;
+
+			this.lastMegabyte = megabyte;
+			System.out.println("[OptiFabric] download " + (received / 1024L) + " KiB"
+					+ (total > 0 ? " of " + (total / 1024L) + " KiB" : ""));
+		}
+	}}
