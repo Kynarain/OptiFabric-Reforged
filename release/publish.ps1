@@ -32,12 +32,12 @@ $root = Split-Path -Parent $PSScriptRoot
 # 本仓库只有 26.x 一条发布线(见 release\MANUAL_RELEASE.md)。
 # 版本基数:$defaultModVersion 是这一线**当前在发**的那个产物的版本号 —— 26.2 那一份。
 $versions = @("26.1.2", "26.2")
-$defaultModVersion = "2.2.4"
+$defaultModVersion = "2.2.5"
 # 逐 MC 版本的例外值:某个版本单独升过版就写在这里。26.1.2 曾在 2.0.0 上发布,但现在两个 MC 版本一起停在
 # 2.2.0(26.1.2 这一份补上了 2.2.0 的 OptiFine 提示与下载,内容与 26.2 那一份同源),所以两条都写成基数
 # 同值;万一以后只给某一个 MC 版本升版,-Mc 会改这里的值,另一条仍用上面的基数;整条线一起升版用
 # -Kind / -Set,只给某一个 MC 版本升版用 -Mc(见 docs\VERSIONING.md 第五节)。
-$modVersions = @{ "26.1.2" = "2.2.4" }
+$modVersions = @{ "26.1.2" = "2.2.5" }
 # 产物名与显示名也是这一线自己的:mod id 是 optifabric_reforged(见根目录 build.gradle),
 # 所以 jar 名与显示名与另一条线(1.21.x,在自己的分支上)不同。下面几张逐版本覆盖表现在都是空的 ——
 # 只有某个 MC 版本要用别的产物名 / 显示名 / tag 分支时才往里加一条。
@@ -49,6 +49,12 @@ $modNames = @{}
 # 本仓库的开发与发布分支:26.x 的修复开发与 tag 都在 26.x 分支上(见 docs\PUBLISHING.md)。
 $defaultTagTarget = "26.x"
 $modTagTargets = @{}
+# 逐 MC 版本的 tag 后缀。**同一版本号出两个 jar 时必须有这张表**:裸标签只能被一个条目占用,26.1.2 那一份
+# 要用 `v<版本>+mc<MC版本>`(与已发的 `v2.2.0+mc26.1.2` / `v2.2.1+mc26.1.2` / `v2.2.2+mc26.1.2` 一致),
+# 否则两个条目抢同一个 tag,第二个 `gh release create` 会因为 tag 已存在而失败(2.2.4 之前这条一直是手工
+# 绕过的,见 release\MANUAL_RELEASE.md 文首)。26.2 那一份继续用裸标签(仓库的 Latest 徽章归它)。
+$defaultTagSuffix = ""
+$modTagSuffixes = @{ "26.1.2" = "+mc26.1.2" }
 
 if ($Version -ne "all") {
 	if ($versions -notcontains $Version) { throw "未知版本: $Version(可选:" + ($versions -join ", ") + ")" }
@@ -68,9 +74,11 @@ foreach ($mc in $versions) {
 	$modName = if ($modNames.ContainsKey($mc)) { $modNames[$mc] } else { $defaultModName }
 $jar = Join-Path $root "dist\$artifact-$modVersion+mc$mc.jar"
 	$notes = Join-Path $root "release\notes\mc$mc.md"
-	# Tag shape follows the releases this repo already has (v1.2.0, v2.0.0): the version number alone. The MC
-	# version stays in the artifact name and in the release title, not in the tag.
-	$tag = "v$modVersion"
+	# Tag shape follows the releases this repo already has (v1.2.0, v2.0.0): the version number alone, and the MC
+	# version stays in the artifact name and in the release title. The *only* exception is a second jar on the same
+	# version: it takes the suffix from $modTagSuffixes above, because two entries cannot share one tag.
+	$tagSuffix = if ($modTagSuffixes.ContainsKey($mc)) { $modTagSuffixes[$mc] } else { $defaultTagSuffix }
+	$tag = "v$modVersion$tagSuffix"
 	$title = "$modName $modVersion+mc$mc"
 	# Which branch the tag is made on. gh would otherwise tag the default branch (main), which is not where this
 	# release line lives - the first 26.x release was tagged through the web UI and ended up pointing at main.

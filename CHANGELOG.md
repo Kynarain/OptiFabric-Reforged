@@ -140,6 +140,18 @@ cloth-config、TRansition/TRender、fabric-language-kotlin、fzzy_config、Fabri
   能解决的;
 - 26.2 上光影照旧不可用(那个 OptiFine 构建自己取消了光影包加载),本版没有碰它。
 
+产物:`OptiFabric-Reforged-2.2.5+mc26.2.jar` — 201124 字节
+`SHA-256: 110CC020CBF5FAA7E434B4F213414C3234689A3B1FD250AC36D3ED6FBEA570B9`
+
+产物:`OptiFabric-Reforged-2.2.5+mc26.1.2.jar` — 201126 字节
+`SHA-256: 999D6EBCCE512994B88D0DC21514C8411B05942720924B8A6B4A1FA628E85A37`
+
+两个 jar 都从**同一个干净临时 worktree**(`r225\wt`,HEAD = 本次的移植提交)构建,`fabric.mod.json` 里分别是
+`2.2.5+mc26.2` 与 `2.2.5+mc26.1.2`。与上一条(2.2.4)那两个产物逐条目比对:共同条目 **81 个哈希完全相同**,不同的
+只有 `fabric.mod.json`(版本号那一行)与 `patcher/fixes/OptifineFixer.class`(多了这一处注册),新增的只有
+`patcher/fixes/LocalSlotLayoutFix.class` 与 `LocalSlotLayoutFix$Slot.class`。**跑真机用的那一份与正式产物只差
+`fabric.mod.json` 里的一行版本号**(逐条目比对:85 个条目里 84 个哈希相同)。
+
 ## 2.2.4+mc26.2 — 26.x 线的第九版(把 Mixin 类元数据的 cache drop 收窄到顶层类:2.2.1–2.2.3 的"装了 OptiFine 就起不来"再修一次,这次去掉的是原因)
 
 > **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
