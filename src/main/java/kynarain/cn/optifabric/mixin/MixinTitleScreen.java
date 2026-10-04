@@ -15,7 +15,9 @@
  *   TitleScreen#doBackgroundFade / #backgroundFadeStart -> TitleScreen#fading / #fadeInStart
  *   Text.literal(x).formatted(F)              -> Component.literal(x).withStyle(F)
  *   Graphics#drawTextWithShadow(font, s, x, y, colour) -> GuiGraphicsExtractor#text(font, s, x, y, colour)
- *   Util.getOperatingSystem().open(x)         -> Util.getPlatform().openUri(String) / .openFile(File)
+ *   Util.getOperatingSystem().open(x)         -> gone: the error dialog's buttons copy their URL or path to the
+ *                                                game's own clipboard (KeyboardHandler#setClipboard) instead of
+ *                                                opening anything, which would start a process
  *   Util.getMeasuringTimeMs()                 -> Util.getMillis()
  *   MinecraftClient#keyboard                  -> Minecraft#keyboardHandler
  *
@@ -120,36 +122,31 @@ public abstract class MixinTitleScreen extends Screen {
 		// failure dialog below is what the user needs. Asserting "no error to show" for those states threw out
 		// of the title screen - which is exactly what must not happen to a user whose OptiFine is newer than
 		// this OptiFabric release. (The 1.21.x line carries the same change; it is part of this port.)
+		// Every button here is local: it copies a URL or a path to the game's own clipboard (or the stack trace,
+		// as before) and never starts a process. Opening a folder or a page through the operating system is a
+		// shell execute - the same shape as the process launch this release had to remove for the platform's
+		// review - so the labels say "copy" and what used to be opened is now copied.
+		String modsPath = new File(FabricLoader.getInstance().getGameDirectory(), "mods").getAbsolutePath();
+		String logsPath = new File(FabricLoader.getInstance().getGameDirectory(), "logs").getAbsolutePath();
+		String readme = "https://github.com/Kynarain/OptiFabric/blob/mc1.21.11/README.md";
+		String issues = "https://github.com/Kynarain/OptiFabric/issues";
+
 		switch (OptifineVersion.jarType) {
 		case MISSING: //Errors relating to the OptiFine jar, link the mods folder
 		case CORRUPT_ZIP:
 		case INCOMPATIBLE:
 		case DUPLICATED:
-			actionButtonText = "Open mods folder";
-			helpButtonText = "Open help";
-			action = help -> {
-				if (help) {
-					Util.getPlatform().openUri("https://github.com/Kynarain/OptiFabric/blob/mc1.21.11/README.md");
-				} else {
-					Util.getPlatform().openFile(new File(FabricLoader.getInstance().getGameDirectory(), "mods"));
-				}
-			};
+			actionButtonText = "Copy mods folder path";
+			helpButtonText = "Copy help link";
+			action = help -> minecraft.keyboardHandler.setClipboard(help ? readme : modsPath);
 			break;
 
 		case INTERNAL_ERROR: //Something wrong with OptiFabric itself
 		default: {
 			String stack = OptifabricError.getErrorLog();
-			actionButtonText = stack != null ? "Copy stack-trace" : "Open logs folder";
-			helpButtonText = "Open issues";
-			action = help -> {
-				if (help) {
-					Util.getPlatform().openUri("https://github.com/Kynarain/OptiFabric/issues");
-				} else if (stack != null) {
-					minecraft.keyboardHandler.setClipboard(stack);
-				} else {
-					Util.getPlatform().openFile(new File(FabricLoader.getInstance().getGameDirectory(), "logs"));
-				}
-			};
+			actionButtonText = stack != null ? "Copy stack-trace" : "Copy logs folder path";
+			helpButtonText = "Copy issues link";
+			action = help -> minecraft.keyboardHandler.setClipboard(help ? issues : stack != null ? stack : logsPath);
 			break;
 		}
 		}

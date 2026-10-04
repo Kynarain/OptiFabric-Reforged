@@ -10,12 +10,13 @@
  *   net.minecraft.client.gui.DrawContext          -> net.minecraft.client.gui.GuiGraphicsExtractor
  *   net.minecraft.client.gui.screen.*             -> net.minecraft.client.gui.screens.*
  *   net.minecraft.client.gui.widget.ButtonWidget  -> net.minecraft.client.gui.components.Button
- *   net.minecraft.client.gui.widget.TextFieldWidget -> net.minecraft.client.gui.components.EditBox
  *   net.minecraft.text.Text                       -> net.minecraft.network.chat.Component
  *   Screen.render(DrawContext, …)                 -> Screen.extractRenderState(GuiGraphicsExtractor, …)
  *   Screen#textRenderer / #client                 -> Screen#font / #minecraft
- *   TextFieldWidget#getText/#setText              -> EditBox#getValue/#setValue
  *   widget.dimensions(…)                          -> Button.Builder#bounds(…) / AbstractWidget#setX/#setY
+ *   MinecraftClient#keyboard                      -> Minecraft#keyboardHandler (the copy buttons)
+ *   Util.getOperatingSystem().open(x)             -> gone: the error dialog's buttons copy their URL or path
+ *                                                    to the clipboard instead of opening anything
  *   context.drawCenteredTextWithShadow(r, c, …)   -> context.centeredText(r, c, …)
  *   MinecraftClient#setScreen                     -> Minecraft#setScreenAndShow (26.2 dropped the old name)
  *   MinecraftClient#scheduleStop                  -> Minecraft#stop
@@ -46,21 +47,24 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
 
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * The screen shown when the running OptiFabric has no usable OptiFine to load, or an older one than this
- * release knows about: it says what is wrong, recommends the latest OptiFine build for this Minecraft release
- * and names the file to look for, and offers to download it from OptiFine's own site.
+ * release knows about: it says what is wrong, recommends the latest OptiFine build for this Minecraft release,
+ * names the file to look for and gives OptiFine's official download URL as text the user can read or copy.
  *
- * <p>Two shapes, taken from the vanilla error-dialog layout (a heading, a couple of explanation lines, a URL
- * field, a status line and three wide stacked buttons):
+ * <p><b>OptiFabric downloads nothing at runtime.</b> There is no downloader, no HTTP client, no URL fetch and
+ * no jar written from a response anywhere in this mod - the platform's review asked for the runtime download to
+ * be removed, and that is why the button that used to fetch the jar is gone (see CHANGELOG.md). The user
+ * fetches the named jar from OptiFine's own site with their own browser and drops it into {@code mods/}.
+ *
+ * <p>Two shapes, taken from the vanilla error-dialog layout (a heading, a couple of explanation lines, a status
+ * line and a stack of wide buttons):
  * <ul>
  *   <li>{@link Mode#MISSING} - no OptiFine jar in {@code mods/} at all. Shown on <b>every</b> launch until one
  *       is installed; {@code Continue to main menu} dismisses it and only for the rest of that session. The
@@ -75,18 +79,15 @@ import net.fabricmc.loader.api.FabricLoader;
  * <p>An installed <em>final</em> build is never a reason for this screen to appear, whatever its age - see
  * {@link #modeFor}.
  *
- * <p>When a download fails the screen says why and swaps the download button for
- * {@code Open the official download page} plus {@code Check again}: the user fetches the named jar from
- * OptiFine's own download page and drops it in the mods folder, and the re-check picks it up. Nothing is ever
- * fetched from anywhere the user did not ask for, and this mod names no other place to get OptiFine.
- *
- * <p>All downloads happen on a daemon worker thread; the worker only ever writes the volatile fields the
- * render thread reads, and every widget is touched on the render thread alone.
+ * <p>{@code Check again} is what picks the jar up once the user has put it in the mods folder: it re-reads that
+ * one file through {@link OptifineJarCheck} and, when it is an OptiFine jar, says that the game has to be
+ * started again by hand. Nothing is restarted from here either: relaunching the game is a process launch, and
+ * this mod no longer launches processes.
  *
  * <p>The layout is computed from this screen's own {@code width}/{@code height}, which are Minecraft's
  * <em>scaled</em> GUI units - at GUI scale 2 on an 854x480 window that is only 427x240. The heading, the line
- * that names the build this release wants, the status line, the URL field and the buttons <em>are</em> the
- * screen and are always drawn; only the supplementary explanation sentences may be given up, and only
+ * that names the build this release wants, the official-URL line, the status line and the buttons <em>are</em>
+ * the screen and are always drawn; only the supplementary explanation sentences may be given up, and only
  * longest-first, when the window is genuinely too short to hold them above the status line. No line is ever
  * placed above the top edge or allowed to overlap the next one, and every layout pass prints what it drew and
  * what it had to drop, so the screen can be checked from a log instead of by eye.
@@ -127,7 +128,7 @@ public class MissingOptifineScreen extends Screen {
 	private static final int MIN_GAP = 2;
 	/** The heading never comes closer to the top edge than this. */
 	private static final int TOP_MARGIN = 4;
-	/** Between the URL field and the first button under it. */
+	/** Between the local-jar path box and the first button under it. */
 	private static final int FIELD_GAP = 6;
 	/** The text block keeps this much room at each side, so a wrapped line never touches the edge. */
 	private static final int SIDE_MARGIN = 10;
@@ -140,8 +141,11 @@ public class MissingOptifineScreen extends Screen {
 	/** The build {@link OptifineVersion} read out of the installed jar, or null when there is none. */
 	private final String installedBuild;
 
-	private EditBox urlField;
-	private Button actionButton;
+	/**
+	 * The box for the path of an OptiFine jar the user has already downloaded. It is a text box and not a URL
+	 * box on purpose: nothing typed into it is ever fetched, it is only opened as a local file.
+	 */
+	private EditBox pathField;
 	/**
 	 * Draw-time layout, recomputed by {@link #init()}; {@link #extractRenderState} only reads it. Every one of
 	 * these is derived from this screen's own {@code height}, so a short window moves them up instead of losing
@@ -149,7 +153,6 @@ public class MissingOptifineScreen extends Screen {
 	 */
 	private int titleY;
 	private int statusY;
-	private int captionY;
 	private int fieldY;
 	private int firstButtonY;
 	private int lastButtonY;
@@ -157,21 +160,17 @@ public class MissingOptifineScreen extends Screen {
 	private List<Line> drawnLines = List.of();
 	/** The explanation sentences the current layout had no room for. */
 	private List<Line> droppedLines = List.of();
-	/** The status line and the caption, wrapped like the block - they are long in English too. */
+	/** The status line, wrapped like the block - it is long in English too. */
 	private List<Line> drawnStatus = List.of();
-	private List<Line> drawnCaption = List.of();
 	/** The last layout logged, so the repeated layout pass at startup does not print twice. */
 	private String lastLayout;
 
 	private volatile String status;
 	private volatile int statusColor = COLOR_DIM;
-	private volatile boolean busy;
-	/** True once a download failed; the buttons become the manual path. */
-	private volatile boolean failed;
-	/** Set by the worker once the state the buttons are built from has changed. */
+	/** Set by an action once the state the buttons are built from has changed. */
 	private volatile boolean relayoutRequested;
-	/** True once a download finished and the game could not restart itself. */
-	private volatile boolean closeGameOnly;
+	/** True once the jar the user just installed was found: OptiFine only loads after a start by hand. */
+	private volatile boolean restartNeeded;
 
 	public MissingOptifineScreen(Mode mode, OptifineSupport.Build build, String installedBuild) {
 		super(Component.literal(titleFor(mode)));
@@ -190,9 +189,12 @@ public class MissingOptifineScreen extends Screen {
 
 		System.out.println("[OptiFabric] prompt " + mode + ":   " + idleStatus());
 
-		// The URL field starts as this and the download button fetches whatever the field holds, so the line
-		// says which build that button would actually fetch.
-		System.out.println("[OptiFabric] prompt " + mode + ":   download " + this.build.officialUrl());
+		// OptiFabric fetches nothing; the URL is printed as well so it can still be recovered from the log when
+		// the screen cannot be used (a headless launch, a crash before the screen is drawn).
+		System.out.println("[OptiFabric] prompt " + mode + ":   official download page "
+				+ OptifineSupport.OFFICIAL_DOWNLOAD_PAGE);
+		System.out.println("[OptiFabric] prompt " + mode + ":   OptiFabric does not download OptiFine; get "
+				+ this.build.file + " from that page yourself and put it in " + modsDir());
 	}
 
 	// ------------------------------------------------------------------ what to show, decided by the mixin
@@ -334,25 +336,21 @@ public class MissingOptifineScreen extends Screen {
 	}
 
 	/**
-	 * The buttons for the current state. The download button is the middle one of the vanilla-style layout and
-	 * is replaced - never joined - by the manual path once a download failed, so the screen can never look like
-	 * it is still offering to fetch something by itself.
+	 * The buttons for the current state. Every one of them is local and none of them can start a process: the
+	 * URL and the mods folder path go to the game's own clipboard (a clipboard write, not a shell call),
+	 * {@code Check again} only re-reads one file, and once that file is there the only thing left is to close
+	 * the game so it can be started again by hand.
 	 */
 	private List<Row> rows() {
 		List<Row> rows = new ArrayList<>();
 
-		if (this.failed) {
-			rows.add(new Row(t("Open the official download page", "打开官网下载页"), this::openOfficialPage));
-			rows.add(new Row(t("Open mods folder", "打开 Mod 文件夹"), this::openModsFolder));
-			rows.add(new Row(t("Check again", "重新检查"), this::recheck));
-		} else {
-			rows.add(new Row(t("Open mods folder", "打开 Mod 文件夹"), this::openModsFolder));
+		rows.add(new Row(t("Install from file", "从本地文件安装"), this::installFromFile));
+		rows.add(new Row(t("Copy official link", "复制官网链接"), this::copyOfficialLink));
 
-			if (this.closeGameOnly) {
-				rows.add(new Row(t("Close game", "关闭游戏"), this::closeGame));
-			} else {
-				rows.add(new Row(downloadLabel(), this::startDownload));
-			}
+		if (this.restartNeeded) {
+			rows.add(new Row(t("Close game", "关闭游戏"), this::closeGame));
+		} else {
+			rows.add(new Row(t("Check again", "重新检查"), this::recheck));
 		}
 
 		rows.add(new Row(dismissLabel(), this::dismiss));
@@ -364,10 +362,11 @@ public class MissingOptifineScreen extends Screen {
 	protected void init() {
 		// Screen#init() is still the no-argument hook in 26.2 (Screen#init(int,int) is the one the client calls,
 		// and it calls this), so the 1.21.x body works as it stands.
-		String source = this.urlField != null ? this.urlField.getValue() : this.build.officialUrl();
+		// Whatever was typed stays typed: this runs again after every action that changes the buttons.
+		String typedPath = this.pathField != null ? this.pathField.getValue() : "";
 		List<Row> rows = rows();
-		int fieldWidth = Math.min(320, this.width - 40);
-		int left = (this.width - fieldWidth) / 2;
+		int buttonWidth = Math.min(320, this.width - 40);
+		int left = (this.width - buttonWidth) / 2;
 		int fontHeight = this.font.lineHeight;
 
 		// GUI scale 2 on an 854x480 window leaves only a few hundred GUI pixels of height, and GUI scale 3
@@ -387,26 +386,17 @@ public class MissingOptifineScreen extends Screen {
 			layout(lines, rows, fontHeight, fontHeight + MIN_GAP, MIN_GAP, MIN_GAP, true);
 		}
 
-		this.urlField = new EditBox(this.font, left, this.fieldY, fieldWidth, BUTTON_HEIGHT,
-				Component.literal(t("OptiFine download source", "OptiFine 下载地址")));
-		this.urlField.setMaxLength(2048);
-		this.urlField.setValue(source);
-		this.addRenderableWidget(this.urlField);
-
-		this.actionButton = null;
+		this.pathField = new EditBox(this.font, left, this.fieldY, buttonWidth, BUTTON_HEIGHT,
+				Component.literal(t("Path to an OptiFine jar you downloaded", "已下载的 OptiFine jar 路径")));
+		this.pathField.setMaxLength(1024);
+		this.pathField.setValue(typedPath);
+		this.addRenderableWidget(this.pathField);
 
 		for (int i = 0; i < rows.size(); i++) {
 			Row row = rows.get(i);
 			Button button = Button.builder(Component.literal(row.label), pressed -> row.action.run())
-					.bounds(left, this.firstButtonY + i * BUTTON_STEP, fieldWidth, BUTTON_HEIGHT)
+					.bounds(left, this.firstButtonY + i * BUTTON_STEP, buttonWidth, BUTTON_HEIGHT)
 					.build();
-
-			// The download button (only ever the second row of the idle layout) is the one that goes dead
-			// while a download is running.
-			if (!this.failed && !this.closeGameOnly && i == 1) {
-				button.active = !this.busy;
-				this.actionButton = button;
-			}
 
 			this.addRenderableWidget(button);
 		}
@@ -522,17 +512,14 @@ public class MissingOptifineScreen extends Screen {
 		this.firstButtonY = this.lastButtonY - (rows.size() - 1) * BUTTON_STEP;
 		this.fieldY = this.firstButtonY - FIELD_GAP - BUTTON_HEIGHT;
 
-		// The status line and the caption are wrapped as well: in English they are long enough to be clipped at
-		// the edges, and they are not part of the text block the drop logic manages.
+		// The status line is wrapped as well: in English it is long enough to be clipped at the edges, and it is
+		// not part of the text block the drop logic manages.
 		int maxWidth = maxTextWidth();
 		String statusText = this.status == null ? idleStatus() : this.status;
 		int statusLineColor = this.status == null ? COLOR_DIM : this.statusColor;
 		List<Line> statusLines = wrapText(statusText, statusLineColor, false, maxWidth, 0);
-		List<Line> captionLines = wrapText(t("Download URL (official; you may replace it)",
-				"下载地址(官方地址;也可以改成你自己的)"), COLOR_DIM, false, maxWidth, 0);
 
-		this.captionY = this.fieldY - gap - blockHeight(captionLines.size(), fontHeight, fontHeight);
-		this.statusY = this.captionY - gap - blockHeight(statusLines.size(), fontHeight, fontHeight);
+		this.statusY = this.fieldY - gap - blockHeight(statusLines.size(), fontHeight, fontHeight);
 
 		// The band the block may use: under the heading, over the status line.
 		int top = this.titleY + fontHeight + gap;
@@ -575,12 +562,7 @@ public class MissingOptifineScreen extends Screen {
 			statusLines.get(i).y = this.statusY + i * fontHeight;
 		}
 
-		for (int i = 0; i < captionLines.size(); i++) {
-			captionLines.get(i).y = this.captionY + i * fontHeight;
-		}
-
 		this.drawnStatus = statusLines;
-		this.drawnCaption = captionLines;
 
 		return fits || force;
 	}
@@ -598,17 +580,16 @@ public class MissingOptifineScreen extends Screen {
 			blockBottom = Math.max(blockBottom, line.y + fontHeight);
 		}
 
-		// Everything that has to hold for the screen to be readable: nothing off the top edge, the block
-		// clear of the status line, and the status, caption, field and buttons in that order inside the
-		// screen. Logged as one word so a run can be checked without looking at it.
+		// Everything that has to hold for the screen to be readable: nothing off the top edge, the block clear
+		// of the status line, and the status line and buttons in that order inside the screen. Logged as one
+		// word so a run can be checked without looking at it.
 		boolean inside = this.titleY >= TOP_MARGIN && this.statusY >= this.titleY + fontHeight
-				&& this.captionY >= this.statusY + fontHeight && this.fieldY >= this.captionY + fontHeight
-				&& this.firstButtonY >= this.fieldY + BUTTON_HEIGHT
+				&& this.fieldY >= this.statusY + fontHeight && this.firstButtonY >= this.fieldY + BUTTON_HEIGHT
 				&& this.lastButtonY + BUTTON_HEIGHT <= this.height && blockBottom <= this.statusY;
 
 		List<String> rows = new ArrayList<>();
 		rows.add("layout gui=" + this.width + "x" + this.height + " titleY=" + this.titleY + " statusY=" + this.statusY
-				+ " captionY=" + this.captionY + " urlFieldY=" + this.fieldY + ".." + (this.fieldY + BUTTON_HEIGHT)
+				+ " pathFieldY=" + this.fieldY + ".." + (this.fieldY + BUTTON_HEIGHT)
 				+ " buttonsY=" + this.firstButtonY + ".." + (this.lastButtonY + BUTTON_HEIGHT) + " insideScreen=" + inside);
 		rows.add("  drawn y=" + this.titleY + " required (heading): " + getTitle().getString());
 
@@ -655,9 +636,21 @@ public class MissingOptifineScreen extends Screen {
 		lines.add(new Line(t("Use the latest OptiFine for this version (currently: " + this.build.file + ")",
 				"建议使用最新版 OptiFine(当前最新:" + this.build.file + ")"), COLOR_OK, true));
 
-		if (this.failed) {
-			lines.add(new Line(t("Open the official download page, download it there, then put it in the mods folder.",
-					"请打开官网下载页自行下载,再把它放进 mods 文件夹。"), COLOR_DIM, false));
+		// The official URL as text, and required: this is the whole replacement for the old download button, so
+		// it has to survive any window height. Nothing is fetched from it - the user reads or copies it.
+		lines.add(new Line(t("Download it yourself from " + OptifineSupport.OFFICIAL_DOWNLOAD_PAGE
+				+ " and put the jar in the mods folder, or paste the path of a jar you already downloaded into"
+				+ " the box below and press Install from file.",
+				"请自己到官网 " + OptifineSupport.OFFICIAL_DOWNLOAD_PAGE + " 下载并把 jar 放进 mods 文件夹,"
+						+ "也可以把已下载 jar 的路径粘贴到下面的输入框,再点「从本地文件安装」。"),
+				COLOR_OK, true));
+
+		lines.add(new Line(t("OptiFabric does not download OptiFine at runtime any more: the platform requires that mods must not fetch files while the game runs.",
+				"OptiFabric 已不再于运行时下载 OptiFine:平台要求模组不得在游戏运行时下载文件。"), COLOR_DIM, false));
+
+		if (this.restartNeeded) {
+			lines.add(new Line(t("OptiFabric changed nothing else, but a new OptiFine only loads after a restart: please start the game again by hand.",
+					"新增的 OptiFine 需要重启才会加载:请手动重新启动游戏。"), COLOR_WARN, true));
 		}
 
 		String note = noteText();
@@ -677,18 +670,12 @@ public class MissingOptifineScreen extends Screen {
 
 	private String idleStatus() {
 		if (this.mode == Mode.MISSING) {
-			return t("Click Download OptiFine for the latest build, or put the jar into the mods folder yourself.",
-					"点「下载 OptiFine」下载最新版,也可以自己把 jar 放进 mods 文件夹。");
+			return t("Download " + this.build.file + " in your browser, then paste its path into the box and press Install from file.",
+					"用浏览器下载 " + this.build.file + ",把它的路径粘贴到下面的输入框,再点「从本地文件安装」。");
 		}
 
-		return t("Click Download the right build for the latest one, or Continue anyway to play as it is.",
-				"点「下载正确的版本」换成最新版,或点「仍要继续」直接进游戏。");
-	}
-
-	private String downloadLabel() {
-		if (this.mode == Mode.MISSING) return t("Download OptiFine", "下载 OptiFine");
-
-		return t("Download the right build", "下载正确的版本");
+		return t("Install the latest build from a file you have already downloaded, or Continue anyway to play as it is.",
+				"用你已经下载好的文件安装最新版,或点「仍要继续」直接进游戏。");
 	}
 
 	private String dismissLabel() {
@@ -729,10 +716,6 @@ public class MissingOptifineScreen extends Screen {
 		for (Line line : this.drawnStatus) {
 			context.centeredText(this.font, Component.literal(line.text), center, line.y, line.color);
 		}
-
-		for (Line line : this.drawnCaption) {
-			context.centeredText(this.font, Component.literal(line.text), center, line.y, line.color);
-		}
 	}
 
 	@Override
@@ -749,12 +732,109 @@ public class MissingOptifineScreen extends Screen {
 
 	// ------------------------------------------------------------------ actions
 
-	private void openOfficialPage() {
-		Util.getPlatform().openUri(OptifineSupport.OFFICIAL_DOWNLOAD_PAGE);
+	/**
+	 * Copies OptiFine's official download page to the game's own clipboard. This replaces the button that
+	 * opened that page in a browser: opening it hands the job to the operating system's shell and therefore
+	 * starts a process, which is exactly what this release had to remove. A clipboard write starts nothing and
+	 * fetches nothing.
+	 */
+	private void copyOfficialLink() {
+		copyToClipboard("official OptiFine download page", OptifineSupport.OFFICIAL_DOWNLOAD_PAGE,
+				t("Copied the official link to the clipboard: ", "已把官网链接复制到剪贴板:"));
 	}
 
-	private void openModsFolder() {
-		Util.getPlatform().openFile(modsDir());
+	/**
+	 * {@code Install from file}: takes the path in the box, checks the file and copies it into {@code mods/}.
+	 * Local file I/O only - a URL typed here is reported, never fetched (see {@link OptifineLocalInstall}).
+	 */
+	private void installFromFile() {
+		String typed = this.pathField == null ? "" : this.pathField.getValue().trim();
+
+		System.out.println("[OptiFabric] install from a local file: \"" + typed + "\"");
+
+		OptifineLocalInstall.Result result = OptifineLocalInstall.install(typed, this.build);
+
+		// A jar is in the mods folder now, but the OptiFine this launch loaded is not it: only a start by hand
+		// can pick it up, and this mod starts nothing (no process, no restart).
+		this.restartNeeded = result.status == OptifineLocalInstall.Status.INSTALLED;
+		setStatus(installMessage(result), installColor(result.status));
+		this.relayoutRequested = true;
+	}
+
+	/** What the status line says about one installation attempt, in the language the game is set to. */
+	private String installMessage(OptifineLocalInstall.Result result) {
+		String expected = this.build == null ? "" : this.build.file;
+
+		switch (result.status) {
+		case INSTALLED:
+			return t("Installed " + result.detail + ". OptiFabric starts nothing itself: start the game again by hand to make OptiFine load.",
+					"已安装 " + result.detail + "。OptiFabric 不会自行重启:请手动重新启动游戏以加载 OptiFine。");
+		case ALREADY_PRESENT:
+			return t(result.detail + " is already in the mods folder; nothing was copied.",
+					result.detail + " 已经在 mods 文件夹里,没有复制任何文件。");
+		case EMPTY:
+			return t("Type the path of an OptiFine jar you downloaded, for example D:\\Downloads\\" + expected,
+					"请输入已下载 OptiFine jar 的路径,例如 D:\\下载\\" + expected);
+		case LOOKS_LIKE_URL:
+			return t("That is a URL, not a file path, and OptiFabric downloads nothing: get " + expected + " from "
+					+ OptifineSupport.OFFICIAL_DOWNLOAD_PAGE + " in your browser first, then paste the path of the"
+					+ " file you saved (for example D:\\Downloads\\" + expected + ").",
+					"这是网址而不是文件路径,OptiFabric 不会下载任何东西:请先用浏览器从 "
+							+ OptifineSupport.OFFICIAL_DOWNLOAD_PAGE + " 下载 " + expected
+							+ ",再粘贴你保存下来的文件路径(例如 D:\\下载\\" + expected + ")。");
+		case NOT_FOUND:
+			return t("No file at " + result.detail + " - check the path.",
+					"找不到文件 " + result.detail + ",请检查路径。");
+		case NOT_A_FILE:
+			return t(result.detail + " is not a readable file.", result.detail + " 不是可读文件。");
+		case NOT_OPTIFINE:
+			return t(result.detail + " is not an OptiFine jar (it carries no OptiFine Config.class).",
+					result.detail + " 不是 OptiFine jar(里面没有 OptiFine 的 Config.class)。");
+		case WRONG_MINECRAFT:
+			return t(result.detail + " is OptiFine for another Minecraft release; this instance runs "
+					+ result.expected + ".", result.detail + " 是给别的 Minecraft 版本的 OptiFine;这个实例跑的是 "
+							+ result.expected + "。");
+		case OTHER_OPTIFINE_PRESENT:
+			return t("The mods folder already carries another OptiFine (" + result.detail
+					+ "). Only one may be there - remove it first.",
+					"mods 文件夹里已经有另一个 OptiFine(" + result.detail + ")。只能放一个,请先移除它。");
+		case TARGET_EXISTS:
+			return t("A file named " + result.detail + " is already in the mods folder and it is not a usable"
+					+ " OptiFine jar; rename or delete it first.",
+					"mods 文件夹里已有同名文件 " + result.detail + ",而它不是可用的 OptiFine jar;请先改名或删除。");
+		default:
+			return t("Could not copy the jar: " + result.detail, "复制 jar 失败:" + result.detail);
+		}
+	}
+
+	/** Green once a jar is in place, amber for a refusal the user can fix, red for a failure. */
+	private static int installColor(OptifineLocalInstall.Status status) {
+		switch (status) {
+		case INSTALLED:
+		case ALREADY_PRESENT:
+			return COLOR_OK;
+		case FAILED:
+			return COLOR_ERROR;
+		default:
+			return COLOR_WARN;
+		}
+	}
+
+	private void copyToClipboard(String what, String text, String confirmation) {
+		// 26.2 calls it Minecraft.getInstance(); the inherited Screen#minecraft field holds the same client once
+		// this screen is shown, and the clipboard is the game's own (a clipboard write, not a shell call).
+		Minecraft client = this.minecraft != null ? this.minecraft : Minecraft.getInstance();
+
+		if (client == null || client.keyboardHandler == null) {
+			System.out.println("[OptiFabric] could not copy the " + what + ", read it here: " + text);
+			setStatus(t("Could not copy it, read it here: ", "复制失败,请自行读取:") + text, COLOR_WARN);
+
+			return;
+		}
+
+		client.keyboardHandler.setClipboard(text);
+		System.out.println("[OptiFabric] copied the " + what + " to the clipboard: " + text);
+		setStatus(confirmation + " " + text, COLOR_OK);
 	}
 
 	private static File modsDir() {
@@ -779,111 +859,18 @@ public class MissingOptifineScreen extends Screen {
 	private void recheck() {
 		File jar = new File(modsDir(), this.build.file);
 
-		if (jar.isFile() && OptifineDownloader.isOptifineArchive(jar)) {
-			this.failed = false;
-			setStatus(t("Found " + this.build.file + ".", "已找到 " + this.build.file + "。"), COLOR_OK);
-			showRestartPrompt();
+		if (jar.isFile() && OptifineJarCheck.isOptifineArchive(jar)) {
+			this.restartNeeded = true;
+			setStatus(t("Found " + this.build.file + ". OptiFabric starts nothing itself: start the game again by hand to make OptiFine load.",
+					"已找到 " + this.build.file + "。OptiFabric 不会自行重启:请手动重新启动游戏以加载 OptiFine。"), COLOR_OK);
 		} else {
-			setStatus(t("Still no " + this.build.file + " in the mods folder.",
-					"mods 文件夹里还是没有 " + this.build.file + "。"), COLOR_WARN);
+			setStatus(t("Still no " + this.build.file + " in the mods folder. Download it from "
+					+ OptifineSupport.OFFICIAL_DOWNLOAD_PAGE + ".",
+					"mods 文件夹里还是没有 " + this.build.file + "。请到 " + OptifineSupport.OFFICIAL_DOWNLOAD_PAGE
+							+ " 下载。"), COLOR_WARN);
 		}
 
 		this.relayoutRequested = true;
-	}
-
-	private void startDownload() {
-		if (this.busy || this.closeGameOnly || this.failed) return;
-
-		String source = this.urlField == null ? "" : this.urlField.getValue().trim();
-
-		if (source.isEmpty()) {
-			setStatus(t("The download URL is empty.", "下载地址是空的。"), COLOR_ERROR);
-
-			return;
-		}
-
-		File mods = modsDir();
-
-		this.busy = true;
-		if (this.actionButton != null) this.actionButton.active = false;
-		setStatus(t("Starting the download...", "正在开始下载..."), COLOR_DIM);
-
-		Thread worker = new Thread(() -> runDownload(source, mods), "OptiFabric-OptiFine-download");
-		worker.setDaemon(true);
-		worker.start();
-	}
-
-	/** Runs on the worker thread; only the volatile fields and the log are touched here. */
-	private void runDownload(String source, File mods) {
-		try {
-			OptifineDownloader.Outcome outcome = OptifineDownloader.download(source, this.build, mods, new OptifineDownloader.Progress() {
-				@Override
-				public void stage(String key, String detail) {
-					switch (key) {
-					case "page":
-						setStatus(t("Fetching the download page...", "正在获取下载页..."), COLOR_DIM);
-						break;
-					case "save":
-						setStatus(t("Saving into the mods folder...", "正在写入 mods 文件夹..."), COLOR_DIM);
-						break;
-					default:
-						break;
-					}
-				}
-
-				@Override
-				public void bytes(long received, long total) {
-					String count = total > 0 ? mb(received) + " / " + mb(total) : mb(received);
-
-					setStatus(t("Downloading ", "正在下载 ") + count, COLOR_DIM);
-				}
-			});
-
-			if (outcome.alreadyPresent) {
-				setStatus(t(outcome.file.getName() + " is already there.", outcome.file.getName() + " 已经存在,无需下载。"), COLOR_OK);
-			} else {
-				setStatus(t("Downloaded " + outcome.file.getName() + " from " + outcome.source,
-						"已从 " + outcome.source + " 下载 " + outcome.file.getName()), COLOR_OK);
-			}
-
-			// A successful download must not restart the game unannounced: ask, and let "Restart now" do it.
-			showRestartPrompt();
-		} catch (Throwable t) {
-			System.out.println("[OptiFabric] OptiFine download failed: " + t);
-			t.printStackTrace();
-			this.failed = true;
-			setStatus(t("Download failed: ", "下载失败:") + String.valueOf(t.getMessage()), COLOR_ERROR);
-		} finally {
-			this.busy = false;
-			this.relayoutRequested = true;
-		}
-	}
-
-	/** After a download (or a re-check that found the jar): ask instead of restarting unannounced. */
-	private void showRestartPrompt() {
-		if (this.minecraft == null) return;
-		Minecraft client = this.minecraft;
-		client.execute(() -> {
-			// 26.2's ConfirmScreen still takes both button labels, so the reference's four-text dialog is used
-			// as it is; there is no need for a hand-written two-button screen on this line.
-			Component title = Component.literal(t("Download complete", "下载已完成"));
-			Component message = Component.literal(t("Restart the game to make OptiFine take effect?",
-					"是否重启游戏使 OptiFine 生效?"));
-			Component yes = Component.literal(t("Restart now", "立即重启"));
-			Component no = Component.literal(t("Continue to main menu", "继续返回主菜单"));
-			client.setScreenAndShow(new ConfirmScreen(ok -> {
-				if (ok) {
-					// "Restart now": start the replacement process, then end this one - otherwise both would
-					// run at once. When the relaunch is impossible (a launcher that hides the command line and
-					// no Windows/JNA path), closing is all that is left, and the launcher's own Play button is
-					// then the way back in.
-					OptifineDownloader.restart();
-					client.stop();
-				} else {
-					client.setScreenAndShow(new TitleScreen());
-				}
-			}, title, message, yes, no));
-		});
 	}
 
 	private void setStatus(String text, int color) {
