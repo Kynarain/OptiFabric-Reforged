@@ -1,5 +1,145 @@
 # 更新日志
 
+## 2.2.5+mc1.21 … 2.2.5+mc1.21.11 — 补上被补丁的 record 缺的那一条接口:1.21.9 / 1.21.10 / 1.21.11 的 `GuiRendererMixin` 又能应用了
+
+> 这一版覆盖全部 10 个产物(1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11),
+> 但**只对 1.21.9 / 1.21.10 / 1.21.11 有行为上的影响**:那三版此前连标题界面都到不了,死在 fabric-rendering-v1 的
+> `GuiRendererMixin` 上。改动是**两处**:新增 `src/main/java/kynarain/cn/optifabric/patcher/fixes/AddInterfaceFix.java`
+> (移植自 26.x 线的同名修复器,那一条线已经用同一个修复器解决过同一个形状),以及
+> `OptifineFixer` 里的一条注册,共 +419 行、两个文件。
+> **修订号递增的原因是向下兼容的问题修正**:不改对外的名字、不改注册方式、不改产物名。
+
+### 修好了:1.21.9 / 1.21.10 / 1.21.11 死在 `Cannot @Coerce` 的那一处
+
+```
+Mixin apply for mod fabric-rendering-v1 failed fabric-rendering-v1.mixins.json:GuiRendererMixin from mod fabric-rendering-v1 -> net.minecraft.class_11228: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException @WrapOperation operation wrapper method net/minecraft/class_11228::fixNonQuadIndexing from fabric-rendering-v1.mixins.json:GuiRendererMixin from mod fabric-rendering-v1 has an invalid signature. Cannot @Coerce argument type net.minecraft.class_11228$class_11230 at index 4 to net.fabricmc.fabric.mixin.client.rendering.DrawAccessor.
+```
+
+三个版本打的是**逐字相同**的失败行(只有时间戳不同),`class_11228` = `GuiRenderer`、
+`class_11228$class_11230` = `GuiRenderer$Draw`、`DrawAccessor` =
+`net.fabricmc.fabric.mixin.client.rendering.DrawAccessor` —— 都是按各版自己的 yarn 映射解析出来的,
+不是按别的版本的印象写的。
+
+### 根因:那个 record 少声明了一个**接口**,不是少了方法,也不是局部变量错位
+
+`GuiRenderer$Draw` 是一个 **record**。原版与 OptiFine 重编译后的两份拷贝都**没有声明任何接口**
+(`interfaces` 表为空,super 是 `java/lang/Record`,两边都是 11 个声明方法)。缺的只有一样东西:
+`DrawAccessor` 那一条接口表项 —— `fabric-rendering-v1` 的 `DrawAccessor` 正是
+`@Mixin(targets = "net/minecraft/class_11228$class_11230")`,声明 `fabric$pipeline()` 与 `fabric$indexCount()`。
+
+`GuiRendererMixin.fixNonQuadIndexing` 是 `@WrapOperation`,包装的是那个 record 作为接收者的
+`RenderPass.setIndexBuffer` 调用;它第 5 个 handler 参数声明为 `DrawAccessor` 并标了 `@Coerce`,
+于是 Mixin 的 `Injector.checkCoerce` 会问:**`DrawAccessor` 是不是 `class_11228$class_11230` 的父类型之一**。
+
+- 游戏自己的那份能过:因为 `fabric-rendering-v1.mixins.json` 把 `DrawAccessor` 排在 `GuiRendererMixin`
+  **之前**,Mixin 的 accessor pass 先把接口放到类上,后面那句 `@Coerce` 检查自然成立;
+- 本模组交给 JVM 的那份过不了:被替换过的类会丢掉 Mixin 先前按**游戏**字节建立的类元数据
+  (`MixinClassMetadata.drop`,2.2.1 引入),这套"谁先谁后"的信息随之丢失,accessor 的接口不再落上去。
+
+### 怎么改的(以及为什么不换一种改法)
+
+`AddInterfaceFix` 只**声明接口**,不实现那两个 accessor 方法:方法由 Mixin 自己的 ACCESSOR pass 补上,
+本模组若也写一遍,Mixin 会在 `mergeMethod` 处报 `cannot overwrite method … because @Overwrite is required`。
+接口名是**解析**出来的 —— 扫描已加载模组的 mixin 包,找 `@Mixin(targets = "…class_11228$class_11230")` 的接口,
+并且只接受一个声明了该类所缺方法的候选 —— 因为它属于 Fabric API,名字会随版本变,写死会随下游漂移。
+`class_11228$class_11230` 是这三个版本共用的同一个中介号,所以一条注册覆盖三版:
+
+```java
+registerFix("class_11228$class_11230", new AddInterfaceFix("net/minecraft/class_11228$class_11230"));
+```
+
+**不会重复施加**:`AddInterfaceFix` 是这一线唯一会写类的 `interfaces` 列表的修复器,`class_11228$class_11230`
+只出现在一条注册里;修复器内部对"接口已经在了"的类直接跳过。
+
+### 机制是证明过的,不是推断的
+
+写修复器之前先把机制证明了一遍:把一份私有缓存里的 `class_11228$class_11230` **手工**加上 `DrawAccessor`
+(并重算 CRC 让本模组接受这份缓存,用 `-KeepCache` 启动)—— **1.21.9 在 9.5 s 内到标题界面,
+`Cannot @Coerce` / `InvalidInjectionException` / `Mixin apply … failed` 全部为 0,而且没有任何东西取代它们。**
+修好之后 Mixin 自己导出的类(`-Dmixin.debug.export=true` 下的
+`.mixin.out\class\net\minecraft\class_11228$class_11230.class`)声明接口 `DrawAccessor`、方法 **13** 个
+(11 个是 record 自己的,另外 2 个正是 `fabric$pipeline()` / `fabric$indexCount()`)—— 接口来自本模组,
+方法来自 Mixin,正是这个修复器要的分工。
+
+### 实测(每个臂:自己的实例副本、`-CleanCache`、本模组 + 该版 OptiFine + 该版 Fabric API、一个预置存档)
+
+| MC | 结果 | 标题界面 | 进世界 | `Cannot @Coerce` | `InvalidInjectionException` | `Mixin apply … failed` | `LVTGeneratorError` | `SugarApplicationException` | 修复器 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.21.9 | **PASS + 进世界** | 24.4 s | 是,220.6 s | 0 | 0 | 0 | 0 | 0 | 声明了接口 |
+| 1.21.10 | **PASS(只到标题界面)** | 42.8 s | 否,见「停住」 | 0 | 0 | 0 | 0 | 0 | 声明了接口 |
+| 1.21.11 | **PASS + 进世界** | 21.6 s | 是,27.7 s | 0 | 0 | 0 | 0 | 0 | 声明了接口 |
+| 1.21.1(冒烟) | **PASS + 进世界** | 18.3 s | 是,21.6 s | 0 | 0 | 0 | 0 | 0 | no-op |
+| 1.21.6(冒烟) | **PASS(只到标题界面)** | 18.5 s | 否,见「停住」 | 0 | 0 | 0 | 0 | 0 | no-op |
+| 1.21.8(冒烟) | **PASS + 进世界** | 18.4 s | 是,24.7 s | 0 | 0 | 0 | 0 | 0 | no-op |
+
+`PASS` 的定义是**到标题界面**(日志出现 `Sound engine started`);只有写了"进世界"的行才声称进过世界,
+判据是集成服务端自己写的标记(`Starting integrated minecraft server version`、
+`Preparing start region for dimension`)加上运行期间被重写的 `level.dat` 与 `session.lock`。
+
+修复器自己打的那一行:
+
+```
+[OptiFabric] Added net/fabricmc/fabric/mixin/client/rendering/DrawAccessor to net/minecraft/class_11228$class_11230 so the mixin that coerces to it can apply (its fabric$pipeline()Lcom/mojang/blaze3d/pipeline/RenderPipeline;, fabric$indexCount()I will be contributed by Mixin)
+```
+
+### 停住:1.21.10 与 1.21.6 到标题界面之后不走,这不是本版造成的
+
+1.21.10 到标题界面之后**没有进世界**:日志不再增长,窗口标题始终没有出现 ` - Singleplayer` 后缀,
+`level.dat` 也没有在运行期间被重写,也就是 `--quickPlaySingleplayer` 从未被处理;**所有失败计数器同样是 0**。
+这就是 `r214` 报告 §10 已经为 1.21(2.2.3 / 2.2.4)记下的同一类"标题界面之后停住":本轮 1.21.6 也一样
+(给足 240 s 余量,实际跑到 261 s 仍未过去),而 1.21.9 在同一处等了约 196 s 后过去了 —— 所以它更像一段很长、
+很不稳定的等待,而不是一个确定的死锁。
+
+**它不是本版造成的**:修复器在 1.21.6 上是彻底的 no-op(那一版整个 Fabric API 里没有任何类引用
+`class_11228$class_11230`),在 1.21 上连 `class_11228` 都不存在;1.21.10 只是本版第一次让它走到标题界面,
+才把这段等待暴露出来。**它的原因本轮没有查清,这里也不做解释。**
+
+### 关于 `/ERROR`:这一版里它不是 0,而 2.2.4 记下的 `/ERROR 0` 不是证据
+
+本轮 `/ERROR` 计数是 0(1.21.1)、1(1.21.6 / 1.21.8)、3(1.21.9 / 1.21.10 / 1.21.11)。逐条看过,
+全是测试台自己的环境问题,与 mixin、`@Coerce` 都无关:
+
+```
+[Render thread/ERROR]: Failed to load options            <- 测试台删掉了 options.txt 的处理,JsonSyntaxException
+                                                            (MalformedJsonException at line 1 column 3)
+[Download-2/ERROR]: Failed to fetch user properties      <- 离线:InvalidCredentialsException Status: 401
+[Download-1/ERROR]: Failed to fetch Realms feature flags <- 离线:401
+```
+
+**更正(2.2.4 的计数缺陷)**:2.2.4 的两份笔记(1.21 与 1.21.1)里写过 `/ERROR` 0。那个数字**不是证据**:
+当时测试台的计数正则写作 `'\] /?ERROR'`,而 PowerShell 把 `\]` 原样传了下去,于是 `[Render thread/ERROR]`
+这类行**从来没有被匹配到过** —— `/ERROR 0` 是"没找到",不是"没有"。把正则改成普通的 `/ERROR` 之后,
+计数才第一次真的动起来(就是上面那 0 / 1 / 3)。**已发布的 2.2.4 正文没有改写**,更正写在这里。
+
+### 离线惰性核对(本版新做的检查)
+
+修复器只在"某个已加载的模组声明了一个 `@Mixin` 指向 `class_11228$class_11230` 的接口"时才动作。
+逐版打开各版 Fabric API 里嵌的 `fabric-rendering-v1`,按字节搜 `net/minecraft/class_11228$class_11230`:
+
+```
+1.21     fabric-rendering-v1-0.102.0.jar              没有 class_11228
+1.21.1   fabric-rendering-v1-0.116.17.jar             没有 class_11228
+1.21.3   fabric-rendering-v1-0.114.1.jar              没有 class_11228
+1.21.4   fabric-rendering-v1-10.2.1+0d31b09f04.jar    没有 class_11228
+1.21.6   fabric-rendering-v1-12.4.0+e8d43c7696.jar    只有 GuiRendererMixin 引用 class_11228
+1.21.7   fabric-rendering-v1-12.4.0+e8d43c766c.jar    只有 GuiRendererMixin 引用 class_11228
+1.21.8   fabric-rendering-v1-12.6.0+486b7ff72c.jar    只有 GuiRendererMixin 引用 class_11228
+1.21.9   fabric-rendering-v1-16.0.1+328a75ba7d.jar    DrawAccessor -> class_11228$class_11230
+1.21.10  fabric-rendering-v1-16.2.0+bee81f016f.jar    DrawAccessor -> class_11228$class_11230
+1.21.11  fabric-rendering-v1-16.2.10+0290ad933e.jar   DrawAccessor -> class_11228$class_11230
+```
+
+所以它在其余七版上要么无事可做,要么打印"没有模组声明指向该类"后原样离开。
+
+### 边界(别把这一版读大)
+
+- **每个臂只有一次启动、三个 jar、一个预置存档**:没有光影包、没有压测、没有长时间游玩、没有逐个模组跑兼容矩阵;
+- **1.21 / 1.21.3 / 1.21.4 / 1.21.7 本轮没有启动游戏**;1.21.1 / 1.21.6 / 1.21.8 是冒烟臂;
+- **1.21.10 只声称到标题界面**,不声称能进世界;
+- 实机结论来自**本版同一提交**构建的候选 jar(与本版产物的差别只有 `fabric.mod.json` 里的版本串,已逐条目比对);
+  本版 jar 没有再把这几版各跑一遍。1.21.6 / 1.21.7 的 OptiFine 预览构建"开光影就崩"是 OptiFine 自己的缺陷,
+  与本版无关,本轮也没有去开光影。
+
 ## 2.2.4+mc1.21 … 2.2.4+mc1.21.11 — 重写 `LocalSlotLayoutFix`:补丁方法的局部变量按**作用域**配对回游戏声明的槽位
 
 > 这一版覆盖全部 10 个产物(1.21 / 1.21.1 / 1.21.3 / 1.21.4 / 1.21.6 / 1.21.7 / 1.21.8 / 1.21.9 / 1.21.10 / 1.21.11),
