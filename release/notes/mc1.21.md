@@ -576,3 +576,10 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 > 也就是:运行时**不下载任何东西**、**不启动任何进程**;`java.net.URL`/`URLClassLoader` 只用于读取用户自己放进 `mods/`
 > 的本地 `file:` jar。每个上架 jar 的下载 / 进程 / 启动 token 都是 **0**;`-full` 那些 jar 是这次扫描的**正对照**
 > (它们确实带着下载器与自动重启,所以只放在 GitHub 上)。
+
+> **`System.exit` 那一行要按方法看,不能按 token 看**:`System/exit` 这个 token 在 class 文件里**根本不存在** —— 一次调用
+> 是常量池里 `java/lang/System` 加 `exit:(I)V` 的 Methodref,所以早先按这个 token 扫出来的「0」是**选错 token 的假象**。
+> 用 `javap` 逐方法解析后,每个上架 jar 的退出原语只有这两处:`patcher/LambdaRebuilder#main` 的 `System.exit(1)`
+> (那个类的离线命令行入口,只有直接运行它才会走到),以及 reforged 线 `mod/C2meCompat#apply` 的 `System.exit(0)`
+> (垫片自己结束本次启动,**不启动任何进程**、不联网)。上架 jar **没有 `Runtime.halt`**;`Runtime.halt(0)` 只出现在
+> `-full` 的下载器与 `-full` 的垫片里。逐 jar 的解析表见 `cf-resume\cp-table.md`。
