@@ -142,7 +142,7 @@ OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recomp
 
 | File | SHA-256 |
 |---|---|
-| `OptiFabric-2.2.5+mc1.21.11.jar` (922134 bytes) | `53411487A6CCA30307B36E25F8FFDFABD7BAAA1CBCA23A3C8704F2E387C590BD` |
+| `OptiFabric-2.2.5+mc1.21.11.jar` (930609 bytes) | `1B1092865833FE909E7649F1079B4AD8E849A4773CFEFAEE0682B4D262FE6714` |
 
 Other Minecraft releases OptiFine ships a build for — 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9 and 1.21.10 — come out of this same repository root (one Gradle project, no `v1.21.x` subproject) with `.\gradlew build "-Pmc=<version>"`, and each of them passes the same offline verification (see [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)).
 
