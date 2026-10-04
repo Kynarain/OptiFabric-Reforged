@@ -25,7 +25,7 @@ OptiFine 不是 Fabric 模组:它的 jar 里是针对原版客户端类的字节
 Minecraft **26.1 起未混淆** —— 官方名就是运行期名字,既没有 yarn,也没有真正可用的 intermediary(26.1.2 只发布占位 `0.0.0`)。所以本线不取任何映射、需要 Loom 的非重映射 flavour,运行期命名空间是 `official`。本线还有**自己的 mod id**:有些模组声明 `"breaks": {"optifabric": "*"}`,而 Fabric Loader 按 **id** 匹配 —— 只改显示名没有用。
 
 **作者:** kynarain · 上游:Modmuss50、Chocohead
-**版本:** `2.2.5`(`OptiFabric-Reforged-2.2.5+mc26.2.jar`)
+**版本:** `2.2.6`(`OptiFabric-Reforged-2.2.6+mc26.2.jar`)
 **许可:** MPL-2.0
 
 ## ✨ 主要特性
@@ -79,6 +79,18 @@ mods/<OptiFine jar>
 
 1. 准备与本版本**严格一致**的 OptiFine(见下表) —— OptiFabric 会读 `optifine/Config` 里的 `MC_VERSION` 校验,不一致会直接在标题界面报错。**不需要**先运行 OptiFine 安装器。
 2. 把本模组的 jar **和** OptiFine 的 jar 一起放进该 Fabric 版本自己的 `mods/` 目录。不要放两份 OptiFine(会报 `DUPLICATED`),也不要混进 1.21.x 线的 jar。
+
+<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
+     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
+> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
+> start the game once by hand.
+>
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
+> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
+> 文件夹;然后手动启动一次游戏。
+
 3. 用 **Fabric 版本**启动,不要用启动器自己注入 OptiFine 的那个版本。
 4. 首次启动会明显变慢(要跑完整条补丁流水线),之后走缓存。标题界面出现 OptiFine 版本号、视频设置里出现 OptiFine 选项即表示成功。
 
@@ -102,7 +114,7 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 需要 **JDK 25**,仓库根目录就是 Gradle 项目:
 
 ```powershell
-.\gradlew build          # -> build/libs/OptiFabric-Reforged-2.2.5+mc26.2.jar
+.\gradlew build          # -> build/libs/OptiFabric-Reforged-2.2.6+mc26.2.jar
 ```
 
 版本号必须与 Minecraft 版本成对出现,而且只通过一个脚本改:
@@ -129,14 +141,14 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 
 | Minecraft | 产物 | OptiFine 构建 | Java | 状态 |
 |---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.2.5+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**没有光影**,见下) |
-| 26.1.2 | `OptiFabric-Reforged-2.2.5+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
+| 26.2 | `OptiFabric-Reforged-2.2.6+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**没有光影**,见下) |
+| 26.1.2 | `OptiFabric-Reforged-2.2.6+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
 
 `2.1.1` 是修订版,它**取代 `2.1.0+mc26.2`**:那一版把 OptiFine 取消掉的光影包加载强行打开,而选了光影包之后世界
 **只画粒子、方块透明**(编译了 27 个 shader program,任何日志里都没有报错)。`2.1.1` 把那段字节码**原样留成
 OptiFine 写的样子**。这条线并没有因此变窄:同一份源码仍能为 26.1.2 构建,并跑完整条离线管线、数字与 2.0.0 当时
 记下的完全一致(见下面「验证状态」),所以 26.1.2 没有被丢开 —— 而且从 `2.2.1` 起它也跟着重新出了一份,
-产物是 `2.2.5+mc26.1.2`(`2.0.0+mc26.1.2` 那份仍然发布过、冻结在它自己的发布页上)。
+产物是 `2.2.6+mc26.1.2`(`2.0.0+mc26.1.2` 那份仍然发布过、冻结在它自己的发布页上)。
 
 OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26.1.1、26.1.3、26.2.1、26.3 在 OptiFine 的下载页上**一个构建都没有** —— 可以自己核一遍:<https://optifine.net/downloads>,某个版本没有构建时,它标题下面的表格就是空的。
 
@@ -148,8 +160,8 @@ OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26
 
 | OptiFabric 版本 | Minecraft 版本 | 建议的 OptiFine 构建 | 类型 |
 |---|---|---|---|
-| `2.2.5+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 预览版(尚无正式版) |
-| `2.2.5+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 预览版(尚无正式版) |
+| `2.2.6+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 预览版(尚无正式版) |
+| `2.2.6+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 预览版(尚无正式版) |
 
 同一 Minecraft 版本的其它构建同样可用;只有当你 `mods/` 里的 jar 是**预览版**、且比表里这个更旧时,提示才会出现。已经装了**正式版**就不会被打扰,哪怕有更新的正式版。
 
@@ -163,7 +175,7 @@ OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26
 
 ### 声明的不兼容,以及加载器实际会怎么做
 
-本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。两个 `2.2.5` 产物(26.2 与 26.1.2)声明的是:
+本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。两个 `2.2.6` 产物(26.2 与 26.1.2)声明的是:
 
 | 声明 | 条目 |
 |---|---|

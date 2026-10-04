@@ -1,4 +1,4 @@
-# 手动发布清单(26.x,逐版一个发布条目)
+��动发布清单(26.x,逐版一个发布条目)
 
 > 本文件覆盖 **26.x** —— 仓库里唯一的一条发布线,现在有两个产物:**26.2**(当前,`2.2.5`)与
 > **26.1.2**(`2.2.5`;它以前冻结在 `2.0.0`,但 2.2.1 修的那个缺陷它也有,2.2.1 起它也每版跟着重新出一份)。另一条线(1.21.x,混淆名 +
@@ -41,8 +41,8 @@
 
 | 版本 | 版本号 / 标签 | jar | 字节 | SHA-256 | 正文 |
 |---|---|---|---|---|---|
-| 26.2 | 2.2.5+mc26.2 / v2.2.5 | dist\OptiFabric-Reforged-2.2.5+mc26.2.jar | 201124 | 110CC020CBF5FAA7E434B4F213414C3234689A3B1FD250AC36D3ED6FBEA570B9 | release/notes/mc26.2.md |
-| 26.1.2 | 2.2.5+mc26.1.2 / v2.2.5+mc26.1.2 | dist\OptiFabric-Reforged-2.2.5+mc26.1.2.jar | 201126 | 999D6EBCCE512994B88D0DC21514C8411B05942720924B8A6B4A1FA628E85A37 | release/notes/mc26.1.2.md |
+| 26.2 | 2.2.6+mc26.2 / v2.2.6 | dist\OptiFabric-Reforged-2.2.6+mc26.2.jar | 183836 | 48402C3EF5CE619E88E07197BDB9073A7FEA947AB5DFF6B872561ECD161F30B9 | release/notes/mc26.2.md |
+| 26.1.2 | 2.2.6+mc26.1.2 / v2.2.6+mc26.1.2 | dist\OptiFabric-Reforged-2.2.6+mc26.1.2.jar | 183838 | 6CBC7844781051579118E605687AC22B85A45F98CEF02D56DCECAE98088DEF34 | release/notes/mc26.1.2.md |
 
 > ⚠️ **`-RecordDigest` 会把这张表里每一行都改一遍,跑完必须 `git diff` 逐行看**
 >
@@ -82,9 +82,9 @@
   target 选 **26.x 线的发布提交(当前在 `wip/26.2` 上,即这次发版的提交)**;
 - **Release title**:OptiFabric Reforged 2.2.5+mc26.2;
 - **Describe this release**:粘贴 `release/notes/mc26.2.md`(Markdown);
-- **Attach binaries**:上传 `dist\OptiFabric-Reforged-2.2.5+mc26.2.jar`(正文里已写好尺寸与 SHA-256,方便用户校验)。
+- **Attach binaries**:上传 `dist\OptiFabric-Reforged-2.2.6+mc26.2.jar`(正文里已写好尺寸与 SHA-256,方便用户校验)。
 - **26.1.2 那一份要单独发一个条目**(同一个版本号、另一个 jar):tag `v2.2.5+mc26.1.2`、title
-  `OptiFabric Reforged 2.2.5+mc26.1.2`、正文用 `release/notes/mc26.1.2.md`、附件 `dist\OptiFabric-Reforged-2.2.5+mc26.1.2.jar`
+  `OptiFabric Reforged 2.2.6+mc26.1.2`、正文用 `release/notes/mc26.1.2.md`、附件 `dist\OptiFabric-Reforged-2.2.6+mc26.1.2.jar`
   (以及它的 `-sources.jar`);**`make_latest` 保持 false** —— 仓库的 Latest 徽章归 26.2 那一份(`v2.2.5`)。
 
 ### Modrinth

@@ -12,6 +12,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipError;
@@ -26,94 +28,188 @@ import kynarain.cn.optifabric.util.ASMUtils;
 import kynarain.cn.optifabric.util.ZipUtils;
 
 /**
- * Locates the OptiFine jar the user dropped into the mods folder and reads its declared versions.
+ * Locates the OptiFine jar this instance is supposed to load and reads its declared versions.
+ *
+ * <p>The places searched, and which of them wins when several hold a valid OptiFine, are
+ * {@link OptifineSearch}'s subject; this class only reads a jar and remembers what it said. The three shapes
+ * are: this instance's {@code mods/} folder, the launcher root's shared {@code mods/} folder, and OptiFine
+ * installed as a launcher <em>version</em> ({@code versions/<name>/} plus its
+ * {@code libraries/optifine/**} jar).
  */
 public class OptifineVersion {
 	public static String version;
 	public static String minecraftVersion;
 	public static JarType jarType;
+	/** The jar {@link #findOptifineJar()} chose, for the prompt's "we found it here" line; null before that. */
+	public static File optifineJar;
+	/** Where that jar was found, as a phrase; null when nothing was found or before the search ran. */
+	public static String optifineSource;
+	/** The absolute paths that were searched, whether or not anything was there. */
+	public static List<String> searchedLocations = List.of();
 
 	public static File findOptifineJar() throws IOException {
-		File modsDir = new File(FabricLoader.getInstance().getGameDirectory(), "mods");
-		File[] mods = modsDir.listFiles();
+		Path gameDir = FabricLoader.getInstance().getGameDirectory().toPath();
+		Path launcherRoot = OptifineSearch.launcherRoot(gameDir);
+		File modsDir = new File(gameDir.toFile(), "mods");
 
-		if (mods != null) {
-			File optifineJar = null;
+		version = null;
+		minecraftVersion = null;
+		optifineJar = null;
+		optifineSource = null;
+		searchedLocations = OptifineSearch.searchedLocations(gameDir, launcherRoot);
 
-			for (File file : mods) {
-				if (!file.isDirectory() && hasJarExtension(file.getName()) && !file.getName().startsWith(".") && !file.isHidden()) {
-					JarType type = getJarType(file);
-					if (type.isError()) {
-						jarType = type;
-						throw new RuntimeException("An error occurred when trying to find the optifine jar: " + type.name());
-					}
+		List<OptifineSearch.Candidate> candidates;
 
-					if (type == JarType.OPTIFINE_MOD || type == JarType.OPTIFINE_INSTALLER) {
-						if (optifineJar != null) {
-							jarType = JarType.DUPLICATED;
-							OptifabricError.setError("Please ensure you only have 1 copy of OptiFine in the mods folder!\nFound: %s\n       %s", optifineJar, file);
-							throw new FileAlreadyExistsException("Multiple optifine jars: " + file.getName() + " and " + optifineJar.getName());
-						}
+		try {
+			candidates = OptifineSearch.find(gameDir, FabricLoader.getInstance().getRawGameVersion());
+		} catch (OptifineSearch.OptifineChoiceException e) {
+			jarType = e.type;
+			OptifabricError.setError("%s", e.getMessage());
+			throw new FileAlreadyExistsException(e.getMessage());
+		} catch (java.io.UncheckedIOException e) {
+			jarType = JarType.CORRUPT_ZIP;
+			OptifabricError.setError("%s", e.getMessage());
+			throw new IOException(e.getMessage(), e.getCause());
+		}
 
-						jarType = type;
-						optifineJar = file;
-					}
+		if (!candidates.isEmpty()) {
+			OptifineSearch.Candidate chosen = candidates.get(0);
+			optifineJar = chosen.jar;
+			optifineSource = chosen.description();
+
+			JarType type = reportJarType(chosen.jar);
+			jarType = type;
+
+			if (type.isError()) {
+				throw new RuntimeException("An error occurred when trying to find the optifine jar: " + type.name());
+			}
+
+			System.out.println("[OptiFabric] Found OptiFine " + version + " in the " + optifineSource
+					+ ": " + chosen.path());
+			if (candidates.size() > 1) {
+				System.out.println("[OptiFabric]   " + (candidates.size() - 1)
+						+ " other usable OptiFine jar(s) are installed as well; the newest build wins (see OptifineSearch)");
+				for (OptifineSearch.Candidate other : candidates.subList(1, candidates.size())) {
+					System.out.println("[OptiFabric]     also: " + other.path() + "  (" + other.description() + ")");
 				}
 			}
 
-			if (optifineJar != null) {
-				return optifineJar;
-			}
+			return optifineJar;
 		}
 
 		jarType = JarType.MISSING;
+		// 2.1.0's three lines are what the dialog shows, so the platform story is told here instead: the log
+		// names the folder, every place that was searched, and the official page, in full sentences.
+		String modsPath = modsDir.getAbsolutePath();
+		String runningMc = FabricLoader.getInstance().getRawGameVersion();
+		System.out.println("[OptiFabric] No OptiFine jar in " + modsPath);
+		for (String place : searchedLocations) {
+			System.out.println("[OptiFabric]   looked in " + place);
+		}
+		System.out.println("[OptiFabric] Download OptiFine for Minecraft " + runningMc + " from "
+				+ OptifineSupport.OFFICIAL_DOWNLOAD_PAGE + " and put the jar in " + modsPath + ", next to this mod");
+		System.out.println("[OptiFabric] OptiFabric does not download OptiFine at runtime: this build ships no"
+				+ " downloader and starts no process, and OptiFine is read from the local file: jar the user placed"
+				+ " in mods/");
 		OptifabricError.setError("OptiFabric could not find the OptiFine jar in the mods folder:\n%s\n\n"
-				+ "Download OptiFine for Minecraft 1.20.6 and place it in that folder next to this mod.", modsDir);
+				+ "Download OptiFine for Minecraft %s and place it in that folder next to this mod.", modsPath, runningMc);
 		throw new FileNotFoundException("Could not find optifine jar");
 	}
 
-	private static boolean hasJarExtension(String name) {
+	/**
+	 * The build name inside one jar, as {@code net.optifine.Config.VERSION} declares it, or null when the jar
+	 * cannot be read. Only used to compare two installed places by build; it reads the jar rather than the
+	 * fields below, so a caller can ask about a jar other than the chosen one.
+	 */
+	static String readBuildName(File file) {
+		try {
+			ClassNode classNode = readConfig(file);
+
+			if (classNode == null) return null;
+
+			for (FieldNode fieldNode : classNode.fields) {
+				if ("VERSION".equals(fieldNode.name)) return (String) fieldNode.value;
+			}
+		} catch (IOException e) {
+			// Unreadable: not orderable, which the caller treats as "cannot be compared".
+		}
+
+		return null;
+	}
+
+	/** Reads {@code net/optifine/Config.class} out of a jar, without loading any class from it. */
+	private static ClassNode readConfig(File file) throws IOException {
+		try (JarFile jarFile = new JarFile(file)) {
+			JarEntry jarEntry = jarFile.getJarEntry("net/optifine/Config.class"); //F1 (1.14.2) - G9 location
+
+			if (jarEntry == null) {
+				jarEntry = jarFile.getJarEntry("notch/net/optifine/Config.class"); //H1 (1.17.1) location
+			}
+
+			if (jarEntry == null) return null;
+
+			return ASMUtils.readClass(jarFile, jarEntry);
+		}
+	}
+
+	public static boolean hasJarExtension(String name) {
 		int dot = name.lastIndexOf('.');
 
 		return dot >= 0 && name.regionMatches(true, dot + 1, "jar", 0, 3) && dot == name.length() - 4;
 	}
 
-	private static JarType getJarType(File file) throws IOException {
+	/** What one jar turned out to be, with no side effect on this class and no error written anywhere. */
+	static final class Parsed {
+		final JarType type;
+		final String version;
+		final String minecraftVersion;
+
+		Parsed(JarType type, String version, String minecraftVersion) {
+			this.type = type;
+			this.version = version;
+			this.minecraftVersion = minecraftVersion;
+		}
+	}
+
+	/**
+	 * Classifies one jar with no side effects, so {@link OptifineSearch} can look at every jar in a folder
+	 * without leaving an error behind for a jar it does not use. {@link #reportJarType} is the reporting half.
+	 */
+	static Parsed parseJarType(File file) throws IOException {
 		ClassNode classNode;
+
 		try (JarFile jarFile = new JarFile(file)) {
 			JarEntry jarEntry = jarFile.getJarEntry("net/optifine/Config.class"); //F1 (1.14.2) - G9 location
+
 			if (jarEntry == null) {
 				jarEntry = jarFile.getJarEntry("notch/net/optifine/Config.class"); //H1 (1.17.1) location
 			}
-			if (jarEntry == null) {
-				return JarType.SOMETHING_ELSE;
-			}
+
+			if (jarEntry == null) return new Parsed(JarType.SOMETHING_ELSE, null, null);
+
 			classNode = ASMUtils.readClass(jarFile, jarEntry);
 		} catch (ZipException | ZipError e) {
-			OptifabricError.setError("The jar at " + file + " is corrupt");
-			return JarType.CORRUPT_ZIP;
+			return new Parsed(JarType.CORRUPT_ZIP, null, null);
 		}
+
+		String foundVersion = null;
+		String foundMcVersion = null;
 
 		for (FieldNode fieldNode : classNode.fields) {
 			if ("VERSION".equals(fieldNode.name)) {
-				version = (String) fieldNode.value;
+				foundVersion = (String) fieldNode.value;
 			}
 			if ("MC_VERSION".equals(fieldNode.name)) {
-				minecraftVersion = (String) fieldNode.value;
+				foundMcVersion = (String) fieldNode.value;
 			}
 		}
 
-		if (version == null || version.isEmpty() || minecraftVersion == null || minecraftVersion.isEmpty()) {
-			OptifabricError.setError("Unable to find OptiFine version from OptiFine jar at " + file);
-			return JarType.INCOMPATIBLE;
+		if (foundVersion == null || foundVersion.isEmpty() || foundMcVersion == null || foundMcVersion.isEmpty()) {
+			return new Parsed(JarType.INCOMPATIBLE, foundVersion, foundMcVersion);
 		}
 
-		String currentMcVersion = FabricLoader.getInstance().getRawGameVersion();
-
-		if (!currentMcVersion.equals(minecraftVersion)) {
-			OptifabricError.setError("This version of OptiFine from %s is not compatible with the current minecraft version\n\nOptifine requires %s you are running %s",
-										file, minecraftVersion, currentMcVersion);
-			return JarType.INCOMPATIBLE;
+		if (!FabricLoader.getInstance().getRawGameVersion().equals(foundMcVersion)) {
+			return new Parsed(JarType.INCOMPATIBLE, foundVersion, foundMcVersion);
 		}
 
 		boolean[] isInstaller = new boolean[1];
@@ -126,10 +222,49 @@ public class OptifineVersion {
 			}
 		});
 
-		if (isInstaller[0]) {
-			return JarType.OPTIFINE_INSTALLER;
-		} else {
-			return JarType.OPTIFINE_MOD;
+		return new Parsed(isInstaller[0] ? JarType.OPTIFINE_INSTALLER : JarType.OPTIFINE_MOD, foundVersion, foundMcVersion);
+	}
+
+	/**
+	 * Classifies one jar <em>and</em> reports it: the fields the rest of the mod reads are set, and a jar that
+	 * cannot be used leaves the message its state deserves. This is the entry point for the jar that was
+	 * actually chosen, so nothing here is ever written for a jar that is not this instance's OptiFine.
+	 */
+	static JarType reportJarType(File file) throws IOException {
+		Parsed parsed = parseJarType(file);
+		jarType = parsed.type;
+		if (parsed.version != null) version = parsed.version;
+		if (parsed.minecraftVersion != null) minecraftVersion = parsed.minecraftVersion;
+
+		String message = describeJarType(file, parsed);
+
+		if (message != null) OptifabricError.setError("%s", message);
+
+		return parsed.type;
+	}
+
+	/**
+	 * The sentence one classification deserves, or null for a jar that is fine: an OptiFine mod jar, an
+	 * installer, or a jar that has nothing to do with OptiFine at all.
+	 */
+	static String describeJarType(File file, Parsed parsed) {
+		switch (parsed.type) {
+		case OPTIFINE_MOD:
+		case OPTIFINE_INSTALLER:
+		case SOMETHING_ELSE:
+			return null;
+
+		case CORRUPT_ZIP:
+			return "The jar at " + file + " is corrupt";
+
+		default:
+			if (parsed.version == null || parsed.version.isEmpty() || parsed.minecraftVersion == null || parsed.minecraftVersion.isEmpty()) {
+				return "Unable to find OptiFine version from OptiFine jar at " + file;
+			}
+
+			return String.format("This version of OptiFine from %s is not compatible with the current minecraft version"
+					+ "\n\nOptifine requires %s you are running %s", file, parsed.minecraftVersion,
+					FabricLoader.getInstance().getRawGameVersion());
 		}
 	}
 

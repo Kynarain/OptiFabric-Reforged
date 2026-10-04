@@ -5,6 +5,98 @@
 > 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.5`)
 > 与 **26.1.2**(`2.2.5`),所以这一线也有了"逐 MC 版本的版本号"。
 
+## 2.2.6+mc26.2 / 2.2.6+mc26.1.2 — 按平台要求移除运行时下载与进程启动;改为手动安装 + 2.1.0 的提示对话框,并同时提供 GitHub-only 的 `-full` 构建
+
+> 26.x 线的两个产物(`26.2` 与 `26.1.2`)一起升到 2.2.6。**修复逻辑一处未改**。
+
+### 为什么改:平台的审核意见(原文与译文)
+
+CurseForge 的审核**正是**因为这两点拒收了提交,原文:
+
+> 该代码在运行时从外部来源下载 jar 文件,并通过 Windows 内核进程调用重新启动游戏,这可能存在安全风险。请移除运行时下载和进程启动功能。
+
+译文:The code downloads a jar file from an external source at runtime and restarts the game through a
+Windows kernel process call; this may pose a security risk. Remove the runtime download and the
+process-spawning functionality.
+
+这是**平台规则**:上架的那一份产物不能有运行时下载,也不能启动进程。所以本版把这两件事从**默认产物**里删掉,
+并新增一条只放在 GitHub 上的 `-full` 构建保留它们。
+
+### 移除了什么
+
+- **删掉 `OptifineDownloader`**:`java.net.http.HttpClient`、OptiFine 官网两步下载、把 jar 写进 `mods/`、
+  JNA 的 `CreateProcessW` 与非 Windows 的 `ProcessHandle`/`ProcessBuilder` 重启、`-Doptifabric.optifineDownloadTest`;
+- **`build.gradle` 的 JNA 依赖删掉**;
+- **`Util.getPlatform().openUri(...)` / `openFile(...)` 删掉**(它们在 Windows 上会启动进程):标题界面错误对话框
+  改为**复制链接或路径到剪贴板**;
+- **`MissingOptifineScreen` 不再下载**:这个类**整个删掉**(2.1.0 没有它);找不到 OptiFine 时由 2.1.0 的确认对话框出面,屏幕上的文案里没有官网链接,官网地址只在日志与文档里。
+
+### 提示界面:回到 2.1.0 的那一个对话框
+
+初版把「本地文件安装」做成了一张带输入框和按钮的屏幕,后来又把提示做成标题界面上直接画的四行字 —— 两种都不是 2.1.0 的
+样子,也都不是本版的样子。现在**完全回到 2.1.0 的机制**:找不到 OptiFine 时 `OptifineVersion.findOptifineJar()` 设一条
+`OptifabricError` 文案并抛出一个**不致命**的失败,`mixin/MixinTitleScreen` 把它显示成这个 mod 唯一的那一个确认对话框
+(标题 `There was an error loading OptiFabric!`),**没有任何独立的 OptiFine 屏幕类**。
+
+正文就是 2.1.0 的原话(只把写死的 1.20.6 换成正在运行的版本,mods 路径仍插在 2.1.0 插的那个位置):
+
+- 找不到:`OptiFabric could not find the OptiFine jar in the mods folder:` + mods 文件夹**绝对路径** + 空行 +
+  `Download OptiFine for Minecraft <MC 版本> and place it in that folder next to this mod.`;
+- 重复:`Please ensure you only have 1 copy of OptiFine in the mods folder!` + `Found:` 两行路径;
+- 损坏:`The jar at <文件> is corrupt`;
+- 认不出构建:`Unable to find OptiFine version from OptiFine jar at <文件>`;
+- 版本不符:`This version of OptiFine from <文件> is not compatible with the current minecraft version` + 空行 +
+  `Optifine requires <需要> you are running <实际>`。
+
+**平台那段话只在日志和文档里**:找不到 OptiFine 时,日志逐行写出 mods 文件夹路径、搜索过的每一个位置、官网地址
+(`https://optifine.net/downloads`),并写明本产物不带下载器、不启动任何进程、只读用户自己放进 `mods/` 的本地 `file:` jar。
+屏幕上的文案里既没有官网链接,也没有「为什么不再下载」的说明。
+
+对话框的两个按钮**只做复制**(`client.keyboard.setClipboard`):mods 文件夹路径 / 帮助链接;内部错误时是堆栈 / issues
+链接或 logs 路径。**不打开文件夹、不打开网页、不启动任何进程**(2.1.0 的「打开 Mod 文件夹 / 打开帮助」在 Windows 上就是
+`ShellExecute`,属于平台要求删掉的那一类)。
+
+**提示规则**(`OptifinePrompt` 是一个**不画任何界面**的闸门,在标题界面那一步生效):
+
+- 没有 OptiFine → **每次启动**都弹(错误在 finder 里就设好了,和 2.1.0 一样);
+- 装了更老的 **preview** → 同一个对话框,但**每个构建只弹一次**(已提示的构建写进
+  `config/optifabric-mismatch-ack.txt`);
+- SAME / NEWER / 任何正式版 → **从不提示**。
+
+### 合规声明(逐 jar 机器核对)
+
+> This build neither downloads anything nor starts any process at runtime. `java.net.URL`/`URLClassLoader` are
+> used only to read a local `file:` jar that the user placed in `mods/`; there is no HTTP client, no
+> `ProcessBuilder`/`ProcessHandle`/`Desktop`/`CreateProcess`, and no `com.sun.jna`.
+
+每个**上架 jar** 的下载 / 进程 / 启动 token 都是 **0**(HTTP 客户端、`Socket`/`InetAddress`/`URLConnection`/
+`openStream`、`ProcessBuilder`、`ProcessHandle`、`java/lang/Process`、`Desktop`、`CreateProcess`、`ShellExecute`、
+`com.sun.jna` 全部为 0);`-full` 那些 jar 是这次扫描的**正对照** —— 它们确实带着下载器(JNA 的 `CreateProcessW`、
+`ProcessBuilder`、`ProcessHandle`、`com.sun.jna`)。逐 jar 表见 `cf-resume\cp-table.md`。
+
+`java.net.URL` / `java.net.URLClassLoader` 两个 token 在**两种产物里都有**,这正是声明里允许的那一条:它们只用于读取
+用户自己放进 `mods/` 的本地 `file:` jar。
+
+**`System.exit` 那一行要按方法看,不能按 token 看**:`System/exit` 这个 token 在 class 文件里**根本不存在** —— 一次调用
+是常量池里 `java/lang/System` 加 `exit:(I)V` 的 Methodref,所以早先按这个 token 扫出来的「0」是**选错 token 的假象**。
+用 `javap` 逐方法解析后,每个上架 jar 的退出原语只有这两处:`patcher/LambdaRebuilder#main` 的 `System.exit(1)`
+(那个类的离线命令行入口,只有直接运行它才会走到),以及 reforged 线 `mod/C2meCompat#apply` 的 `System.exit(0)`
+(垫片自己结束本次启动,**不启动任何进程**、不联网)。上架 jar **没有 `Runtime.halt`**;`Runtime.halt(0)` 只出现在
+`-full` 的下载器与 `-full` 的垫片里。
+### 两条产物
+
+| 产物 | 内容 | 去处 |
+|---|---|---|
+| `OptiFabric-Reforged-2.2.6+mc<版本>.jar` | **无**运行时下载、**无**进程启动 | CurseForge / Modrinth / GitHub |
+| `OptiFabric-Reforged-2.2.6+mc<版本>-full.jar` | 保留自动下载(只从 optifine.net)与自动重启 | **仅** GitHub |
+
+两者 mod id 相同;**只能装一个**。
+
+### 没有改什么
+
+提示规则逐字未动(没有 OptiFine → 每次启动;更老的 preview → 每个构建一次;final → 从不提示);
+支持表与两个 MC 版本的 OptiFine 构建名未动;所有 fixer 未动;已知限制原样保留。
+
 ## 2.2.5+mc26.2 — 26.x 线的第十版(移植 1.21.x 线重写过的 `LocalSlotLayoutFix`:把游戏自己的局部变量放回游戏声明的槽位)
 
 > **修订号递增的依据**(SemVer §7,规则见 [`docs/VERSIONING.md`](docs/VERSIONING.md)):改动表的这一格是
