@@ -1,5 +1,45 @@
 # 更新日志
 
+## 1.1.3-reforged+mc1.20.6 — 替代产物:自动关掉 c2me 的线程化世界生成(装好就能进世界)
+
+### 新功能
+
+- **`C2meCompat`**:装了 `c2me` 时,启动的 `preLaunch` 第一步把 `config/c2me.toml` 里的
+  `[threadedWorldGen] enabled` 写成 `false` —— **只动这一个键**,其余字节原样保留;第一次修改前把原文件备份到
+  `config/c2me.toml.optifabric-backup`(只备份一次,不覆盖)。
+  - c2me 的元数据里写着 `breaks: { optifabric: "*" }`,所以**只有这一支产物**(mod id `optifabric_reforged`)
+    能让 c2me 加载;而加载之后,`c2me-threading-worldgen` 会注入 OptiFine 重编译过的 `class_3898.method_17224` ——
+    那个成员的字节**自相矛盾**(lambda 描述符 / 注册点压入的实参 / 方法体读的槽位三者对不上),**不可能**在保持
+    游戏签名的同时自洽,所以只能把那个模块关掉。分析见 `docs/REFORGED_BUILD.md` 与 `collision-1206\REPORT.md`。
+  - **尊重显式 `true`**:使用者自己把它写成 `true` 时,垫片**只打印警告、不覆盖**(那个组合进世界必崩)。
+  - **只写一次**:第二次启动看到已经是 `false`,就一个字节都不写。
+  - **开关**:`-Doptifabric.noC2meCompat=true` 完全不碰配置,并在日志里说明。
+  - 只在装了 c2me 时做任何事;没有 c2me 时这一支与已发布产物行为一致。
+- **第一次启动会自己重启一次游戏。** Fabric Loader 先准备所有模组的 mixin 配置、**之后**才调用 `preLaunch`
+  (Loader 0.19.5 的 `Knot.init` 顺序),而 c2me 是在它自己的 mixin 插件 `onLoad` 里读 `config/c2me.toml` ——
+  所以 `preLaunch` 里写的值只对**下一次**启动生效。垫片因此会读回 c2me 本次解析出来的值,只在「必须改 + 本次是开」
+  时用**同一条命令行**重启一次,并在进入世界之前结束当前进程;三重防循环(值本来就已经是关 / 写完之后重新读盘确认 /
+  标记文件只允许一次自动重启)。之后每次启动都是普通启动。
+
+### 验证(本条线自己的实例,pristine `.optifine` 缓存,`-Xmx6G` 让 c2me 的默认值真的是"开")
+
+| `mods/` | 结果 |
+|---|---|
+| 替代产物 1.1.3-reforged + c2me,全新实例(连 `config/c2me.toml` 都没有) | **进世界**,0 个 `/ERROR`(1236 行)。第一次启动:垫片写 `"default" -> false`、备份、自己重启;第二个进程里 `Config threadedWorldGen.enabled changed from true to false` → `Disabling com.ishland.c2me.threading.worldgen.mixin`,垫片打印 `already says … false, nothing to do` |
+| 同一个实例紧接着再跑一次(幂等) | **进世界**,0 个 `/ERROR`;`config/c2me.toml` 前后**是同一个 sha256**,备份仍是原来那一份,垫片打印 `nothing to do (file left untouched)` |
+| 同上,但加 `-Doptifabric.noC2meCompat=true` | **只到主界面**:世界加载崩在 `method_17224`(4 个 `/ERROR`、1 个 `Mixin apply … failed`、3 个 `InvalidInjectionException`、1 个崩溃报告),配置**一个字节没动** |
+| 同上,但配置里显式 `enabled = true` | **只到主界面**:垫片打印警告且不覆盖,文件仍然是 `true`,崩溃与上一行相同 |
+| 替代产物,不带 c2me | **进世界**,0 个 `/ERROR`(967 行) |
+| 替代产物 + sodium | **被我们自己的声明拒载**:`NEG_HARD_DEP optifabric_reforged 1.1.3-reforged+mc1.20.6 {breaks sodium @ [*]}` |
+
+### 说明
+
+- 这一支仍然是**替代产物**:mod id 变了,所以 13 条第三方针对 `optifabric` 的声明(10 个模组)不再生效,
+  而且两个 1.20.6 产物**只能装一个**(实测:同时装会死于 `Non-unique Mixin config name optifabric.mixins.json`)。
+  代价、完整表格与实测见 `docs/REFORGED_BUILD.md`。
+- 它同样带着 `class_3898` 的 lambda 改名修复(59 个成员):没有它,`c2me-opts-scheduling` 的三个 `@Overwrite`
+  与 `c2me-notickvd` 的几个注入都找不到目标。
+
 ## 未发布 — `class_3898` 的 lambda 名字还回去(c2me 进世界那一步)
 
 ### 修了什么

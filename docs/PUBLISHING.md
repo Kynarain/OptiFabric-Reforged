@@ -3,7 +3,7 @@
 本文档记录"把本项目发出去"需要做的步骤。仓库里已经准备好的东西、以及**你还需要自己做的部分**都写在下面。
 
 > 本分支是 **1.20.6 线**(`main`),只出一个 jar:`OptiFabric-1.1.2+mc1.20.6.jar`。
-> 另有 `wip/1.20.6-reforged` 分支出的**替代产物** `OptiFabric-Reforged-1.1.2-reforged+mc1.20.6.jar`
+> 另有 `wip/1.20.6-reforged` 分支出的**替代产物** `OptiFabric-Reforged-1.1.3-reforged+mc1.20.6.jar`
 > (mod id `optifabric_reforged`,与上面那个**只能装一个**;它按自己的 `mod_version` 走,发布与否是另一个决定) —
 > 见 [`REFORGED_BUILD.md`](REFORGED_BUILD.md)。
 > 更新的两条线(1.21.x、26.x)在各自的 worktree/分支上独立开发,各线的 jar **不能互相替代**。
