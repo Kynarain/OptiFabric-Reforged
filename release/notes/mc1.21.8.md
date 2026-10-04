@@ -1,8 +1,129 @@
-# OptiFabric 2.2.6+mc1.21.8
+# OptiFabric 2.2.7+mc1.21.8
 
 **Minecraft 1.21.8** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar`
 
 状态:**已实测正常(含抗锯齿)**
+
+## 2.2.7 的改动
+
+**本版把 Twilight Forest 那条链剩下的五处 OptiFine 重编译损失一起修掉**,1.21.1 上 TF 4.8.734 现在能到标题界面。
+改动集中在三个文件:`ImplicitDiscriminatorMaskFix.java`(新文件,+268)、`InjectionCallPointFix.java`(+64/−6)、
+`OptifineFixer.java`(+106)。没有改资源、映射或元数据。
+
+**先把一句必须说清楚的话写在前面**:上一版 **2.2.6 的发布产物里并没有**这个判别符掩码,也没有 `class_761` 那一处
+调用点。那三个提交(`1f8377b`、`b08241d`、`faa5ad4`)此前只以 **dangling object** 的形式存在于仓库里(在另一个私有
+克隆里做出来的),**从来没有并进 `1.21.x`**。所以用已发布的 2.2.6 jar 普通启动 TF,**6.1 s 就死**,日志里是
+12 条 `invalid IMPLICIT discriminator`(11 条 `Found 2` + 1 条 `Found 3`)。**本版是第一次真的带上这套恢复的版本**,
+不是"延续上一版"。2.2.6 的正文里那句"TF 仍然不支持"因此仍然适用于 2.2.6 本身。
+
+### 链上的五处,按客户端撞上的顺序
+
+1. **隐式判别符掩码 + `class_761` 的调用点**。Porting Lib 的 `porting_lib_blocks` `LevelRendererMixin` 用隐式
+   `@ModifyVariable` 包住方块实体的 `Iterator`,判别符会把方法里从槽位 1 开始的每一个 `Iterator` 型局部变量都数进去;
+   补丁后的类在那个切片的**十二个 store 上各有两个或三个**,于是每个注入点都被丢掉,整个类失败:
+   `@At("STORE" implicit Iterator) has invalid IMPLICIT discriminator ... Found 2 candidate variables but
+   exactly 1 is required`。候选**根本不在类文件的 LocalVariableTable 里**:它们是 Mixin 的 `Locals` 在真实表
+   对那个槽位没有任何在范围内的表项时、从代码生成出来的表项(所以名字才叫 `var26`/`var29`,跟着槽位走),
+   这也正是"改写已有表项"够不到它们的原因。同一个 mixin 的另一个处理器是包在 `BlockState.getLightEmission()` 上的
+   `@WrapOperation`,而 OptiFine 的 `method_23793` 只剩一条**四条指令的转发器**(转给它自己的
+   `getPackedLightmapCoords`),从来没有调用 `class_2680.method_26213`;
+2. **`class_776.method_3353`**(`BlockRenderDispatcher`):OptiFine 的 `method_3353` 是一条**十条指令的转发器**,
+   转给它自己那个七参数的 `renderSingleBlock`,方法体和 `ItemBlockRenderTypes.getRenderType` 调用都在那边。
+   `RestoreVanillaMethodsFix(true, "method_3353")` 把原版方法体放回去;这一步是**先在一份手工改过的补丁缓存上
+   证过**才注册的(把 `method_3353` 换回原版、重算 CRC 后普通启动,`class_776` 那一处消失、运行多走了几秒,
+   下一个失败变成 `class_778` 的);
+3. **`class_778.method_3374`**(`ModelBlockRenderer`):同一个被丢掉的调用,再往后一个类。游戏在 `tesselateBlock`
+   里第 17 条指令调用 `BlockState.getLightEmission()`,OptiFine 改走自己的 `LightCacheOF`/`RenderEnv` 路径,
+   那个调用在整个类里**一次都不剩**。`InjectionCallPointFix` 把调用重建出来;
+4. **`class_915.method_33434`**(`ItemFrameRenderer`):这里是**新形状** —— 调用不是被挪走,而是被**内联**了。
+   游戏问的是 `ItemStack.is(Items.FILLED_MAP)`,OptiFine 编译成了 `getItem() instanceof MapItem`;调用和它的常量参数
+   在方法里都不存在了。MixinExtras 没有针对类型判断的 `@At`,去劫持 `getItem()` 又会改掉游戏里每一个物品,所以
+   诚实的修法还是重建那个调用,只是**参数要从静态字段读**:`InjectionCallPointFix` 为此长了一个
+   `withArgumentField` 工厂(既有的构造函数原样保留)。重建序列是
+   `ALOAD 2 / GETSTATIC class_1802.field_8204 / INVOKEVIRTUAL method_31574 / POP`,放在 mixin 那个分支读的
+   `instanceof` **前面**;两种写法问的是同一个问题,所以被包住的值就是那个分支本来会算出来的值;
+5. **`class_5944`**(`ShaderProgram`):OptiFine 把被委托的 `(class_5912, class_2960, class_293)` 构造函数
+   **内联**进了 String 重载,于是它自己带了一条 `Identifier.of`(`method_60654`)调用,而游戏那里是
+   `Identifier.ofVanilla`(`method_60656`)—— Fabric API 的 `ShaderProgramMixin` 包的正是后者。`VanillaFactoryCallFix`
+   现在也跑在 `<init>` 上。**这条只修到一半,见下面的「只修到一半的那一处」。**
+
+### 判别符掩码做了什么,如实写
+
+它是**写进一个 debug 属性里的一处刻意的类型谎言**:给同一类型里除"要留下的那一个"之外的每个候选槽位,
+**追加**一条覆盖该方法切片的 `Ljava/lang/Object;` 表项。JVM 校验器读的是 `StackMapTable`、`max_locals`、
+异常表和代码,**从不读 LocalVariableTable**,所以类照常校验、照常运行;真正会看见这条表项的,只有读局部变量表的东西
+—— 首先是 Mixin 自己的 `Locals`(这正是目的),其次是 MixinExtras 的 `@Local` 糖、调试器、agent 和字节码扫描器,
+而且**只在配置好的那个切片范围内**。
+
+为什么是"追加"而不是"改写":Mixin 取局部变量的类型走 `Locals.getLocalVariableAt`,它先读随类发布的那张
+LocalVariableTable,一旦某个槽位在范围内**没有**表项,就退回到 ASM 自己按数据流生成的那张表。有歧义的候选通常正是
+生成表里的那些。而 `getLocalVariableAt` 按顺序扫描、**保留最后一个范围内命中的表项**,所以追加在末尾的这条会同时
+压过发布表与生成表。它不动基本类型、不动参数槽位、不新建也不删除局部变量,也不改代码、槽号、范围、名字或
+`maxLocals`。它是**按(类、方法、捕获类型、切片)逐条注册的可选项**:那个形状不在了(找不到切片两条边界、同类型
+局部变量不足两个、或者方法根本没有真实局部变量表),它什么都不做。
+
+### 只修到一半的那一处(`class_5944`)
+
+`VanillaFactoryCallFix("<init>")` 把"包错了工厂"改成了"包对了工厂",但**没有消掉资源包被丢掉这件事**:Fabric
+自己的处理器仍然在**这条被重建出来的调用**上抛 NPE(`Cannot invoke "String.indexOf(int)" because "stringIn" is
+null`,`class_2960.method_12838` ← `method_60654` ← `FabricShaderProgram.rewriteAsId`),因为 `allow = 1`
+(没有 `require`)允许 MixinExtras 在无法捕获参数的情况下照样包上去。也就是说崩溃轨迹从"mixin 没应用"变成了
+"mixin 应用了、它的处理器自己抛"。**这是本链唯一一处没有修完的地方,不致命**:客户端照常走到标题界面,
+只是**一个资源包也不剩**。它不是那个"标题界面之后停住"的原因 —— 没有 TF 的对照臂行为相同、停在同一处,
+而 1.21.6 / 1.21.8(那两版 `class_915` 与 `class_5944` 都不触发)连一条资源包错误都不打。
+
+### 实测(普通启动,`-Xmx2048M`,没有任何 debug 开关)
+
+TF `twilightforest-fabric-1.21.1-4.8.734.jar` + `fabric-api-0.116.17+1.21.1.jar` + 本 jar + OptiFine
+`OptiFine_1.21.1_HD_U_J1.jar`,1.21.1 / Fabric Loader 0.19.5。**五个链上修复都在这份日志的标准输出里**
+(`Masked java.util.Iterator local(s) …`、`Re-created the injection point … class_2680.method_26213()I in
+… class_761.method_23793`、`Restored vanilla … class_776.method_3353(…)V`、`Re-created … in
+… class_778.method_3374`、`Re-created … class_1799.method_31574(Lnet/minecraft/class_1792;)Z in
+… class_915.method_33434`、`… class_5944: 1 factory call(s) aligned with the game`)。
+
+计数器(逐条都是 0):
+
+| 计数 | 条数 |
+| --- | --- |
+| `/ERROR` | 0 |
+| `Cannot @Coerce` | 0 |
+| `InvalidInjectionException` | 0 |
+| `Mixin apply … failed` | 0 |
+| `Mixin transformation of … failed` | 0 |
+| `LVTGeneratorError` | 0 |
+| `SugarApplicationException` | 0 |
+| `expected N invocation(s)` | 0 |
+| `Minecraft has crashed` | 0 |
+| `invalid IMPLICIT discriminator` | 0 |
+| `[Server thread]` | 0 |
+
+**这一版是"到标题界面",不是"能玩"**:TF 到了标题界面就没再往前走 —— 而且**挡住它的不是 TF**:同一套
+OptiFabric + OptiFine 在 1.21.1 上**不装** TF 也一样停在标题界面之后(标题 12.0 s / 一直等到 156 s,
+`[Server thread]` 从未出现)。所以本版**不声称** TF 可以进世界、可以玩,也不声称那个停住被修了 ——
+它是一件**独立的事**,本版既没有造成它,也没有解释它。
+
+### 与 2.2.6 / 2.2.4 的产物差别
+
+条目级比对(每个条目都取哈希):相对已发布的 **2.2.6**,新增 1 个类
+(`ImplicitDiscriminatorMaskFix.class`),2 个类的内容变了(`InjectionCallPointFix.class`、
+`OptifineFixer.class`),**没有**探针、没有多余的条目;相对 **2.2.4** 的差别是上述三类再加上 2.2.5 / 2.2.6 已经发布的
+那些类(逐条列在下面的核对表里)。
+
+### 边界(别把这一版读大)
+
+- **每个臂只启动一次**,一个实例副本、一个预置存档,**没有光影包、没有压测、没有长时间游玩、没有多人**。
+  `PASS` 的定义是**到标题界面**(日志出现 `Sound engine started`);只有明确写了「进世界」的行才声称进过世界,
+  本版一行都没有;
+- **TF 那一臂只跑了 1.21.1**;ShoulderSurfing 那一臂(局部变量表重写当初就是拿它验证的)也只跑了 1.21.1;
+  其余九个版本各做了一次**不带 TF** 的标题界面启动,结果见本版发布说明的核对表;
+- **1.21.6 / 1.21.8 上两处修复会照常触发**(`class_776` 与 `class_778` 的形状在这两版也在),另两处不触发;
+  掩码在那两版是 no-op(切片指令是 1.21.1 的)。两版都到标题界面、失败计数器全 0;
+- **`/ERROR` 计数只有 0 才算干净**:测试台自己的 `options.txt` JsonSyntaxException
+  (`Failed to load options` / `MalformedJsonException at line 1 column 3`)与离线导致的 401
+  (`Failed to fetch user properties`、`Failed to fetch Realms feature flags`)是**已知的台架噪声**,出现时会逐条点名;
+  计数用的是普通的 `/ERROR` 匹配 —— 老的正则 `'\] /?ERROR'` 受 PowerShell 转义影响,**从来没有匹配到过任何东西**;
+- 本版的实测是在**同一提交**构建的 jar 上做的,与随发布上传的产物**只差 `fabric.mod.json` 里的版本串**
+  (已逐条目比对)。
 
 ## 2.2.6 的改动
 
