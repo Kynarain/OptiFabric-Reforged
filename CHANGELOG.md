@@ -1,5 +1,71 @@
 # 更新日志
 
+## 2.2.8+mc1.21 … 2.2.8+mc1.21.11 — 按平台要求移除运行时下载与进程启动;改为「本地文件安装」,并同时提供 GitHub-only 的 `-full` 构建
+
+> 这一版覆盖全部 10 个产物。**没有任何修复逻辑被改动**:补丁管线、`LocalSlotLayoutFix`、`AddInterfaceFix`、
+> `InjectionCallPointFix`、`LambdaMethodRefFix`、`SyntheticFieldFix`、`RestoreVanillaMethodsFix`、
+> `VanillaFactoryCallFix`、`ImplicitDiscriminatorMaskFix`、mod id、支持表与提示规则全部与 2.2.7 一致。
+
+### 为什么改:平台的审核意见(原文与译文)
+
+CurseForge 的审核**正是**因为这两点拒收了提交,原文:
+
+> 该代码在运行时从外部来源下载 jar 文件,并通过 Windows 内核进程调用重新启动游戏,这可能存在安全风险。请移除运行时下载和进程启动功能。
+
+译文:The code downloads a jar file from an external source at runtime and restarts the game through a
+Windows kernel process call; this may pose a security risk. Remove the runtime download and the
+process-spawning functionality.
+
+这是**平台规则**,不是我们自己的取舍:上架到 CurseForge / Modrinth 的那一份产物不能有运行时下载,也不能启动进程。
+所以本版把这两件事从**默认产物**(上架用的、没有后缀的那一个)里彻底删掉,并新增一条只放在 GitHub 上的
+`-full` 构建保留这两个便利功能(见下)。
+
+### 移除了什么
+
+- **删掉 `OptifineDownloader`**:HTTP 客户端(`java.net.http.HttpClient`)、OptiFine 官网两步下载、把下载到的
+  jar 写进 `mods/`、JNA 的 `CreateProcessW`(Windows)与非 Windows 的 `ProcessHandle`/`ProcessBuilder` 重启、
+  以及 `-Doptifabric.optifineDownloadTest=...` 自测入口,全部随这个类一起消失;
+- **`build.gradle` 里的 JNA 依赖删掉**:不再加载任何本地库;
+- **`Util.getOperatingSystem().open(...)` 删掉**(Windows 上它就是 `ShellExecute`,属于启动进程):标题界面错误
+  对话框的「打开 Mod 文件夹 / 打开帮助 / 打开 issues / 打开日志」改为**把链接或路径复制到游戏自己的剪贴板**
+  (`client.keyboard.setClipboard`);
+- **`MissingOptifineScreen` 不再下载**:官网地址作为**文本**显示(必显行,并写进日志),按钮改为「复制官网链接」。
+
+### 新增:本地文件安装(仍然不联网、不启动进程)
+
+屏幕上多了一个输入框:把**你已经下载好的 OptiFine jar 的路径**粘进去,点「从本地文件安装」,`OptifineLocalInstall`
+校验后把它**复制**进 `mods/`(只做本地文件 I/O):
+
+| 校验 | 不通过时的提示 |
+|---|---|
+| 必须存在、是可读的普通文件 | `找不到文件 …` / `… 不是可读文件。` |
+| 必须是带 OptiFine `Config.class` 的 zip(本线十个构建在 `notch/` 下) | `… 不是 OptiFine jar(里面没有 net/optifine/Config.class)。` |
+| 能读出 `MC_VERSION` 时必须与当前实例的 MC 一致 | `… 是给别的 Minecraft 版本的 OptiFine;这个实例跑的是 …` |
+| `mods/` 里不能已经有另一个 OptiFine | `mods 文件夹里已经有另一个 OptiFine(…)。只能放一个,请先移除它。` |
+| 同名文件已存在时**绝不覆盖** | 可用 OptiFine → `… 已经在 mods 文件夹里,没有复制任何文件。`;否则 → `请先改名或删除` |
+
+**粘贴的是网址时不下载**:`http://` / `https://` / 任何含 `://` 的文本会被拒绝,并提示先用浏览器从官网下载、
+再粘贴本地路径。安装成功后屏幕与日志都写「OptiFabric 不会自行重启:请手动重新启动游戏以加载 OptiFine。」
+
+### 两条产物:默认(上架)与 `-full`(仅 GitHub)
+
+| 产物 | 内容 | 去处 |
+|---|---|---|
+| `OptiFabric-2.2.8+mc<版本>.jar` | **无**运行时下载、**无**任何进程启动/重启 | CurseForge / Modrinth / GitHub |
+| `OptiFabric-2.2.8+mc<版本>-full.jar` | 保留自动下载(只从 optifine.net)与自动重启 | **仅** GitHub |
+
+两者 **mod id 相同**,所以配置与世界通用;**只能装一个**。`-full` 是「同一版修复 + 那两个便利功能」,
+不是绕过审核:上架的那一份确实没有这两项能力。
+
+### 没有改什么(可复核)
+
+- 提示规则逐字未动:没有 OptiFine → **每次启动**都提示;装了更老的 preview → **每个构建提示一次**;
+  任何 final 构建 → **从不提示**;
+- 支持表(`OptifineSupport.BUILDS`)与十个 MC 版本的 OptiFine 构建名未动;
+- `LocalSlotLayoutFix` / `AddInterfaceFix` / `InjectionCallPointFix` / `LambdaMethodRefFix` / `SyntheticFieldFix` /
+  `RestoreVanillaMethodsFix` / `VanillaFactoryCallFix` / `ImplicitDiscriminatorMaskFix` 未动;
+- 已知限制(1.21.6 / 1.21.7 的光影崩溃、sodium 冲突声明等)原样保留。
+
 ## 2.2.7+mc1.21 … 2.2.7+mc1.21.11 — 把 Twilight Forest 那条链剩下的五处 OptiFine 重编译损失一起修掉:1.21.1 上的 TF 到标题界面了
 
 > 这一版覆盖全部 10 个产物。它修的是一条**链**上剩下的五处损失(隐式判别符掩码 + 四处调用点),
