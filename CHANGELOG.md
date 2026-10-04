@@ -4,7 +4,8 @@
 
 > 这一版覆盖全部 10 个产物。**没有任何修复逻辑被改动**:补丁管线、`LocalSlotLayoutFix`、`AddInterfaceFix`、
 > `InjectionCallPointFix`、`LambdaMethodRefFix`、`SyntheticFieldFix`、`RestoreVanillaMethodsFix`、
-> `VanillaFactoryCallFix`、`ImplicitDiscriminatorMaskFix`、mod id、支持表与提示规则全部与 2.2.7 一致。
+> `VanillaFactoryCallFix`、`ImplicitDiscriminatorMaskFix`、mod id、支持表与提示规则全部与 2.2.7 一致;**唯一**
+> 例外是下面写明的 `class_5944` 补完(2.2.7 那一处「只修到一半」)。
 
 ### 为什么改:平台的审核意见(原文与译文)
 
@@ -19,6 +20,40 @@ process-spawning functionality.
 这是**平台规则**,不是我们自己的取舍:上架到 CurseForge / Modrinth 的那一份产物不能有运行时下载,也不能启动进程。
 所以本版把这两件事从**默认产物**(上架用的、没有后缀的那一个)里彻底删掉,并新增一条只放在 GitHub 上的
 `-full` 构建保留这两个便利功能(见下)。
+
+**这一版还带着一条 Twilight Forest 的最新测量**,与上面的 `class_5944` 补完一起写在这里:2.2.8 拿掉了启动崩溃、
+把 TF 送到标题界面 (**1.21.1**,`twilightforest-fabric-1.21.1-4.8.734` + `fabric-api-0.116.17+1.21.1` + 本 jar +
+`OptiFine_1.21.1_HD_U_J1`),而且同一套 jar 上一轮专门的调查(**11 个带 TF 的臂**)量到它**确实能进世界,但是间歇性的**:TF 那一套 **11 个臂
+里进了 4 个**(入场 46.7 s / 约 50 s / 约 50 s / **122.7 s**),同一台机器上不带 TF 的对照 **3/3** 进了世界。失败的那些臂
+**没有任何异常**,停在世界数据包读完、集成服务端启动之前,Render thread 闲在标题界面的帧循环里(自建的
+`-javaagent` 探针:零条未捕获 throwable、没有死锁、`Server thread` 从未被创建)—— 是**一处「世界打开的交接」被丢掉,不是本模组的
+代码**。**别急着判它卡死,也别忘了重试**(四次成功里有两次发生在一次失败之后,而最慢的那次是标题界面后 **122.7 s** 才进场):
+给世界加载 **两到三分钟** 再下结论;真没打开就关掉客户端再启动一次,失败时存档不会坏(**没有东西要修**)。另外:
+**不要压帧率**(那一套实例是 `maxFps:5`,交接跑在 render thread 的帧循环上),并**优先从标题界面点开世界**而不是
+launcher 的 quick-play(后者没有量过,是第一个该试的方向)。**边界**:那一组只有 **11 个带 TF 的臂和 3 个对照臂**,没有光影包、没有世界内压测、
+没有多人、没有进 TF 维度,只有一个预置存档,而且只跑了 1.21.1 —— 所以**进世界是间歇性的,本版没有修它,也不声称
+修了它**;`release/notes/mc<版本>.md` 里有同一段更细的写法。
+
+### 唯一的修复逻辑改动:`class_5944` 的那一处补完(ShaderProgram,影响所有注册核心着色器的模组)
+
+> 2.2.7 的「只修到一半的那一处」在这里补完。这是本版**唯一**改动补丁逻辑的地方,其余 fixer 与支持表逐字未动。
+
+`DelegatingConstructorFix.parameterState()` 现在会把游戏自己构造函数里、从 String 参数发出的 `PUTFIELD` **重放**在
+重建出来的调用**前面**,于是 Fabric API 的 `ShaderProgramMixin` 拿到的不再是 `null`:
+
+- **症状**:Fabric API 的 `ShaderProgramMixin` 包住 `ShaderProgram` 里的 `Identifier.ofVanilla`,`modifyId` 处理器随后用
+  **被 shadow 的 name 字段**去构造 Identifier(`FabricShaderProgram.rewriteAsId(id, this.field_29494)` → `Identifier.of(containedId)`)。
+  游戏自己的构造函数在 `ofVanilla` 调用**之前**就把那个字段从 String 参数存好了,所以处理器总能看到值;
+  OptiFine 重编译后的 `class_5944` 没有这个存储 —— 它的 String 重载委托给 `(provider, Identifier, format)` 构造函数,
+  字段由 identifier 派生。`DelegatingConstructorFix` 把那具身体内联进 String 重载、并在 `super()` 之后立刻用游戏自己的
+  工厂建 identifier,**恰好就是被 wrap 的那次调用**;内联后的形状里字段唯一的存储点在调用**之后**,于是处理器拿到 `null`,
+  `Identifier.of(null)` 在第一次资源重载时就抛;
+- **后果**:客户端**把每一个资源包都丢掉**,quick-play 请求也永远不会被受理。它影响的是**任何**通过
+  `CoreShaderRegistrationCallback` 注册核心着色器的模组 —— PortingLib 的 `rendertype_entity_unlit_translucent`
+  (在 Twilight Forest 4.8.734 里)只是第一个跑到那儿的;
+- **修法**:把游戏自己的那几条存储语句重放到重建调用之前。处理器那次 rewrite 于是退化成恒等,而方法体自己派生字段与
+  着色器位置的那一半不变(对同一个 Identifier 两者都得到 `namespace:path`);
+- **实测**(1.21.1,普通启动):`stringIn` NPE **2 → 0**、`CompletionException` **1 → 0**、资源包被丢掉 **1 → 0**。
 
 ### 移除了什么
 
@@ -184,7 +219,8 @@ debug 开关的台架**;debug 开关在这里会把"静默没生效的注入"变
 `Minecraft has crashed`);那次复核的 `/ERROR` 只有一条,是环境的(`Failed reading REFMAP JSON … 'mapper' is
 null`,forgeconfigapiport)—— 它在**不带 TF、照样进世界**的那一臂里也在。
 
-**但 TF 没有进世界**,300 s 与 600 s 两次都没有:预置存档的 `level.dat` **一个字节都没动**(两次都是 2,299 B、
+**那两臂里 TF 没有进世界**(300 s 与 600 s 两次都没有)—— **注意:2.2.8 后来量到了进世界,
+而且是间歇性的,见上面 2.2.8 那一节**;预置存档的 `level.dat` **一个字节都没动**(两次都是 2,299 B、
 同一个修改时间、同一个 SHA-256),日志停在第一次资源重载结束的那一刻,此后整个窗口一个字都不再写。这不是推断:
 对冻住的 600 s 客户端做过一次 `jstack`,**进程里根本没有 Server thread,也找不到任何 `MinecraftServer` /
 `IntegratedServer` 帧**,Render thread 停在原版的标题界面帧循环里(`glfwWaitEventsTimeout ←

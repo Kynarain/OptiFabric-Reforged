@@ -6,9 +6,10 @@
 
 ## 2.2.8 的改动
 
-**本版把 Twilight Forest 那条链剩下的五处 OptiFine 重编译损失一起修掉**,1.21.1 上 TF 4.8.734 现在能到标题界面。
-改动集中在三个文件:`ImplicitDiscriminatorMaskFix.java`(新文件,+268)、`InjectionCallPointFix.java`(+64/−6)、
-`OptifineFixer.java`(+106)。没有改资源、映射或元数据。
+**本版把 Twilight Forest 那条链剩下的五处 OptiFine 重编译损失一起修掉**,1.21.1 上 TF 4.8.734 现在能到标题界面,
+并且**已经量到过进世界,但只是间歇性的(11 个带 TF 的臂里进了 4 个)**(见下面「TF 进世界是间歇性的」)。改动集中在三个文件:
+`ImplicitDiscriminatorMaskFix.java`(新文件,+268)、`InjectionCallPointFix.java`(+64/−6)、`OptifineFixer.java`(+106);
+外加把「只修到一半」的 `class_5944` 补完(同见下)。没有改资源、映射或元数据。
 
 **先把一句必须说清楚的话写在前面**:上一版 **2.2.6 的发布产物里并没有**这个判别符掩码,也没有 `class_761` 那一处
 调用点。那三个提交(`1f8377b`、`b08241d`、`faa5ad4`)此前只以 **dangling object** 的形式存在于仓库里(在另一个私有
@@ -62,15 +63,30 @@ LocalVariableTable,一旦某个槽位在范围内**没有**表项,就退回到 A
 `maxLocals`。它是**按(类、方法、捕获类型、切片)逐条注册的可选项**:那个形状不在了(找不到切片两条边界、同类型
 局部变量不足两个、或者方法根本没有真实局部变量表),它什么都不做。
 
-### 只修到一半的那一处(`class_5944`)
+### 补完了那一处(`class_5944`):ShaderProgram 的 null,影响所有注册核心着色器的模组
 
-`VanillaFactoryCallFix("<init>")` 把"包错了工厂"改成了"包对了工厂",但**没有消掉资源包被丢掉这件事**:Fabric
-自己的处理器仍然在**这条被重建出来的调用**上抛 NPE(`Cannot invoke "String.indexOf(int)" because "stringIn" is
-null`,`class_2960.method_12838` ← `method_60654` ← `FabricShaderProgram.rewriteAsId`),因为 `allow = 1`
-(没有 `require`)允许 MixinExtras 在无法捕获参数的情况下照样包上去。也就是说崩溃轨迹从"mixin 没应用"变成了
-"mixin 应用了、它的处理器自己抛"。**这是本链唯一一处没有修完的地方,不致命**:客户端照常走到标题界面,
-只是**一个资源包也不剩**。它**不是** TF 那一臂进不去世界的原因 —— **不带 TF 的那一套一个资源包也没有,却照常进
-世界**(见下),而 1.21.6 / 1.21.8(那两版 `class_915` 与 `class_5944` 都不触发)连一条资源包错误都不打。
+2.2.7 只把「包错了工厂」改成「包对了工厂」;2.2.8 把那一处**补完**,从 2.2.7 的「只修到一半」变成修完。抛 NPE 的那条
+null **不是**被重建调用的实参,而是 Fabric API 用 `@Shadow` 读到的 `ShaderProgram.field_29494`(名字字段),四点是
+逐字节看出来的:
+
+1. `FabricShaderProgram.rewriteAsId(String, String)` 的第一条指令是 `aload_1` → `class_2960.method_60654`
+   (`Identifier.of`),也就是**第二个形参**被拿去建 Identifier;
+2. `ShaderProgramMixin.modifyId(String, Operation)` 交进去的第二个实参就是 `this.field_29494`;
+3. 游戏自己的构造函数**先**把 String 形参写进这个字段、**再**建 location(OptiFine 重编译后的 `class_5944`
+   没有那次写入,字段由 `(provider, Identifier, format)` 那个构造函数反推);
+4. PortingLib 传进来的 shader id **不是 null**(`twilightforest:rendertype_entity_unlit_translucent`)。
+
+`DelegatingConstructorFix.parameterState()` 现在把游戏自己构造函数里、从 String 参数发出的 `PUTFIELD` **重放**在
+重建出来的调用**前面**,处理器那次 rewrite 于是退化成恒等。**它影响的是任何**通过
+`CoreShaderRegistrationCallback` 注册核心着色器的模组 —— PortingLib 那条
+`rendertype_entity_unlit_translucent`(在 Twilight Forest 4.8.734 里)只是第一个跑到那儿的。修后的补丁器输出:
+`The inlined (…)V fills 1 field(s) from its String parameter before the re-created call, as the game's own
+constructor does`。
+
+**更正(2.2.7 正文里那句当默认值的一般结论)**:「不是 TF 那一臂进不去世界的原因」这句原是拿**不带 TF 的那一套**
+(它一个资源包也不剩却照常进世界)推出的;本轮 8 臂的实测量到带 TF 的那一套**本身就能进世界**,而资源包那一步
+修与不修都不改变进世界的成败。实测(1.21.1,普通启动):`stringIn` NPE **2 → 0**、`CompletionException` **1 → 0**、
+资源包被丢掉 **1 → 0**,资源重载从两次变一次。
 
 ### 实测(普通启动,`-Xmx2048M`,没有任何 debug 开关)
 
@@ -97,32 +113,49 @@ TF `twilightforest-fabric-1.21.1-4.8.734.jar` + `fabric-api-0.116.17+1.21.1.jar`
 | `invalid IMPLICIT discriminator` | 0 |
 | `[Server thread]` | 0 |
 
-**这一版是"到标题界面",不是"能玩";而"挡住它的不是 TF"这句现在作废**:2.2.8 拿掉了启动崩溃、把 TF 送到标题界面,
-但 **TF 能不能进世界已经量过了,答案是不能**。
+**这一版是"到标题界面",而且已经量到过进世界;进世界是间歇性的**:2.2.8 拿掉了启动崩溃、把 TF 送到标题界面,
+并且**八次尝试里有三次进了世界**(见下)。
 
-先说那句作废的观测是怎么来的:**"同一套 OptiFabric + OptiFine 不装 TF 也一样停在标题界面之后"出自一个带 Mixin
-debug 开关的台架**;debug 开关在这里会把"静默没生效的注入"变成致命错误,同一原因当天已经造成过一次撤回。
-**普通启动的复核与它相反**:不带 TF 的那一套(`fabric-api 0.116.17+1.21.1` + 本 jar `2.2.8+mc1.21.1` +
-`OptiFine_1.21.1_HD_U_J1`)**能进世界,4/4 次**(标题界面之后 25.7 / 29.0 / 32.2 s 入场,每一次 `level.dat` 的
-修改时间都前移,日志里有 `Starting integrated minecraft server version` 与 `logged in with entity id`);
-更早一次同样的裸装也是 3/3 进世界。所以**本版收回"挡住它的不是 TF"这个说法**。
+带 TF 的那一套(TF `twilightforest-fabric-1.21.1-4.8.734.jar` + `fabric-api-0.116.17+1.21.1.jar` + 本 jar +
+`OptiFine_1.21.1_HD_U_J1.jar`)在 2.2.8 上**到标题界面**(300 s 那次 46.8 s,600 s 那次 25.8 s),致命计数器
+**逐条为 0**(`Cannot @Coerce`、`InvalidInjectionException`、`Mixin apply … failed`、
+`Mixin transformation of … failed`、`LVTGeneratorError`、`SugarApplicationException`、`Minecraft has crashed`);
+那次复核的 `/ERROR` 只有一条,是环境的(`Failed reading REFMAP JSON … 'mapper' is null`,forgeconfigapiport)
+—— 它在**不带 TF、照样进世界**的那一臂里也在。
 
-带 TF 的那一套(上面那一串再加 `twilightforest-fabric-1.21.1-4.8.734`)在 2.2.8 上**到标题界面**(300 s 那次
-46.8 s,600 s 那次 25.8 s),致命计数器**逐条为 0**(`Cannot @Coerce`、`InvalidInjectionException`、
-`Mixin apply … failed`、`Mixin transformation of … failed`、`LVTGeneratorError`、`SugarApplicationException`、
-`Minecraft has crashed`);那次复核的 `/ERROR` 只有一条,是环境的(`Failed reading REFMAP JSON … 'mapper' is
-null`,forgeconfigapiport)—— 它在**不带 TF、照样进世界**的那一臂里也在。
+### TF 进世界是间歇性的(本轮新量到;这一条修正了本版早先的"不能")
 
-**但 TF 没有进世界**,300 s 与 600 s 两次都没有:预置存档的 `level.dat` **一个字节都没动**(两次都是 2,299 B、
-同一个修改时间、同一个 SHA-256),日志停在第一次资源重载结束的那一刻,此后整个窗口一个字都不再写。这不是推断:
-对冻住的 600 s 客户端做过一次 `jstack`,**进程里根本没有 Server thread,也找不到任何 `MinecraftServer` /
-`IntegratedServer` 帧**,Render thread 停在原版的标题界面帧循环里(`glfwWaitEventsTimeout ←
-RenderSystem.limitDisplayFPS`)。也就是说客户端一直闲在标题界面,**那个存档从来没有被打开过**。这是一处
-**进世界之前的空档**,不是"世界加载到一半卡住",也和本版别处记的那段"标题界面之后停住"(世界已经开着、停在
-世界/区块那一侧)不是同一个形状。
+本版早先写的是「TF 没有进世界,两次都没有」;那是**另外几臂**的测量。本轮专门量了这一件事:
+**11 个带 TF 的臂**(`tf-must`,同一套 jar、同一台机器、同一份按文件 SHA-256 校验过的预置存档、每个臂自己的实例副本):
 
-**所以本版只能说到这儿**:2.2.8 修掉了启动崩溃、把 TF 送到标题界面;TF 能不能进世界现在已经量过了,答案是不能,
-形状如上;**本版没有修它,也不声称修了它** —— 它是谁的责任、为什么不动,本轮**没有量**,这里一个字都不写。
+| 那一套 | 进世界 |
+| --- | --- |
+| 不带 TF(fabric-api + 本 jar + OptiFine) | **3/3**(标题界面之后 20.3 / 20.4 / 20.6 s) |
+| 带 TF(再加 `twilightforest-fabric-1.21.1-4.8.734`) | **4/11**(入场 46.7 s / 约 50 s / 约 50 s / **122.7 s**) |
+
+- 进去的那四臂有完整的证据:日志里 `Applied 0 biome modifications to 0 of 86 new biomes`、
+  `Starting integrated minecraft server version 1.21.1`、`logged in with entity id 70`,并且预置存档的
+  `level.dat` 被改写(2,303 B → 2,439 B,`01E5A1B6…` → `8C1C7514…`);
+- 没进的那七臂**没有任何异常**:日志停在 `Loaded 1944 advancements` 之后,再没有一个字。用一支自建的
+  `-javaagent` 探针(装上 JVM 的默认未捕获异常处理器、每秒两次采样全部线程)量到:**零条未捕获 throwable、
+  没有死锁、`Server thread` 从未被创建**;Render thread 一直闲在标题界面的帧循环里(`glfwWaitEventsTimeout ←
+  RenderSystem.limitDisplayFPS`),`jcmd Thread.print` 与探针上看到的是同一幅画面;`level.dat` 一个字节没动,
+  下一次启动仍能正常打开同一个存档;
+- **别急着判它卡死**:四次成功里有两次发生在一次失败之后,而最慢的那次是标题界面**之后 122.7 s** 才进场 —— 所以
+  **给世界加载两到三分钟**再下结论;真没打开时,关掉客户端再启动一次,失败的那次不会弄坏存档(**没有东西要修**),
+  下次照常打开;
+- **不要压帧率**:那一套实例的 `options.txt` 里 `maxFps:5`(不是本 rig 压的),而这一步「世界打开的交接」跑在
+  render thread 的帧循环上;
+- **优先从标题界面点开世界**,而不是启动器的 quick-play/自动进场(`--quickPlaySingleplayer`)。**这一条本轮没有量**,
+  只是按上面顺序试完之后第一个该试的方向。
+
+**边界(别把这一条读大)**:这一组只有 **11 个带 TF 的臂**和 3 个对照臂,**样本很小**;
+**没有光影包、没有世界内压测、没有多人、没有进 TF 维度**;只有一个预置存档、只跑了 **1.21.1**(1.21.6 / 1.21.8
+两版带 TF 的臂**没有跑**)。挡住它的那一处**是一个「世界打开的交接」被丢掉,不是本模组的代码**:
+带 TF 的臂和不带 TF 的臂打的是同一份补丁器输出,包括 `class_5944` 那三行。
+
+**所以本版的说法是**:2.2.8 修掉了启动崩溃、把 TF 送到标题界面,并**量到过进世界(11 次里 4 次)**;
+**进世界是间歇性的,本版没有修它,也不声称修了它**;失败了就再启动一次,没有东西要修。
 
 ### 与 2.2.6 / 2.2.4 的产物差别
 
@@ -135,9 +168,12 @@ RenderSystem.limitDisplayFPS`)。也就是说客户端一直闲在标题界面,*
 
 - **每个臂只启动一次**,一个实例副本、一个预置存档,**没有光影包、没有压测、没有长时间游玩、没有多人**。
   `PASS` 的定义是**到标题界面**(日志出现 `Sound engine started`);只有明确写了「进世界」的行才声称进过世界,
-  下面那张逐版本表里一行都没有(那十次都只跑到标题界面);
-- **TF 那一臂只跑了 1.21.1**;ShoulderSurfing 那一臂(局部变量表重写当初就是拿它验证的)也只跑了 1.21.1;
+  下面那张逐版本表里一行都没有(那十次都只跑到标题界面),1.21.1 那两次进世界是另外一组臂量到的;
+- **所有带 TF 的世界进入测量都只跑了 1.21.1**;1.21.6 / 1.21.8 只做了**不带 TF** 的标题界面启动;
+  ShoulderSurfing 那一臂(局部变量表重写当初就是拿它验证的)也只跑了 1.21.1;
   其余九个版本各做了一次**不带 TF** 的标题界面启动,结果见本版发布说明的核对表;
+- **进世界那一组只有 11 个带 TF 的臂和 3 个对照臂**(`tf-must`,一个预置存档、每个臂一次启动),
+  没有光影包、没有世界内压测、没有多人、没有进 TF 维度;`4/11` 只是这一组的比例,不是稳定的复现率;
 - **1.21.6 / 1.21.8 上两处修复会照常触发**(`class_776` 与 `class_778` 的形状在这两版也在),另两处不触发;
   掩码在那两版是 no-op(切片指令是 1.21.1 的)。两版都到标题界面、失败计数器全 0;
 - **`/ERROR` 计数只有 0 才算干净**:测试台自己的 `options.txt` JsonSyntaxException
@@ -560,9 +596,9 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.8+mc1.21.6.jar` — 895372 字节
+`OptiFabric-2.2.8+mc1.21.6.jar` — 896204 字节
 
-`SHA-256: 2D27BDF72BA21D44CA6C748B56C7F981F71822B97D9F8A5C20B5A11A548AA3B3`
+`SHA-256: 101BA66557855402A854D589DAE8D403C837305600A9840E834578B6075E78ED`
 ---
 
 ## 这一版有两条产物(装之前请看这一段)

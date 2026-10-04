@@ -1,7 +1,14 @@
 # 兼容性:1.21.1 实测扫描的结果
 
 > 本文件汇总一次**实测**兼容性扫描:**OptiFabric Reforged 2.2.1 + OptiFine** 搭配 1.21.1 上流行的 Fabric 模组。
-> 它只汇报测量结果,不做宣传。完整数据(每一行、每一句原始日志、方法与限制)在
+> 它只汇报测量结果,不做宣传。
+>
+> **本快照里有一行后来重新量过:The Twilight Forest。** 下面它那条 FAIL 是 **2.2.1 时代、只判"到标题界面"** 的结果;
+> 在 **2.2.8** 上专门做的那次调查量到它在 1.21.1 上**能进世界,但是间歇性的**(带 TF 的那一套 11 个臂里 4 个,
+> 不带 TF 的同一套 3/3),重试有效、丢掉的那次不会弄坏存档。见第五、第六节,以及当前数字:
+> [`RELEASE_NOTES.md`](RELEASE_NOTES.md) 与 `release/notes/mc1.21.1.md`。
+>
+> 完整数据(每一行、每一句原始日志、方法与限制)在
 > [`docs/compatibility/`](compatibility/)(先看 [`INDEX.md`](compatibility/INDEX.md));
 > 声明式的不兼容清单见 [`README_CN.md`](../README_CN.md#声明的不兼容以及加载器实际会怎么做)。
 
@@ -136,6 +143,13 @@ unexplained,而它的逐行数据只给出 **3** 条(第 4 条是 `carpet-fixes`
   (`mixin-transform`,涉及 `class_156` / `class_638`)—— 但它是**只发在 CurseForge** 的 1.21.1 Fabric 移植,
   且不带 OptiFine 的对照**同样失败**(原因不同),因此归属是 `mod-broken-on-plain-fabric`:**不能算到 OptiFabric 头上**。
   只扫 Modrinth 的流程根本碰不到这个模组。
+  **这一行已经作废,而且它点名的那两个类今天都不是障碍**:它量的是 **OptiFabric 2.2.1**;`class_156` 与 `class_638`
+  各自在 **2.2.3** 拿到了修复(`RestoreVanillaMethodsFix(true, "method_29191")` 与 `LambdaMethodRefFix()`,见上文),
+  所以今天在 1.21.1 上,**The Twilight Forest 能到标题界面**,并且 **2.2.8** 上专门做的那次调查量到**进世界是间歇性的
+  —— 带 TF 的那一套 11 个臂里进了 4 个,不带 TF 的同一套 3/3 —— 重试有效**;丢掉的那一次不会弄坏存档。
+  停住的地方是客户端里一处**闲置的"世界打开交接"**,不是崩溃,也不归因于本模组;这一路上需要的那处着色器修复
+  (`class_5944` 的 `field_29494` null)在 **2.2.8** 里。现在该看的行:[`RELEASE_NOTES.md`](RELEASE_NOTES.md) 与
+  `release/notes/mc1.21.1.md`。
 - 有一个第三方个案是已知的、上游有报告、我们这边已修:**ShoulderSurfing** 的 `Camera` 局部槽位冲突,上游报告在
   `Exopandora/ShoulderSurfing#476`,本线在 2.2.1 里处理(实测记录见 [`DEVELOPMENT.md`](DEVELOPMENT.md) 与
   [`RELEASE_NOTES.md`](RELEASE_NOTES.md))。它**不在本次扫描范围内**,这里只作为背景引用。
@@ -143,6 +157,11 @@ unexplained,而它的逐行数据只给出 **3** 条(第 4 条是 `carpet-fixes`
   这一条记为"无法测试",而不是悄悄丢掉。
 
 ## 六、这次扫描没有覆盖什么
+
+> **这里有一行后来重新量过。** 第五节里的 The Twilight Forest:在装齐 2.2.3–2.2.8 的修复之后,它在 1.21.1 上
+> **能进世界,但只是间歇性的(11 个带 TF 的臂里 4 个)** —— 这次扫描看不到这一点:它的判定是"到标题界面",
+> 每个模组只跑一次,而丢掉的那次"世界打开交接"看起来与"这个模组根本没跑出结论"一模一样。当前数字见
+> `release/notes/mc1.21.1.md` 与 [`RELEASE_NOTES.md`](RELEASE_NOTES.md)。
 
 1. **不开世界、不渲染、不开光影** —— 见第一节的提示框。最大的盲区是:任何只在世界加载之后才出现的失败。
 2. **一次一个模组。** 不测组合、不测整合包、不测两个非基础模组之间的相互作用。

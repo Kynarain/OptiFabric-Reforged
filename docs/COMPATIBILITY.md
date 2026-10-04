@@ -5,6 +5,12 @@
 > every quoted log line, the method and the limitations — is in [`docs/compatibility/`](compatibility/) (start with
 > [`INDEX.md`](compatibility/INDEX.md)). Declared incompatibilities are listed in
 > [`README.md`](../README.md#declared-incompatibilities-and-what-the-loader-actually-does).
+>
+> **One row in this snapshot has been measured again since: The Twilight Forest.** Its FAIL verdict below is a
+> 2.2.1-era **title-screen** result; the dedicated investigation run on **2.2.8** measured the mod **reaching a world
+> on 1.21.1, intermittently** (4 entries in 11 arms of the TF-bearing set, against 3/3 for the same set without TF),
+> with retrying working and a lost attempt leaving the save usable. See §5 and §6, and the current numbers in
+> [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and `release/notes/mc1.21.1.md`.
 
 ## 1. What was tested, and how
 
@@ -148,6 +154,15 @@ others are all tagged "renderer overhaul" in the matrix. The typical evidence is
   (`mixin-transform` on `class_156` / `class_638`) — but it is a CurseForge-only 1.21.1 Fabric port and its
   no-OptiFine control **also fails**, for a different reason, so it is owned `mod-broken-on-plain-fabric`: not
   attributable to OptiFabric. A Modrinth-only sweep could not have reached that mod at all.
+  **This verdict is superseded, and the two named classes are not the blocker any more.** It was measured with
+  **OptiFabric 2.2.1**; `class_156` and `class_638` were each given a fix in **2.2.3**
+  (`RestoreVanillaMethodsFix(true, "method_29191")` and `LambdaMethodRefFix()`, both above), so today
+  **The Twilight Forest reaches the title screen** next to OptiFabric + OptiFine on 1.21.1, and the dedicated
+  investigation run on **2.2.8 measures world entry as intermittent — 4 entries in 11 arms of the TF-bearing set,
+  against 3/3 for the same set without TF — and retrying works**; the attempt that is lost leaves the save usable.
+  The stop is an idle world-open hand-off in the client, not a crash and not attributable to this mod; the shader fix
+  that was needed along the way (`class_5944`, `field_29494` null) is in **2.2.8**. The current numbers are in
+  [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and `release/notes/mc1.21.1.md`.
 - One third-party case is known, reported upstream and patched from this side: **ShoulderSurfing**'s `Camera`
   local-slot conflict, reported at `Exopandora/ShoulderSurfing#476` and addressed in this line in 2.2.1 (its
   measurement is in [`DEVELOPMENT.md`](DEVELOPMENT.md) and [`RELEASE_NOTES.md`](RELEASE_NOTES.md)). It is **not part
@@ -156,6 +171,12 @@ others are all tagged "renderer overhaul" in the matrix. The typical evidence is
   cannot be fetched without CurseForge's official API. It is recorded as untestable rather than dropped.
 
 ## 6. What this does not cover
+
+> **One row here has been measured again since.** The Twilight Forest (the bullet in §5) does enter a world on
+> 1.21.1 with OptiFabric + OptiFine once the 2.2.3–2.2.8 fixes are in, but only intermittently (4 of 11 arms), and
+> this sweep could not have seen that: its verdict is the title screen, it ran one launch per mod, and a lost
+> world-open hand-off looks exactly like a mod that never got a verdict. The current numbers are in
+> `release/notes/mc1.21.1.md` and [`RELEASE_NOTES.md`](RELEASE_NOTES.md).
 
 1. **No world, no rendering, no shaders** — see the box in §1. The single biggest blind spot is any failure that
    only appears after a world is loaded.
