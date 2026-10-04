@@ -16,6 +16,7 @@
 Load **OptiFine** under **Fabric Loader**. Put OptiFine's jar next to this mod and it patches the vanilla client with OptiFine's own patcher, rebuilds the lambdas whose targets moved, remaps OptiFine from its obfuscated names into Fabric's namespace, and hands the patched Minecraft classes to Fabric Loader's class transformer — so both can live in one client. **OptiFine itself is not bundled or redistributed.**
 
 This branch is the **1.21.x line** and covers Minecraft **1.21 – 1.21.11** (all ten releases OptiFine ever shipped a build for). The 26.x line (Minecraft 26.2 and 26.1.2) lives on its own branch/worktree and is developed separately; jars from the two lines are **not interchangeable**.
+完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。The full MC 1.21.1 compatibility list is in [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
 ## 📖 Overview
 
@@ -210,7 +211,7 @@ The `sodium` conflict and three of those five `breaks` are **inherited from upst
 
 **Architectury is the reverse story, and worth keeping.** Upstream declared architectury broken, and architectury's own metadata declares `breaks: optifabric <1.13.0`. On 1.21.1 this fork fixed the real conflict behind that declaration: OptiFine inserts its own locals into the middle of `GameRenderer.render`, which shifts the vanilla slots that Mixin's `LocalCapture` hands to a handler, so `LocalSlotLayoutFix` moves the extra slots to the end of the local variable range. `architectury-api` `13.0.11` now passes the sweep (row #14 of the matrix), and the rename to `optifabric_reforged` is what stops architectury's own declaration from firing. The measurements are in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) and [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md).
 
-The empirical picture — which mods actually fail next to OptiFabric, and which of those failures are ours — is in [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
+The empirical picture — which mods actually fail next to OptiFabric, and which of those failures are ours — is in [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md); the full per-mod list is in [`COMPATIBILITY.md`](COMPATIBILITY.md) at the repository root.
 
 ### How indigo is handled
 
@@ -256,6 +257,7 @@ OptiFabric/
 │   ├── mixin/                       # the two mixins this project ships
 │   └── util/                        # ASM / mixin / remap / zip helpers
 ├── src/main/resources/              # fabric.mod.json, optifabric.mixins.json, assets/…/icon.png
+├── COMPATIBILITY.md                 # the full per-mod compatibility list (MC 1.21.1)
 ├── docs/                            # DEVELOPMENT.md, COMPATIBILITY.md (+ _CN), compatibility/ (the 1.21.1 sweep), …
 ├── release/                         # version.ps1, publish.ps1, notes/, MANUAL_RELEASE.md
 ├── build.gradle · gradle.properties · settings.gradle
