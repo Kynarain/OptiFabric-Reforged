@@ -90,11 +90,11 @@ Intermediate files live in `<game dir>/.optifine/<OptiFine version>/`:
 > **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
 > **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
 > OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> the box on this screen and press **Install from file**); then start the game once by hand.
+> start the game once by hand.
 >
 > **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
 > 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹(或把它的路径粘进屏幕上的输入框,点「从本地文件安装」);然后手动启动一次游戏。
+> 文件夹;然后手动启动一次游戏。
 
 3. Launch the **Fabric** profile — not a launcher-made `1.21.x-OptiFine_xxx` profile, which injects OptiFine itself and collides with this mod.
 4. The first start spends a few extra seconds patching and remapping (5–7 s in practice); later starts use the cache (1–2 s). A title screen showing OptiFine's version and OptiFine entries in video settings mean it worked.

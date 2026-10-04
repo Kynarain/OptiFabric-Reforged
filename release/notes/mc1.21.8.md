@@ -568,8 +568,8 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 - `OptiFabric-2.2.8+mc1.21.8.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
   运行时**不下载任何东西**,也**不启动任何进程**(平台的规则不允许模组在游戏运行时下载文件或启动进程)。
-  OptiFine 要你自己从官网 <https://optifine.net/downloads> 下载,然后用屏幕上的输入框把保存下来的本地 jar
-  装进 `mods`,装好之后**手动重新启动游戏一次**(本产物不会自动重启)。
+  OptiFine 要你自己从官网 <https://optifine.net/downloads> 下载,把 jar 放进这个 mod 旁边的 `mods` 文件夹;
+装好之后**手动重新启动游戏一次**(本产物不会自动重启)。提示只在标题界面上写这几行字,没有任何按钮或输入框。
 - `OptiFabric-2.2.8+mc1.21.8-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
   「自动重启」这两项。除了这两项,它与默认产物是同一版修复。
 

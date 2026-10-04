@@ -89,11 +89,11 @@ mods/OptiFine_1.21.11_HD_U_J9.jar
 > **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
 > **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
 > OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> the box on this screen and press **Install from file**); then start the game once by hand.
+> start the game once by hand.
 >
 > **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
 > 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹(或把它的路径粘进屏幕上的输入框,点「从本地文件安装」);然后手动启动一次游戏。
+> 文件夹;然后手动启动一次游戏。
 
 3. 用 **Fabric 版本**启动,不要用启动器注入 OptiFine 的 `1.21.x-OptiFine_xxx` 版本(那个是启动器在启动时注入 OptiFine,会与本模组重复)。
 4. 首次启动会明显变慢(实测 5–7 秒,要跑完整的补丁与重映射流程),之后走缓存(1–2 秒)。标题界面出现 OptiFine 版本号、视频设置里出现 OptiFine 选项即表示成功。
