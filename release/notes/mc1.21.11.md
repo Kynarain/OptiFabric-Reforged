@@ -1,4 +1,4 @@
-# OptiFabric 2.2.3+mc1.21.11
+# OptiFabric 2.2.4+mc1.21.11
 
 **Minecraft 1.21.11** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `OptiFine_1.21.11_HD_U_J9.jar`
 
@@ -220,6 +220,6 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 - 真机:1.1.1 已由用户在自己的 1.21.11 实例确认(启动、资源重载、切光影包、开关抗锯齿都正常,`[ERROR]` 0 条);
   1.1.2 用同一个实例再跑一遍资源重载,`Resource not found: minecraft:post_effect/*` **0 条**。
 
-`OptiFabric-2.2.3+mc1.21.11.jar` — 917368 字节
+`OptiFabric-2.2.4+mc1.21.11.jar` — 917368 字节
 
 `SHA-256: 3914F1233302F0B26C062BC4FC14B819523636374595682C3C9D357A3F15A184`
