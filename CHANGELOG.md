@@ -27,30 +27,49 @@ process-spawning functionality.
 
 ### 移除了什么
 
-- **删掉 `OptifineDownloader`**(HTTP 客户端、官网下载、写 jar、JNA `CreateProcessW` / `ProcessHandle` /
+- **上架的那一份删掉 `OptifineDownloader`**(本分支的 `-full` 产物保留它,见下)(HTTP 客户端、官网下载、写 jar、JNA `CreateProcessW` / `ProcessHandle` /
   `ProcessBuilder` 重启、自测入口)与 `build.gradle` 里的 JNA 依赖;
 - **`C2meCompat` 不再重启**(见上);
 - **`Util.getOperatingSystem().open(...)` 删掉**:错误对话框按钮改为**复制链接/路径到剪贴板**;
-- **`MissingOptifineScreen` 不再下载**:官网地址作为**文本**显示,按钮改为「复制官网链接」。
+- **`MissingOptifineScreen` 不再下载**:这个类**整个删掉**(2.1.0 没有它);找不到 OptiFine 时由 2.1.0 的确认对话框出面,屏幕上的文案里没有官网链接,官网地址只在日志与文档里。
 
-### 提示界面:一句话,不要一张表(便利版也一样)
+### 提示界面:回到 2.1.0 的那一个对话框
 
-初版把「本地文件安装」做成了一张带输入框和按钮的屏幕,东西太多,两条分支现在都回到 **2.1.0 的形态**:标题界面上直接画四行字,
-没有输入框、没有按钮、没有第二个屏幕 —— 用户按标题界面自己的按钮或关窗口就行。
+初版把「本地文件安装」做成了一张带输入框和按钮的屏幕,后来又把提示做成标题界面上直接画的四行字 —— 两种都不是 2.1.0 的
+样子,也都不是本版的样子。现在**完全回到 2.1.0 的机制**:找不到 OptiFine 时 `OptifineVersion.findOptifineJar()` 设一条
+`OptifabricError` 文案并抛出一个**不致命**的失败,`mixin/MixinTitleScreen` 把它显示成这个 mod 唯一的那一个确认对话框
+(标题 `There was an error loading OptiFabric!`),**没有任何独立的 OptiFine 屏幕类**。
 
-**这四行(中英各一份,按游戏语言选)**:标题(`OptiFine 未安装` / `OptiFine is not installed`)、
-**唯一一条操作指示**(点名 mods 文件夹的绝对路径)、一句平台规则(「OptiFabric 不会在运行时下载 OptiFine:平台要求模组
-不得在游戏运行时下载文件。」/ "OptiFabric does not download OptiFine at runtime: the platform requires that a mod must
-not fetch files while the game runs.")、一句怎么离开(「使用本提示后面的标题界面按钮,或关闭游戏。」/ "Use the title
-screen behind this message, or close the game.")。同一段文字**逐字写进日志**,并附官网地址。
+正文就是 2.1.0 的原话(只把写死的 1.20.6 换成正在运行的版本,mods 路径仍插在 2.1.0 插的那个位置):
 
-**随这一版删掉的东西**:本地 jar 路径输入框、「从本地文件安装」按钮、`OptifineLocalInstall` 与 `OptifineJarCheck`
-两个类及其全部校验/结果文案、「复制官网链接」按钮、「重新检查」按钮,以及「为什么不再下载」的那一整段多段说明。
+- 找不到:`OptiFabric could not find the OptiFine jar in the mods folder:` + mods 文件夹**绝对路径** + 空行 +
+  `Download OptiFine for Minecraft <MC 版本> and place it in that folder next to this mod.`;
+- 重复:`Please ensure you only have 1 copy of OptiFine in the mods folder!` + `Found:` 两行路径;
+- 损坏:`The jar at <文件> is corrupt`;
+- 认不出构建:`Unable to find OptiFine version from OptiFine jar at <文件>`;
+- 版本不符:`This version of OptiFine from <文件> is not compatible with the current minecraft version` + 空行 +
+  `Optifine requires <需要> you are running <实际>`。
 
-**便利版保留的便利功能**:自动从 optifine.net 下载与自动重启(见下与「两条产物」),这两项只在 `-full` 产物里。
+**平台那段话只在日志和文档里**:找不到 OptiFine 时,日志逐行写出 mods 文件夹路径、搜索过的每一个位置、官网地址
+(`https://optifine.net/downloads`),并写明本产物不带下载器、不启动任何进程、只读用户自己放进 `mods/` 的本地 `file:` jar。
+屏幕上的文案里既没有官网链接,也没有「为什么不再下载」的说明。
 
-**提示规则一字未改**:没有 OptiFine → **每次启动**都提示;装了更老的 preview → **每个构建提示一次**
-(`config/optifabric-mismatch-ack.txt`);SAME / NEWER / final → **从不提示**。
+对话框的两个按钮**只做复制**(`client.keyboard.setClipboard`):mods 文件夹路径 / 帮助链接;内部错误时是堆栈 / issues
+链接或 logs 路径。**不打开文件夹、不打开网页、不启动任何进程**(2.1.0 的「打开 Mod 文件夹 / 打开帮助」在 Windows 上就是
+`ShellExecute`,属于平台要求删掉的那一类)。
+
+**提示规则**(`OptifinePrompt` 是一个**不画任何界面**的闸门,在标题界面那一步生效):
+
+- 没有 OptiFine → **每次启动**都弹(错误在 finder 里就设好了,和 2.1.0 一样);
+- 装了更老的 **preview** → 同一个对话框,但**每个构建只弹一次**(已提示的构建写进
+  `config/optifabric-mismatch-ack.txt`);
+- SAME / NEWER / 任何正式版 → **从不提示**。
+本分支的 `-full` 产物另说:实例里没有 OptiFine 时,它从官网把官方 jar 下进 `mods\`,把过程、文件、大小与 SHA-256 写进
+日志,然后 `OptifineDownloader.restart()` 重启并用 `Runtime.halt()` 结束当前 JVM,客户端不会在没有 OptiFine 的状态下起来。
+触发点在 `OptifabricRuntime.ensureSetup()` 的客户端检查之后(以前唯一的调用点在已删掉的 `MissingOptifineScreen` 里,所以
+下载器一度是没人调用的代码);「没有 OptiFine」在报告任何东西**之前**判定:别的 MC 版本的 jar、损坏的 jar、两份无法取舍
+都算「有,去报告」,不会在旁边再下一份。日志里那句「本产物不下载、不启动进程」说的是**上架的那一份**。
+
 ### 两条产物
 
 | 产物 | 内容 | 去处 |
