@@ -39,7 +39,14 @@ public final class OptifinePrompt {
 		/** No OptiFine at all: the finder reports it on every launch. */
 		MISSING,
 		/** An older preview is installed: reported once per build. */
-		MISMATCH
+		MISMATCH,
+		/**
+		 * The installed build is the newest one this release knows, and that build carries a caveat worth showing
+		 * ({@link OptifineSupport#NOTE_NO_SHADERS}: it does not load shader packs, so selecting one has no effect).
+		 * Reported once per build, because there is nothing for the user to update to - the advice is to play without
+		 * shaders on that Minecraft version.
+		 */
+		NO_SHADERS
 	}
 
 	private OptifinePrompt() {
@@ -50,6 +57,14 @@ public final class OptifinePrompt {
 		if (jarType == JarType.MISSING) return Mode.MISSING;
 		if (jarType != JarType.OPTIFINE_MOD && jarType != JarType.OPTIFINE_INSTALLER) return null;
 		if (expected == null || installedBuild == null || installedBuild.isEmpty()) return null;
+
+		//The newest build for this Minecraft version is the one there is nothing to update to, so a caveat on it is
+		//the only thing left to say. Anything older falls through to the mismatch notice below, which already tells
+		//the user to update - once that is done, this becomes the notice they see.
+		if (OptifineSupport.NOTE_NO_SHADERS.equals(expected.note)
+				&& OptifineSupport.order(installedBuild, expected) == OptifineSupport.Order.SAME) {
+			return Mode.NO_SHADERS;
+		}
 
 		return OptifineSupport.order(installedBuild, expected) == OptifineSupport.Order.OLDER
 				&& OptifineSupport.isPreview(installedBuild) ? Mode.MISMATCH : null;
@@ -75,9 +90,30 @@ public final class OptifinePrompt {
 		OptifineSupport.Build expected = OptifineSupport.forMc(FabricLoader.getInstance().getRawGameVersion());
 		Mode mode = modeFor(OptifineVersion.jarType, expected, OptifineVersion.version);
 
-		if (mode != Mode.MISMATCH || !shouldPrompt(mode, OptifineVersion.version)) return;
+		if (mode == null || !shouldPrompt(mode, OptifineVersion.version)) return;
 
 		String modsPath = new File(FabricLoader.getInstance().getGameDirectory(), "mods").getAbsolutePath();
+
+		//The newest build for this version is what is installed, and it does not load shader packs. There is nothing
+		//to update to, so the only advice is to leave shaders off on this Minecraft version.
+		if (mode == Mode.NO_SHADERS) {
+			System.out.println("[OptiFabric] OptiFine " + OptifineVersion.version + " is the newest build for Minecraft "
+					+ expected.mc + ", and it does not load shader packs; this notice is shown once per build"
+					+ " (remembered in config/" + ACK_FILE + ")");
+			System.out.println("[OptiFabric] Play Minecraft " + expected.mc + " without shaders; a build that loads them"
+					+ " would appear on " + OptifineSupport.OFFICIAL_DOWNLOAD_PAGE);
+			OptifabricError.setError("The newest OptiFine build for this Minecraft version does not load shader packs:"
+					+ " selecting one in OptiFine has no effect with this build (%s), so the game keeps rendering"
+					+ " without it.\n\nThis mod cannot add that back - OptiFabric repairs what OptiFine's recompile"
+					+ " changed, and there is no shader path here to repair.\n\nPlay Minecraft %s without shaders, or"
+					+ " use a Minecraft version whose OptiFine build loads them.", expected.file, expected.mc);
+			acknowledge(OptifineVersion.version);
+
+			return;
+		}
+
+		if (mode != Mode.MISMATCH) return;
+
 		System.out.println("[OptiFabric] OptiFine " + OptifineVersion.version + " is older than " + expected.file
 				+ ", the newest build for Minecraft " + expected.mc + "; this notice is shown once per build"
 				+ " (remembered in config/" + ACK_FILE + ")");
