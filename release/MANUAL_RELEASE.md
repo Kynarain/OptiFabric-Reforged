@@ -170,8 +170,8 @@ type release\tmp\modrinth-1.21.11.json                                          
 
 `-DryRun` 就会把草稿按 `dist\` 里的 jar 与 `release\notes\mc<MC>.md` 重写一遍(只有真发那一步需要凭据)。
 
-**人的上传文件夹也要顺手刷新**:`C:\Users\kynar\IdeaProjects\OptiFabric\release-upload\<线>-<版本>\`,例如
-`release-upload\1.21.x-2.2.1\`。里面放该版全部 jar(含 `-sources.jar`)与 `metadata\`(从 `release\tmp\` 拷
+**人的上传文件夹也要顺手刷新**:`I:\mods\release-upload\<线>-<版本>\`,例如
+`release-upload\1.21.x-2.2.11\`。里面放该版全部 jar(含 `-sources.jar`)与 `metadata\`(从 `release\tmp\` 拷
 `modrinth-*.json` / `curseforge-*.json`),命名规则与已有那些目录一致:
 `1.21.x-<版本>`、`26.x-<版本>`、`26.1.2-<版本>`、`1.20.6-<版本>`。它是**上传时的取件处**,不是仓库内容,
 `.gitignore` 之外由人自己维护。
