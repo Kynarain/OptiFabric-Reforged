@@ -12,7 +12,7 @@
 | Minecraft | 产物 | OptiFine 构建 | Java |
 |---|---|---|---|
 | 1.20.6 | `OptiFabric-1.1.3+mc1.20.6.jar` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
-| 1.20.6 | `OptiFabric-Reforged-1.1.3-reforged+mc1.20.6.jar`(`wip/1.20.6-reforged` 分支) | 同上 | 21 |
+| 1.20.6 | `OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar`(`wip/1.20.6-reforged` 分支) | 同上 | 21 |
 
 - mod id `optifabric`,仅客户端,要求 **Fabric Loader ≥ 0.19.3**。
 - 表里第二行是**替代产物**:mod id 是 `optifabric_reforged`,给「别的模组的元数据里拒绝 `optifabric`、因而拒绝本模组」的组合用 ——
