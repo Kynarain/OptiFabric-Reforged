@@ -74,6 +74,17 @@
 > 一个只认 CHANGELOG 小节的补丁会漏掉 `release/notes/mc<MC>.md` 与 `docs/RELEASE_NOTES.md` 里同样带版本号的历史段,
 > 而一个通用的"只改当前版本段落"的改法在发布清单那种混合文件上更危险 —— 所以这里只把坑写清楚,不动脚本。
 
+> **2.2.9 追记的四个发布期坑(都踩过,下次别再踩)**
+>
+> 1. **`make_latest` 读不回来**。GitHub 的 release 对象**不返回** `make_latest` 这个字段(2.2.8 的 release 同样没有,不是我们设置失败),所以"字段不存在"**不能**当成"没有被设成 latest"。唯一可查的证据是**效果**:发布前记一次 `GET /repos/<owner>/<repo>/releases/latest`,发布后再查一次,两次都必须还是那个该当 Latest 的版本(1.21.x 线是 26.x 那条线的裸 `v2.2.6`)。创建时按 API 要求把 `make_latest` 写成**字符串** `"false"`(写 JSON 布尔会被 422 拒:"false is not a string")。
+>
+> 2. **PowerShell 5.1 把 JSON 正文按 ASCII 发出去,中文到服务端就成了 `???`**(与 2.2.4 那次反引号 / C0 是同一类:都是"字符串在不该被转换的地方被转换了")。`Invoke-RestMethod -Body <string>` 在没有 `charset=utf-8` 时按 ASCII 编码;2.2.9 的十个正文第一次上传后,`GET` 回来是 `## 2.2.9 ???`。**正确写法**:把 JSON 转成 UTF-8 字节再发,并显式写 `charset=utf-8` —— `$bytes = [Text.Encoding]::UTF8.GetBytes(($payload | ConvertTo-Json -Compress))`,然后 `Invoke-RestMethod -Body $bytes -ContentType "application/json; charset=utf-8"`。**发完必须再 `GET` 回来逐字符复核**(正文与笔记按 LF 规范化后必须相等),只看本地文件是发现不了的。
+>
+> 3. **上传附件时 `+` 只留在 query 值里**。附件名进的是 `uploads.github.com/.../assets?name=<名称>` 的**查询值**,那里的 `+` 必须写成 `%2B`;而 **tag 名要写原样的 `+`** —— 无论它出现在 URL 路径、JSON 正文还是 `ref` 里。把 tag 也 percent-encode 过,仓库里就会出现一个**字面 `%2B` 的 tag**(本仓库发生过一次,只能手工删)。发布后扫一遍全部 tag ref,`%2B` 必须是 0 个。
+>
+> 4. **`version.ps1` 的两条机械事实**(2.2.9 都是手工补的):(a) 只改 `gradle.properties` 与 `release\publish.ps1` 的版本基数**不会**动文档 —— 补丁升版真正改写文档的是 `-Kind` / `-Set` 那一步(`Update-FilePattern`,全文件把 `<旧版本>+mc` 换成 `<新版本>+mc`)。2.2.9 的分支只提交了那两行,157(store)/ 167(convenience)处 `2.2.8+mc` 仍指向不存在的产物,是发布时手工补的,**外加三个 note 标题**(`# OptiFabric <版本>+mc<MC>`,那串也带 `+mc`,同一次替换会一起改);(b) `-RecordDigest` 与 `publish.ps1` 都**写死读 `dist\`**,不是 `build\libs\`,所以两个变体的产物**都要**放进各自的 `dist\`(store 的普通 jar、convenience 的 `-full` jar),否则 `-RecordDigest` 找不到文件、`publish.ps1 -DryRun` 会跳过该 MC。两个工作区的 `dist\` 内容相同时,直接互相补齐 40 个文件最省事。
+>
+
 | 版本 | 版本号 / 标签 | jar | 字节 | SHA-256 | 正文 |
 |---|---|---|---|---|---|
 | 1.21 | 2.2.9+mc1.21 / v2.2.9+mc1.21 | dist\OptiFabric-2.2.9+mc1.21.jar | 799568 | 46A498D1211C0B94DE5929A21821DBFF5F151FBFBBF2ECC44156F1B518298CE3 | release/notes/mc1.21.md |
