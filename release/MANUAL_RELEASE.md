@@ -26,6 +26,7 @@
 | **1.1.4** | `1.1.4+mc1.20.6` / `v1.1.4+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6.jar` | 725273 | `49F7DA6131EA1EB9FE5DB11D7A4F8B883F2E119E58A19C9A4B03774C1FE7535F` | `CHANGELOG.md` 1.1.4 节 |
 | 1.1.4(仅 GitHub:`-full`) | `1.1.4+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6-full.jar` | 743283 | `0E4B602414C2052D1B625D8F00C246F40D8A65329E994558759469DB39D7055E` | `CHANGELOG.md` 1.1.4 节 |
 | **1.1.5** | `1.1.5+mc1.20.6` / `v1.1.5+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar` | 729236 | `4BC7F967BA1E7F4F8947B050F1DD45303203DC1F1CFCACBD017FC23A406AD8DB` | `CHANGELOG.md` 1.1.5 节 |
+| 1.1.5(仅 GitHub:`-full`) | `1.1.5+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.5-reforged+mc1.20.6-full.jar` | 747246 | `D0DBCAB6B6FBFD403F491EE04D6A0D2189B6B95F68403378B581127669570610` | `CHANGELOG.md` 1.1.5 节 |
 
 `-sources.jar`(一般不发,留档用):
 
