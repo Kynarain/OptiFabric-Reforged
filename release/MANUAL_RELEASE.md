@@ -85,7 +85,7 @@
 > 4. **`version.ps1` 的两条机械事实**(2.2.9 都是手工补的):(a) 只改 `gradle.properties` 与 `release\publish.ps1` 的版本基数**不会**动文档 —— 补丁升版真正改写文档的是 `-Kind` / `-Set` 那一步(`Update-FilePattern`,全文件把 `<旧版本>+mc` 换成 `<新版本>+mc`)。2.2.9 的分支只提交了那两行,157(store)/ 167(convenience)处 `2.2.8+mc` 仍指向不存在的产物,是发布时手工补的,**外加三个 note 标题**(`# OptiFabric <版本>+mc<MC>`,那串也带 `+mc`,同一次替换会一起改);(b) `-RecordDigest` 与 `publish.ps1` 都**写死读 `dist\`**,不是 `build\libs\`,所以两个变体的产物**都要**放进各自的 `dist\`(store 的普通 jar、convenience 的 `-full` jar),否则 `-RecordDigest` 找不到文件、`publish.ps1 -DryRun` 会跳过该 MC。两个工作区的 `dist\` 内容相同时,直接互相补齐 40 个文件最省事。
 >
 
-> **2.2.10 追记的四个发布期坑(都踩过,下次别再踩)**
+> **2.2.10 追记的五个发布期坑(都踩过,下次别再踩)**
 >
 > 1. **`release\publish.ps1` 必须保住 UTF-8 BOM —— 这是三个字节的事,不是格式洁癖。** 2.2.10 这条线上两个分支的第一次提交都把 BOM 丢了,于是 `publish.ps1 -DryRun` 在 Windows PowerShell 5.1 下直接死在 `Unexpected token '}' at release\publish.ps1:158`:文件被当 ANSI 读,最后一行那句中文里的引号被吃掉,整个脚本加载失败,**元数据那一步根本走不到**。修法就是把 `EF BB BF` 三个字节加回去,文件其余部分一字未动(提交 `68c7614`)。文件第 1 行本来就写着这条要求;改过 `publish.ps1` 之后当场验一遍:`$b=[IO.File]::ReadAllBytes('release\publish.ps1'); $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF` 必须是 True(下面「文档编码」那一条自查同理)。
 >
@@ -98,6 +98,12 @@
 >    4. 目标版本号不对就**停下**:错位的一跑会把整版文档写成下一个版本(2.2.11 的串写进 2.2.10 的笔记与清单),而 `-Kind patch` 只从 `gradle.properties` 读当前值,不会替你判断。
 >
 > 4. **`Scanned 0 target(s)` 是这一版 Mixin 里的一个常量,不是测量结果 —— 任何"这个注入什么都没找到"的结论都不能只靠它。** 对 `sponge-mixin-0.17.4+mixin.0.8.7.jar` 跑 `javap -p -c org.spongepowered.asm.mixin.injection.struct.InjectionInfo`(类在 `injection.struct`,不在 `injection`):`targetCount` 这个字段**全类只在构造函数里被 `putfield` 写过一次**(`iconst_0` → `putfield targetCount:I`),之后再没被赋值过;而 `Critical injection failure: … Scanned %d target(s)` / `Injection validation failed: … Scanned %d target(s)` 两句里的 `%d` 读的正是这个字段(两处 `getfield targetCount` 都在 `postInject()` 里);真正的计数在 `getTargetCount()` 里,它是 `return this.targets.size()`(`TargetSelectors`),两者根本不是一回事。实测也一致:本仓库泳道日志里出现的每一处 `Scanned N target(s)` 都是 0 —— 只说 reattrib / reattrib-fix / carryon / compat-matrix / c2mefs 这五处的日志,就有 **607 处,607 处全为 0**;另一次全仓扫描记到的是 48 处 / 48 个 0。**所以**:引用这条消息时,能承重的是那句里的 **(注入数/要求数) 对**(`(0/1) succeeded`、`expected N invocation(s) but M succeeded`)以及需要时的**字节级反汇编(对加载器实际拿到的那份类)**,`Scanned N target(s)` 只能当装饰。今天几份泳道报告(包括 Carry On 那条线)都引过这个计数,它们的结论仍然成立 —— 因为它们同时有 `(0/1) succeeded` 与 `ClassCompare` 的反汇编 —— 但今后只靠这个数字下结论的分析,读到的会是一个过期字段。要真正的 selector 数,从 mixin 自己已解析的 selectors 或变换后的类里读,不要从这一行读。
+>
+> 5. **构建来源那一句从此由 `version.ps1 -RecordProvenance` 生成,别再手改(它已经错过两次)。** `release\notes\mc*.md` 里「<版本> 的默认产物构建自 `<sha>`,`-full` 产物构建自 `<sha>`(上一版分别是 `<sha>` 与 `<sha>`;`-full` 没有单独的 tag,与默认产物共用同一个 release)」这一句,四个提交都来自这个模式:**它既不是 jar 里的东西,也不带 `+mc` 串,所以 `-Kind patch` / `-Set` 的文档替换永远走不到它** —— 2.2.9 与 2.2.10 两次发布就是这样带着 2.2.7 的提交出去的(2.2.10 是事后手改的,提交 `52e545e`)。**发布时必跑**:两条产物都构建完、提交都定下来之后,
+>    ```powershell
+>    powershell -NoProfile -ExecutionPolicy Bypass -File release\version.ps1 -RecordProvenance -Head <默认产物的提交> -FullHead <-full 产物的提交>
+>    ```
+>    版本号默认取 `gradle.properties` 的当前值;给更早的版本补记加 `-ProvenanceVersion <版本>`,但那个版本必须是句子里**已经有的槽**(主槽或副槽)。它**先读每个提交自己的 `gradle.properties`**,`mod_version_base` 不是这一版就直接报错停下(写错就是把"这一版构建自哪里"永久写错);十份文件**全部校验通过才动第一份**,某一份里找不到这一句、或同一份文件里出现不止一次,都会非零退出并说清是哪一份;重复跑同一对提交是幂等的(只报告"已是该值",一个字节都不写)。跑完 `git diff release\notes\` 应当只有这一句变。
 >
 | 版本 | 版本号 / 标签 | jar | 字节 | SHA-256 | 正文 |
 |---|---|---|---|---|---|

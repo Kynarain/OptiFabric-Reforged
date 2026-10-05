@@ -11,6 +11,13 @@
 #   .\release\version.ps1 -Line 1.21.x -Part               # 只打印当前版本号(给别的脚本用)
 #   .\release\version.ps1 -Line 1.21.x -RecordDigest       # 构建之后:把产物的字节数与 SHA-256 写回文档
 #
+# 发布页上"这一版的两条产物各由哪次提交构建"那一句也由这个脚本生成(那一句里没有 "<版本>+mc" 串,所以递增与
+# -RecordDigest 都不会碰到它,手写已经错过两次)。两条产物都构建完、提交都定下来之后跑:
+#
+#   .\release\version.ps1 -RecordProvenance -Head <默认产物的提交> -FullHead <-full 产物的提交>
+#
+# 版本号默认取 gradle.properties 的当前值;给更早的版本补记时加 -ProvenanceVersion <版本>。
+#
 # 发布前离线核对"哪一版 MC 要哪个 OptiFine 构建":README 表、release\notes\ 与模组里的 OptifineSupport
 # 三者必须同名,不看网络。改动支持表或换 OptiFine 构建之后跑一遍:
 #
@@ -49,6 +56,16 @@ param(
 	[switch]$DryRun,
 	# Write the built jar's size and SHA-256 into the documents that record them.
 	[switch]$RecordDigest,
+	# The commit the default artifact (no "-full" suffix - the one uploaded to CurseForge / Modrinth) was built
+	# from. -RecordProvenance writes it, and the other, into the sentence every release\notes\mc*.md carries.
+	[string]$Head,
+	# The commit the "-full" artifact was built from.
+	[string]$FullHead,
+	# Which version's provenance is being recorded; defaults to the current gradle.properties base. Only needed
+	# when back-filling an older version.
+	[string]$ProvenanceVersion,
+	# Write the "which commit built which artifact" sentence back into all ten release\notes\mc*.md.
+	[switch]$RecordProvenance,
 	# Offline cross-check: the README tables, release\notes\mc<MC>.md and the mod's own support table must name
 	# the same OptiFine build for every Minecraft version. Touches no network and writes no file.
 	[switch]$CheckSupport,
@@ -108,6 +125,28 @@ function Write-ReleaseFile([string]$path, [string]$text) {
 
 	if (-not $DryRun) {
 		[System.IO.File]::WriteAllText($full, $text, (New-Object System.Text.UTF8Encoding($bom)))
+	}
+}
+
+# The shape a document has to keep: its BOM, its newline style, and no stray C0 control bytes. -RecordProvenance
+# rewrites text inside files this script must not reformat, so it compares the shape before and after the write.
+function Get-FileShape([string]$fullPath) {
+	$bytes = [System.IO.File]::ReadAllBytes($fullPath)
+	$crlf = 0
+	$bareLf = 0
+	$control = 0
+	for ($i = 0; $i -lt $bytes.Length; $i++) {
+		$b = $bytes[$i]
+		if ($b -eq 0x0D) {
+			if ($i + 1 -lt $bytes.Length -and $bytes[$i + 1] -eq 0x0A) { $crlf++ } else { $control++ }
+		} elseif ($b -eq 0x0A) { $bareLf++ } elseif ($b -lt 0x20 -and $b -ne 0x09) { $control++ }
+	}
+
+	return @{
+		bom     = ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
+		crlf    = $crlf
+		bareLf  = $bareLf
+		control = $control
 	}
 }
 
@@ -409,6 +448,193 @@ if ($CheckSupport) {
 
 	Write-Host ""
 	Write-Host "支持表一致:三种写法都指向同一批 OptiFine 构建。"
+	return
+}
+
+# ---------------------------------------------------------------- provenance mode
+
+# -RecordProvenance: "这一版的两条产物各由哪次提交构建"这句话既读不出 jar、也不由构建过程产生,所以脚本别的地方都带不上它:
+# -Kind / -Set 的文档替换只认 "<版本>+mc" 这一串,而这句话里没有,于是永远走不到它。结果就是手写错了两次(2.2.9 与 2.2.10
+# 发布时都还写着 2.2.7 的提交)。这个模式拿两条产物真正的构建提交,把十份 release\notes\mc*.md 里的这句话重写一遍。
+if ($RecordProvenance) {
+	if (-not $Head -or -not $FullHead) {
+		throw "-RecordProvenance 需要 -Head(默认产物那次构建的提交)与 -FullHead(-full 产物那次构建的提交)"
+	}
+
+	$version = if ($ProvenanceVersion) { (Parse-Version $ProvenanceVersion).text } else { Get-CurrentVersion "1.21.x" }
+
+	# 写进发布页之前先证一遍:这一版的两条产物必须构建自 mod_version_base=<版本> 的那棵树,所以逐个提交读它自己的
+	# gradle.properties。发布页发出去就改不回来,写错一次就是把"这一版构建自哪里"永久写错。
+	function Resolve-ProvenanceCommit([string]$sha, [string]$label) {
+		$shaLines = @(& git -C $root rev-parse --verify --quiet "$sha^{commit}")
+		if ($LASTEXITCODE -ne 0 -or $shaLines.Count -eq 0 -or -not $shaLines[0]) {
+			throw "${label}的提交 '$sha' 在仓库里不是一次提交(git rev-parse <sha>^{commit} 失败)"
+		}
+		$commit = ([string]$shaLines[0]).Trim()
+
+		$propertyLines = @(& git -C $root show "${commit}:gradle.properties" 2>$null)
+		if ($LASTEXITCODE -ne 0 -or $propertyLines.Count -eq 0) { throw "${label}的提交 $commit 里读不到 gradle.properties" }
+
+		$base = [regex]::Match(($propertyLines -join "`n"), '(?m)^mod_version_base=(.+)$')
+		if (-not $base.Success) { throw "${label}的提交 $commit 的 gradle.properties 里没有 mod_version_base" }
+
+		$declared = $base.Groups[1].Value.Trim()
+		if ($declared -ne $version) {
+			throw ("${label}的提交 $commit 的 gradle.properties 写的是 mod_version_base=$declared,不是 $version;" +
+				"这一次构建不可能是它(提交给错了?要记的是别的版本,那就加 -ProvenanceVersion)")
+		}
+
+		return $commit
+	}
+
+	function Get-ShortSha([string]$commit) {
+		$shaLines = @(& git -C $root rev-parse --short=7 $commit)
+		if ($shaLines.Count -eq 0 -or -not $shaLines[0]) { throw "算不出提交 $commit 的短 SHA" }
+
+		return ([string]$shaLines[0]).Trim()
+	}
+
+	$headCommit = Resolve-ProvenanceCommit $Head "默认产物"
+	$fullCommit = Resolve-ProvenanceCommit $FullHead "-full 产物"
+	$headShort = Get-ShortSha $headCommit
+	$fullShort = Get-ShortSha $fullCommit
+
+	# 这句话的形状是唯一的:主槽("<版本> 的默认产物构建自 `<sha>`," + 换行 + "`-full` 产物构建自 `<sha>`"),紧接着副槽
+	# ("(<更早的版本> 分别是 `<sha>` 与 `<sha>`;…")。提交按十六进制串收,长短由 git 自己决定。整句都必须落在模式里
+	# (包括结尾那句"没有单独的 tag…release)。"):模式只吃掉半句、替换却给整句,就会把尾巴一遍遍重复写进文件。
+	$provenancePattern = '(?<pver>\d+\.\d+\.\d+) 的默认产物构建自 `(?<pdef>[0-9a-f]{7,40})`,' + "`r`n" +
+		'`-full` 产物构建自 `(?<pfull>[0-9a-f]{7,40})`\((?<sver>\d+\.\d+\.\d+) 分别是 `(?<sdef>[0-9a-f]{7,40})` 与 `(?<sfull>[0-9a-f]{7,40})`' +
+		[regex]::Escape(';`-full` 没有单独的 tag,与默认产物共用同一个 release)。')
+
+	# 反引号在双引号串里要转义,拼句子时用 [char]96 更不容易看错。
+	$tick = [char]96
+	function Format-ProvenanceSentence([string]$pv, [string]$pd, [string]$pf, [string]$sv, [string]$sd, [string]$sf) {
+		return ("$pv 的默认产物构建自 ${tick}$pd${tick}," + "`r`n" +
+			"${tick}-full${tick} 产物构建自 ${tick}$pf${tick}($sv 分别是 ${tick}$sd${tick} 与 ${tick}$sf${tick};" +
+			"${tick}-full${tick} 没有单独的 tag,与默认产物共用同一个 release)。")
+	}
+
+	# 句子与模式必须严丝合缝:这里用一组假值自证一次。改了一处忘了另一处时,当场就在这里停下,而不是把半句
+	# 重复写进十份发布说明(那正是手写这条路已经错过两次的地方)。
+	$sample = Format-ProvenanceSentence "1.2.3" "aaaaaaa" "bbbbbbb" "1.2.2" "ccccccc" "ddddddd"
+	if (-not [regex]::IsMatch($sample, '^' + $provenancePattern + '$')) {
+		throw "构建来源那句与匹配模式对不上(Format-ProvenanceSentence 与 `$provenancePattern 没有同步);停下,不写任何文件"
+	}
+
+	$notes = @(Get-ChildItem (Join-Path $root "release/notes") -Filter "mc*.md" | Sort-Object Name)
+	if ($notes.Count -eq 0) { throw "release\notes 里没有 mc*.md" }
+
+	Write-Host "构建来源:$version  默认产物 $headShort  -full $fullShort"
+	$files = 0
+	$already = 0
+
+	# 先只读、只校验:十份文件全都合格才动第一份。"改了一半"的发布说明比根本没改更难收拾。
+	$pending = @()
+	foreach ($note in $notes) {
+		$relative = "release/notes/" + $note.Name
+		$text = Read-ReleaseFile $relative
+		$found = [regex]::Matches($text, $provenancePattern)
+
+		if ($found.Count -eq 0) {
+			throw ("$relative 里找不到那句构建来源;这一句由 -RecordProvenance 生成、不允许手写," +
+				"先按原样放回一句(形状见 release\MANUAL_RELEASE.md 的发布期陷阱清单)")
+		}
+		if ($found.Count -gt 1) {
+			throw "$relative 里那句构建来源出现了 $($found.Count) 次:同一次运行里同一处替换不能做两遍,先把它合并成一句"
+		}
+
+		$hit = $found[0]
+		$currentVersion = $hit.Groups['pver'].Value
+		$previousVersion = $hit.Groups['sver'].Value
+
+		if ($currentVersion -eq $version) {
+			# 主槽就是这一版:只换两个提交,副槽原样保留(所以重复跑同一对提交是幂等的)。
+			$newCurrentVersion = $currentVersion
+			$newCurrentDefault = $headShort
+			$newCurrentFull = $fullShort
+			$newPreviousVersion = $previousVersion
+			$newPreviousDefault = $hit.Groups['sdef'].Value
+			$newPreviousFull = $hit.Groups['sfull'].Value
+		}
+		elseif ($previousVersion -eq $version) {
+			# 副槽是这一版(给上一版补记):同样只换两个提交。
+			$newCurrentVersion = $currentVersion
+			$newCurrentDefault = $hit.Groups['pdef'].Value
+			$newCurrentFull = $hit.Groups['pfull'].Value
+			$newPreviousVersion = $previousVersion
+			$newPreviousDefault = $headShort
+			$newPreviousFull = $fullShort
+		}
+		else {
+			# 两个槽都不是这一版:整句往前挪一格(旧的主槽变成副槽)。挪格会挤掉原来的副槽,所以先证自己站在对的版本上:
+			# 标题里的版本必须是这一版,而且必须比句子里记的那个版本高。
+			$title = [regex]::Match($text, '(?m)^#\s+OptiFabric\s+(\d+\.\d+\.\d+)\+mc')
+			if (-not $title.Success) { throw "$relative 的标题不是「# OptiFabric <版本>+mc<MC>」的形状,认不出这份文件是哪个版本" }
+			if ($title.Groups[1].Value -ne $version) {
+				throw ("$relative 的标题写的是 $($title.Groups[1].Value),而这次要记的是 $version:句子里既没有 $version 这个槽," +
+					"标题也不是它 —— 先核对版本号(要补记更早的版本才用 -ProvenanceVersion)")
+			}
+			if ((Compare-Version (Parse-Version $version) (Parse-Version $currentVersion)) -le 0) {
+				throw "$relative 里记的已经是 $currentVersion,不比 $version 低:不能把它挤到副槽去"
+			}
+
+			$newCurrentVersion = $version
+			$newCurrentDefault = $headShort
+			$newCurrentFull = $fullShort
+			$newPreviousVersion = $currentVersion
+			$newPreviousDefault = $hit.Groups['pdef'].Value
+			$newPreviousFull = $hit.Groups['pfull'].Value
+		}
+
+		$sentence = Format-ProvenanceSentence $newCurrentVersion $newCurrentDefault $newCurrentFull $newPreviousVersion $newPreviousDefault $newPreviousFull
+		$updated = [regex]::Replace($text, $provenancePattern, { param($x) $sentence })
+
+		$pending += @{
+			relative           = $relative
+			updated            = $updated
+			changed            = ($updated -ne $text)
+			currentVersion     = $currentVersion
+			previousVersion    = $previousVersion
+			newCurrentVersion  = $newCurrentVersion
+			newCurrentDefault  = $newCurrentDefault
+			newCurrentFull     = $newCurrentFull
+			newPreviousVersion = $newPreviousVersion
+			newPreviousDefault = $newPreviousDefault
+			newPreviousFull    = $newPreviousFull
+		}
+	}
+
+	foreach ($item in $pending) {
+		if (-not $item.changed) {
+			$already++
+			Write-Host ("  {0,-30} 已是该值({1} / {2}),未改动" -f $item.relative, $item.newCurrentVersion, $item.newPreviousVersion)
+			continue
+		}
+
+		if ($DryRun) {
+			$files++
+			Write-Host ("  {0,-30} [DryRun] 会改成 {1}={2}/{3}、{4}={5}/{6}" -f $item.relative, `
+				$item.newCurrentVersion, $item.newCurrentDefault, $item.newCurrentFull, $item.newPreviousVersion, $item.newPreviousDefault, $item.newPreviousFull)
+			continue
+		}
+
+		# 这一句以外的字节都不该动,所以写回前后比一次形状:BOM、换行风格、C0 控制字节数。
+		$before = Get-FileShape (Join-Path $root $item.relative)
+		Write-ReleaseFile $item.relative $item.updated
+		$after = Get-FileShape (Join-Path $root $item.relative)
+		if ($before.bom -ne $after.bom -or $before.crlf -ne $after.crlf -or $before.bareLf -ne $after.bareLf) {
+			throw ("$($item.relative) 写回后形状变了:BOM $($before.bom)->$($after.bom)、CRLF $($before.crlf)->$($after.crlf)、" +
+				"裸 LF $($before.bareLf)->$($after.bareLf)")
+		}
+		if ($after.control -ne 0) { throw "$($item.relative) 写回后有 $($after.control) 个 C0 控制字节(CR/LF/TAB 之外)" }
+
+		$files++
+		Write-Host ("  {0,-30} 主槽 {1} -> {2}、副槽 {3} -> {4}" -f $item.relative, $item.currentVersion, $item.newCurrentVersion, $item.previousVersion, $item.newPreviousVersion)
+	}
+
+	Write-Host ""
+	if ($DryRun) { Write-Host "[DryRun] 会改写 $files 份 release\notes\mc*.md;$already 份已经是该值" }
+	else { Write-Host "已改写 $files 份 release\notes\mc*.md;$already 份已经是该值;请 git diff release\notes\ 复核" }
 	return
 }
 
