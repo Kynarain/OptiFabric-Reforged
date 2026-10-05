@@ -570,7 +570,21 @@ public class OptifineFixer {
 		//      above, before class_983 was ever transformed, so its log never reached this failure. It was found by
 		//      measuring this lane's own arms - with class_836 restored the client runs on, ParrotRenderer loads and
 		//      the same "could not find any targets matching 'method_17958'" failure appears. Same family, same
-		//      repair, so supplementaries needs two registrations rather than one.
+		//      repair - and it is DELIBERATELY NOT REGISTERED, because the repair is worse than the failure.
+		//      Measured: restoring method_17958 makes the pipeline recompute class_983's stack map frames (a class a
+		//      fixer changed takes FrameComputingWriter, see OptifineInjector#patch), and the recomputed frame types
+		//      the entity local in class_983.lambda$renderParrot$1 as java/lang/Object instead of class_1297. The
+		//      game then refuses the whole class:
+		//        java.lang.VerifyError: Bad type on operand stack in putfield
+		//        Location: net/minecraft/class_983.lambda$renderParrot$1(...)V @100: putfield
+		//        Reason: Type 'java/lang/Object' (current frame, stack[0]) is not assignable to 'net/minecraft/class_1297'
+		//      which costs the resource reload ("Caught error loading resourcepacks, removing all selected
+		//      resourcepacks") and the parrot renderer. With class_836 alone supplementaries reaches the title screen
+		//      with its ParrotLayerMixin failing and nothing else wrong; with this line it would reach the title screen
+		//      with a broken class. This is the same class_983 landmine the 1.21.8 note in OptifineInjector#patch
+		//      records ("class_983.method_62593"), reached here on 1.21.1 through a different method.
+		//      The real repair for this gap is therefore either a narrower edit than "copy the whole method back", or
+		//      making the frame recomputation keep the entity type - neither is proven, so nothing is shipped.
 		//  class_1043.method_22793()V                     removed, OptiFine's lambda$new$0()V added
 		//      modernfix: safety.DynamicTextureMixin, @Inject checkNullPixels
 		//  class_442.method_55814(Lclass_4185)V           removed, OptiFine's lambda$init$1..5(Lclass_4185)V added
@@ -586,7 +600,7 @@ public class OptifineFixer {
 		//reach. That is the trade-off this fixer has always made and it is stated in the report per row.
 		registerFix("class_757", new RestoreVanillaMethodsFix("method_18144"));
 		registerFix("class_836", new RestoreVanillaMethodsFix("method_3580"));
-		registerFix("class_983", new RestoreVanillaMethodsFix("method_17958"));
+		//registerFix("class_983", new RestoreVanillaMethodsFix("method_17958"));  // NOT registered - see below
 		registerFix("class_1043", new RestoreVanillaMethodsFix("method_22793"));
 		registerFix("class_442", new RestoreVanillaMethodsFix("method_55814"));
 		registerFix("class_1921", new RestoreVanillaMethodsFix("method_34834", "method_34833", "method_36437",
