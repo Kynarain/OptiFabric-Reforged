@@ -1,4 +1,4 @@
-﻿# NOTE: keep this file UTF-8 WITH BOM. Windows PowerShell reads .ps1 as ANSI when there is no BOM, and the
+# NOTE: keep this file UTF-8 WITH BOM. Windows PowerShell reads .ps1 as ANSI when there is no BOM, and the
 # Chinese text below then mis-parses (a trailing quote gets eaten and the whole file fails to load).
 <#
     把 dist/ 里十版 jar 逐个发到三个平台。逐版一个发布条目,版本号就是 <版本>+mc<MC版本>。
@@ -33,7 +33,7 @@ $root = Split-Path -Parent $PSScriptRoot
 # 版本基数:$defaultModVersion 是 1.21.x 里没有例外值的那些版本用的。现在十个产物都是同一个版本号,
 # 所以下面那张例外表是空的 —— 每个 jar 的版本号相同的时候,写进表里是多余的。
 $versions = @("1.21", "1.21.1", "1.21.3", "1.21.4", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11")
-$defaultModVersion = "2.2.9"
+$defaultModVersion = "2.2.10"
 # 逐 MC 版本的例外值:只有某个 jar 的版本号**必须与整条线的基数不同**时才写在这里(例如只修了 1.21.11
 # 的那次 1.1.1)。值等于基数的条目是多余的,整线升版时还会被落在后面(version.ps1 会改写等于旧基数的条目)。
 # 这张表由 release\version.ps1 -Mc 维护,别手改(见 docs\VERSIONING.md 第五节)。
