@@ -500,6 +500,36 @@ public class OptifineFixer {
 				"(Lnet/minecraft/class_243;Lnet/minecraft/class_6491$class_4859;)Lnet/minecraft/class_243;", "method_23777"));
 		registerFix("class_761", new InjectionCallPointFix("class_310", "method_1517", "()Z", "method_22714"));
 
+		//The RestoreVanillaMethodsFix batch: OptiFine's recompiler removed or renamed a method a mixin names as its
+		//own target, so Mixin reports "could not find any targets matching <owner>.<name><desc>" and fails the whole
+		//class through the mixin config's defaultRequire = 1. Every line names the method its own log named, and the
+		//byte evidence (ClassCompare: the game's client-intermediary.jar against the served class) is that the game's
+		//method is gone and OptiFine's own lambda took its place:
+		//  class_757.method_18144(Lclass_1297;)Z          removed, OptiFine's lambda$pick$57(Lclass_1297;)Z added
+		//      cut-through: @Inject(isPickable) could not find any targets matching
+		//      Lnet/minecraft/class_757;method_18144(Lnet/minecraft/class_1297;)Z
+		//  class_836.method_3580(Ljava/util/HashMap;)V    removed, OptiFine's lambda$static$0(Ljava/util/HashMap;)V added
+		//      deeperdarker (ShatteredHeadRenderMixin, @Inject addModel) and supplementaries (SkullBlockRendererMixin,
+		//      @Inject supp$addExtraTextures) name the same method, so one registration covers both rows
+		//  class_1043.method_22793()V                     removed, OptiFine's lambda$new$0()V added
+		//      modernfix: safety.DynamicTextureMixin, @Inject checkNullPixels
+		//  class_442.method_55814(Lclass_4185)V           removed, OptiFine's lambda$init$1..5(Lclass_4185)V added
+		//      no-chat-reports: client.MixinTitleScreen, @Inject onRealmsButtonClicked
+		//  class_1921's six candidates                    all six removed, replaced by OptiFine's lambda$static$N
+		//      immediatelyfast: core.MixinRenderLayer, @ModifyArg changeTranslucency, whose method list is exactly
+		//      method_34834, method_34833, method_36437, method_36436, method_37348 and method_37347. All six exist in
+		//      the game's own class_1921 and all six contain the method_24049 call its @At names, so restoring all six
+		//      reproduces what the mod does on plain Fabric - where Mixin simply finds six targets - instead of
+		//      guessing one of them. Both immediatelyfast rows are this one jar.
+		//The restored copies are what OptiFine's own code no longer calls, so they are injection targets and nothing
+		//else: the mixin applies and the client starts, and the handler sits in a method OptiFine's body does not
+		//reach. That is the trade-off this fixer has always made and it is stated in the report per row.
+		registerFix("class_757", new RestoreVanillaMethodsFix("method_18144"));
+		registerFix("class_836", new RestoreVanillaMethodsFix("method_3580"));
+		registerFix("class_1043", new RestoreVanillaMethodsFix("method_22793"));
+		registerFix("class_442", new RestoreVanillaMethodsFix("method_55814"));
+		registerFix("class_1921", new RestoreVanillaMethodsFix("method_34834", "method_34833", "method_36437",
+				"method_36436", "method_37348", "method_37347"));
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
