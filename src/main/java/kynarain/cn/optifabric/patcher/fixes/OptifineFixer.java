@@ -538,6 +538,20 @@ public class OptifineFixer {
 		//entry above: OptiFine's own additions to this one logging method stop being used.
 		registerFix("class_1008", new RestoreVanillaMethodsFix(true, "method_4224"));
 
+		//class_702.method_3049, particle-core, and the replace-mode case of this family. OptiFine did not remove the
+		//method: it reduced it to a six-instruction forwarder to its own render(LightTexture,Camera,F,Frustum), and
+		//particle-core's ParticleManagerFrustumMixin is a @WrapWithCondition at the
+		//class_703.method_3074(Lclass_4588;Lclass_4184;F)V call inside it, so it scans 0 targets and the class fails
+		//("Callback method particle_core_cullParticles(class_703;class_4588;class_4184;F)Z ... (0/1) succeeded").
+		//The vanilla body has that call (vanilla method_3049 is 167 instructions and OptiFine's is 12), so it is put
+		//back over OptiFine's forwarder. What that costs is stated rather than hidden: with this registration and
+		//RestoreVanillaCallFix both in place, the three particle calls RestoreVanillaCallFix aims back at
+		//method_3049 land in the game's own body rather than in OptiFine's render(...,Frustum), so on that one call
+		//path OptiFine's own particle stage is bypassed and the game's own loop runs. Proved on a private .optifine
+		//cache copy before it was registered: with method_3049 restored over the forwarder the mixin applies, the
+		//client reaches the title screen at 16.8 s and every counter is zero, /ERROR included.
+		registerFix("class_702", new RestoreVanillaMethodsFix(true, "method_3049"));
+
 		//The RestoreVanillaMethodsFix batch: OptiFine's recompiler removed or renamed a method a mixin names as its
 		//own target, so Mixin reports "could not find any targets matching <owner>.<name><desc>" and fails the whole
 		//class through the mixin config's defaultRequire = 1. Every line names the method its own log named, and the
