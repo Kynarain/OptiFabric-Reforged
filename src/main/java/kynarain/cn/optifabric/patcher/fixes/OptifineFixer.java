@@ -32,6 +32,24 @@ public class OptifineFixer {
 		//net/minecraft/client/render/block/BlockModelRenderer$AmbientOcclusionCalculator
 		registerFix("class_778$class_780", new AmbientOcclusionCalculatorFix());
 
+		//class_778 itself (BlockModelRenderer), which this line's OptiFine (HD_U_J1 pre18) damages the same way
+		//1.21.1's does. Measured, not assumed: the 426 patched classes were unpacked from this line's own
+		//.optifine cache and compared against the intermediary client jar, and every mod mixin in the cross-line
+		//set was cross-referenced against what the comparison found missing. Two repairs came out of that:
+		//
+		//  - method_3374 no longer makes the class_2680.method_26213()I call: the identical call the 1.21.x line
+		//    repairs with this identical registration, so the point is reconstructed in front of OptiFine's body
+		//    instead of replacing it;
+		//  - method_23073 no longer exists under that name, and sodium's
+		//    features.textures.animations.tracking.BlockModelRendererMixin injects into it by name, which fails
+		//    the whole class. The vanilla body is put back under that name - it is the same repair 2.2.10 shipped
+		//    for 1.21.1 before the per-quad observer replaced it there.
+		//
+		//The other members this scan found missing (method_3363, method_3370) are named by no mixin in the set, so
+		//they are left alone: a repair nobody can fail on is churn.
+		registerFix("class_778", new InjectionCallPointFix("class_2680", "method_26213", "()I", "method_3374"));
+		registerFix("class_778", new RestoreVanillaMethodsFix("method_23073"));
+
 		//net/minecraft/client/Keyboard
 		registerFix("class_309", new KeyboardFix());
 
