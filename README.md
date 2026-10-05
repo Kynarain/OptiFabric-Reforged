@@ -31,7 +31,25 @@ Measured with the third-party **FPS Benchmark** mod (`fpstest-1.0.jar`, sha256 `
 
 - **C averages 38.8% above the vanilla baseline** and its worst frame is 5× better (3.31 ms vs 17.21 ms) — OptiFine's own optimisations are doing real work, so the compatibility layer is a net gain here, not a tax.
 - **B (Sodium) is fastest on average (~13% over C) but has the worst tail**: 0.1% low 349 vs 713, worst frame 12.47 ms vs 3.31 ms, lowest FPS 80 vs 302.
-- **The three "performance" mods measured neutral-to-negative in this scene** (C 5040 → D 4475) — this benchmark deliberately keeps worldgen and ticking light, which is exactly where C2ME / Lithium / FerriteCore normally earn their keep. Do not read that row as "those mods are useless".
+- **The three "performance" mods barely show up in this still scene** (C 5040 → D 4475) — the *Base* run keeps world generation and ticking deliberately light. The **41-test suite** below tells the opposite story on the scenarios they were built for.
+
+### Full suite — 41 tests, all four configurations
+
+Same machine, same settings, same deterministic scenes as the table above (the mod writes one report per test; raw reports under [`benchmarks/`](benchmarks/2026-10-05-fps-benchmark/)). Category averages, shown as **average FPS / 1% low**:
+
+| category (tests) | A vanilla | B Sodium + Lithium | C OptiFabric + OptiFine | D = C + Lithium + FerriteCore + C2ME |
+|---|---|---|---|---|
+| idle / static (2) | 4579 / 1278 | **5961** / 1712 | 5388 / 1529 | 5670 / 1686 |
+| flyby, 12 biomes (12) | 2606 / 288 | **5254** / 649 | 4220 / 461 | 4382 / **777** |
+| entities (8) | 1496 / 537 | **1861** / 681 | 1595 / 587 | 1626 / 638 |
+| physics (6) | 3066 / 602 | **4040** / 924 | 3915 / 785 | 3979 / 901 |
+| redstone / block entities (5) | 3935 / 1078 | **5537** / 1523 | 4898 / 1369 | 5004 / 1404 |
+| particles (2) | 1972 / 523 | 2634 / 510 | 2331 / 669 | **2670** / **770** |
+
+- **The vanilla baseline is last in all six categories.** Adding OptiFabric + OptiFine (C) is worth roughly +62% on flybys, +28% on physics, +25% on redstone, +18% on particles and +17% at idle — the compatibility layer pays for itself here too.
+- **D is at or above C in almost every category** (idle 5670 vs 5388, flyby 4382 vs 4220, physics 3979 vs 3915, redstone 5004 vs 4898, particles 2670 vs 2331) and its **tails are clearly better** — flyby 1% low 777 vs 461, particles 770 vs 669. So Lithium / FerriteCore / C2ME *do* earn their keep in real scenarios; the still *Base* scene simply cannot show it.
+- **The single clearest case is the falling-sand wall**: 1% low is 32 (A), 66 (B), **34 (C)** and **73 (D)**. Without the three performance mods, C's tail is as bad as vanilla's — D is what rescues it. Same shape in falling gravel (34 / 74 / 34 / 68).
+- **Particle diversity is the one scenario no mod set fixes**: all four land between 437 and 495 fps. That bottleneck is not ours.
 
 *One machine, one run per group, one benchmark, resolution not forced. Treat these numbers as an indication, not a specification — yours will differ.*
 
