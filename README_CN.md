@@ -193,7 +193,7 @@ java.lang.NullPointerException: Cannot read field "norm" because "multiTex" is n
 |---|---|
 | ✅ 可用 | OptiFine 的视频设置、缩放、连接纹理、动态光源、**光影**(1.21.6 / 1.21.7 除外),以及 1.1.2 起的**抗锯齿** |
 | ⚠️ 有意中和 | `BEFORE_BLOCK_OUTLINE` 事件不再触发(方块描边仍照画);移动方块的 FRAPI 渲染钩子失效(移动方块由原版路径正常渲染) |
-| ❌ 不兼容 | **Sodium**(已声明 `conflicts` 与 `breaks`),以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(已声明 `breaks`)。RyoamicLights 的具体原因是 OptiFine 把原版视频设置界面**整类替换成自己的实现,连父类都换掉**,而它的 mixin 注入在原版父类上;删掉它不会损失功能,OptiFine 自带动态光源。完整清单、来源与加载器实际会怎么做:[下面这一节](#声明的不兼容以及加载器实际会怎么做) |
+| ❌ 不兼容 | **Sodium**(只声明 `conflicts`,即只警告;不写 `breaks`,那会把整个实例拒掉),以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(已声明 `breaks`)。RyoamicLights 的具体原因是 OptiFine 把原版视频设置界面**整类替换成自己的实现,连父类都换掉**,而它的 mixin 注入在原版父类上;删掉它不会损失功能,OptiFine 自带动态光源。完整清单、来源与加载器实际会怎么做:[下面这一节](#声明的不兼容以及加载器实际会怎么做) |
 | 📄 OptiFine 侧限制 | OptiFine 看不到 Fabric 模组内部的资源(`[OptiFine] Unknown resource pack type: …ModNioResourcePack`);光影包与你的 OptiFine 版本不匹配时会打印自己的 `[Shaders]` 报错 |
 
 ### 声明的不兼容,以及加载器实际会怎么做
@@ -203,7 +203,7 @@ java.lang.NullPointerException: Cannot read field "norm" because "multiTex" is n
 | 声明 | 条目 |
 |---|---|
 | `conflicts` | `sodium`(`*`) |
-| `breaks` | `no_fog`、`thallium`、`xradiation`、`ryoamiclights`、`sodium`(`*`) |
+| `breaks` | `no_fog`、`thallium`、`xradiation`、`ryoamiclights` |
 
 Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)(其默认分支 `llama` 上的 `fabric.mod.json`,v1.14.3)声明的同样是 `sodium` 冲突,以及 `no_fog`、`thallium`、`xradiation` 三条 `breaks`;它另外还有三条带版本范围的条目,**本移植有意没有带过来**:
 
@@ -213,17 +213,20 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 | `architectury >1.2.72 <1.3.77` | 1.16/1.17 时代的范围,而且它背后那个冲突在 1.21.1 上已经**被修好**(见下) |
 | `meteor-client >=0.4.1` | 1.16/1.17 时代的条目 |
 
-`ryoamiclights` 是本移植自己加的,原因见上面那张表。把 `sodium` 也列进 `breaks` 同样是本移植自己加的:上游只在 `conflicts` 里声明它,而有些启动器与平台只读 `breaks`。
+`ryoamiclights` 是本移植自己加的,原因见上面那张表。`sodium` **没有**写进 `breaks`:2.2.8 曾经把它同时写进 `breaks` 和 `conflicts`,等于把警告变成了闸门(见下一段),2.2.10 又把它从 `breaks` 里拿了出来 —— 上游只在 `conflicts` 里声明它,本移植现在也一致。
 
-**两个字段不是一回事:`conflicts` 只警告,`breaks` 会被执行。** Sodium 两处都写了。在 **Fabric Loader 0.19.5** 上实测:
+**两个字段不是一回事:`conflicts` 只警告,`breaks` 会被执行。** Sodium 只写在 `conflicts` 里。在 **Fabric Loader 0.19.5** 上实测:
 `conflicts` 条目根本不会给加载器的依赖求解器添加任何约束 —— `ModSolver` 里 `CONFLICTS` 分支至今还是一句
 `// TODO: soft negative dep?` —— 所以日志开头是 `Warnings were found!`,然后照常进入 `Loading 56 mods:`。
 而 `breaks` 点到**已存在**的模组时是另一回事:求解器给出 `NEG_HARD_DEP`,加载器**拒绝这个组合**,不是放行。
-本仓库记录到的一次运行里写着 `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`。所以把 sodium 写进 `breaks`
-是**闸门**,不是声明 —— 装了 sodium 就起不来;只写 `conflicts` 的条目才只是警告。请把这张表读成
-"作者已知这个组合会坏",其中 `breaks` 那一半加载器会真的拦,`conflicts` 那一半不会。
+本仓库记录到的一次运行里写着 `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`;另一侧是
+`NEG_HARD_DEP optifabric_reforged 2.2.9+mc1.21.1 {breaks sodium @ [*]}`,后面紧跟 `Incompatible mods found!`。
+所以 `breaks` 是**闸门**,不是声明 —— 装了 sodium 整个实例就起不来。**2.2.8 到 2.2.9 两处都写,于是任何同时装了
+sodium 的实例都被加载器直接拒绝;2.2.10 只写在 `conflicts`,实例能起来,日志里留一条警告。** 这才是当前已知状态
+的诚实说法:sodium 自己的若干 mixin 在本模组所服务的类上确实不成立(调用点见
+[`docs/COMPATIBILITY_CN.md`](docs/COMPATIBILITY_CN.md)),但那只能支持"警告",不支持把整个整合包一起拒掉。
 
-**Sodium 这一对只有一侧还在声明。** Sodium 只在 `breaks` 里声明这一对 —— 我们手上的 sodium 构建都没有 `conflicts`(`sodium-fabric` `0.5.11+mc1.21`、`0.6.13+mc1.21.1`、`0.8.13+mc1.21.1` 都是 `"breaks": {"optifabric": "*"}`)—— 而它点名的是**旧 mod id `optifabric`**;本线从 2.0.0 起以 `optifabric_reforged`(显示名 *OptiFabric Reforged*)发布,那条规则根本不会命中,所以你在 sodium 上看到的那条警告来自**本模组这一侧**。把 sodium 写进我们自己的 `breaks`,正是把改名弄丢的那条声明补回来:在本线上,它是加载器唯一会理会的 sodium 声明。
+**Sodium 这一对只有一侧还在声明。** Sodium 只在 `breaks` 里声明这一对 —— 我们手上的 sodium 构建都没有 `conflicts`(`sodium-fabric` `0.5.11+mc1.21`、`0.6.13+mc1.21.1`、`0.8.13+mc1.21.1` 都是 `"breaks": {"optifabric": "*"}`)—— 而它点名的是**旧 mod id `optifabric`**;本线从 2.0.0 起以 `optifabric_reforged`(显示名 *OptiFabric Reforged*)发布,那条规则根本不会命中,所以你在 sodium 上看到的那条警告来自**本模组这一侧**。承担这条声明的字段是 `conflicts`,所以它写在 `conflicts` 里,不再写进 `breaks`。
 
 **Architectury 是反过来的例子,值得留着。** 上游声明 architectury 坏,architectury 自己的元数据也声明了 `breaks: optifabric <1.13.0`。而在 1.21.1 上,本移植把它背后真正的冲突修掉了:OptiFine 往 `GameRenderer.render` **中间**插了自己的局部变量,把 Mixin `LocalCapture` 交给处理器的原版槽位整体顶高,`LocalSlotLayoutFix` 则把这些多出来的槽位挪到局部变量区末尾。现在 `architectury-api` `13.0.11` 能通过兼容性扫描(矩阵第 14 行),而改成 `optifabric_reforged` 正是让 architectury 那条声明不再命中的原因。实测记录见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) 与 [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md)。
 
