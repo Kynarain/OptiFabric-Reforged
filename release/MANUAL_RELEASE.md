@@ -1,4 +1,4 @@
-# 手动发布清单(1.20.6 线,每个版本一个发布条目)
+手动发布清单(1.20.6 线,每个版本一个发布条目)
 
 > 本文件只讲 **1.20.6 线**(`main`):整条线**只出一个 jar**,mod id 是 `optifabric`。
 > 同仓库还有 1.21.x 与 26.x 两条线,各线的 jar **不能互相替代**;此外 `wip/1.20.6-reforged` 分支上还有
@@ -22,7 +22,10 @@
 | 1.1.0 | `1.1.0+mc1.20.6` / `v1.1.0+mc1.20.6` | `dist\OptiFabric-1.1.0+mc1.20.6.jar` | 726924 | `6ABABCAF25DFDB592CE2299DC3F19F717FD4399B089C6C5C559EBE4AC5BDC93D` | `CHANGELOG.md` 1.1.0 节 |
 | 1.1.1 | `1.1.1+mc1.20.6` / `v1.1.1+mc1.20.6` | `dist\OptiFabric-1.1.1+mc1.20.6.jar` | 729103 | `F9BBEE732E0C1FFB0FA84CA65DB8E566A555138DBFEC602CB71F7442C1F3DFFD` | `CHANGELOG.md` 1.1.1 节 |
 | 1.1.2 | `1.1.2+mc1.20.6` / `v1.1.2+mc1.20.6` | `dist\OptiFabric-1.1.2+mc1.20.6.jar` | 729105 | `0267DF7B6DDA25424A6FF11060EFC528429B15AE3A844992AE0ED1F94DC85C0C` | `CHANGELOG.md` 1.1.2 节 |
-| **1.1.3** | `1.1.3+mc1.20.6` / `v1.1.3+mc1.20.6`(**未发布**) | `dist\OptiFabric-1.1.3+mc1.20.6.jar` | 733927 | `7A65777272624D8A33DC1C6EEF28986FCBDCC40998A175B7119A43101245010C` | `CHANGELOG.md` 1.1.3 节 |
+| **1.1.3** | `1.1.3+mc1.20.6` / `v1.1.3+mc1.20.6` | `dist\OptiFabric-1.1.3+mc1.20.6.jar` | 733927 | `7A65777272624D8A33DC1C6EEF28986FCBDCC40998A175B7119A43101245010C` | `CHANGELOG.md` 1.1.3 节 |
+| **1.1.4** | `1.1.4+mc1.20.6` / `v1.1.4+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6.jar` | 725273 | `49F7DA6131EA1EB9FE5DB11D7A4F8B883F2E119E58A19C9A4B03774C1FE7535F` | `CHANGELOG.md` 1.1.4 节 |
+| 1.1.4(仅 GitHub:`-full`) | `1.1.4+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6-full.jar` | 743283 | `0E4B602414C2052D1B625D8F00C246F40D8A65329E994558759469DB39D7055E` | `CHANGELOG.md` 1.1.4 节 |
+| **1.1.5** | `1.1.5+mc1.20.6` / `v1.1.5+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar` | 729236 | `4BC7F967BA1E7F4F8947B050F1DD45303203DC1F1CFCACBD017FC23A406AD8DB` | `CHANGELOG.md` 1.1.5 节 |
 
 `-sources.jar`(一般不发,留档用):
 
@@ -32,20 +35,23 @@
 | 1.1.1 | `dist\OptiFabric-1.1.1+mc1.20.6-sources.jar` | 92481 | `A12AEE0753935446C8F0F53788F595FF74F80CD4D044B61DF441E08C941EB3E8` |
 | 1.1.2 | `dist\OptiFabric-1.1.2+mc1.20.6-sources.jar` | 92485 | `B8D715A845BF94931FCC61DA96D682BC88158CD0D3E96ED11C2271B4A88A44B6` |
 | **1.1.3** | `dist\OptiFabric-1.1.3+mc1.20.6-sources.jar` | 98407 | `AF1589E3EC5EEB5BCAC320C5F53E3622CB9D82A04E55DF3C4A35FB82CC6B9D7C` |
+| **1.1.4** | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6-sources.jar` | 94335 | `946766BB14AF63CFF925C535746FAD4DC407914749788EEFFC87DF8F69BB8D8E` |
+| **1.1.5** | `dist\OptiFabric-Reforged-1.1.5-reforged+mc1.20.6-sources.jar` | 97979 | `6551EC8D36FAD6F4E2043F03CFEAB1507D773792A830596E6256EB7A346ADC44` |
 
 **交叉核对(1.1.2)**:上表 1.1.2 的 SHA-256 与 `collision-1206\REPORT.md` 里记下的"已发布 1.1.2"
 (`0267DF7B…C85C0C`,729,105 B)逐字符相同,也与 `release-upload\1.20.6-1.1.2\` 里那一份相同 —— 三处一致。
 
-## 二、1.1.3 这一次要发的东西
+## 二、1.1.5 这一次要发的东西
 
 | | |
 |---|---|
-| 上传的 jar | `dist\OptiFabric-1.1.3+mc1.20.6.jar`(733,927 B,`7A657772…245010C`) |
-| 取件目录 | `C:\Users\kynar\IdeaProjects\OptiFabric\release-upload\1.20.6-1.1.3\`(jar + `-sources.jar` + `metadata\`) |
-| 元数据草稿 | [`release\tmp\modrinth-1.20.6.json`](tmp/modrinth-1.20.6.json)、[`release\tmp\curseforge-1.20.6.json`](tmp/curseforge-1.20.6.json) |
-| 标签 | `v1.1.3+mc1.20.6` |
-| Release 正文 | `CHANGELOG.md` 的 **1.1.3 节**(整节粘贴) |
+| 上传的 jar | `dist\OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar`(729,236 B,`4BC7F967…06AD8DB`) |
+| 取件目录 | `I:\mods\release-upload\1.20.6-reforged-1.1.5\`(jar + `-sources.jar` + `metadata\`) |
+| 元数据草稿 | [`release\tmp\modrinth-1.20.6-reforged.json`](tmp/modrinth-1.20.6-reforged.json)、[`release\tmp\curseforge-1.20.6-reforged.json`](tmp/curseforge-1.20.6-reforged.json) |
+| 标签 | `v1.1.5+mc1.20.6` |
+| Release 正文 | `CHANGELOG.md` 的 **1.1.5 节**(整节粘贴) |
 | Latest | **不勾** `make_latest`(Latest 归 26.x 线) |
+| `-full` 变体 | 由 `convenience/1.20.6-reforged-1.1.5` 构建,与默认产物共用同一个 Release(仅 GitHub) |
 
 ## 三、核对命令(每次升版都跑一遍)
 

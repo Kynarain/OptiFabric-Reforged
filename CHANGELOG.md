@@ -1,5 +1,29 @@
 # 更新日志
 
+## 1.1.5-reforged+mc1.20.6 — 修好 `BlockModelRenderer` 上被 OptiFine 拆掉的两处:Sodium 按名字注入的那个方法,以及它丢掉的调用点
+
+> 本版只改补丁管线里的修复器,没有改动其它行为。两处修复**都有实测依据**,依据与边界写在下面。
+
+### 量出来的,不是猜的
+
+这个产物用的 OptiFine(`preview_OptiFine_1.20.6_HD_U_J1_pre18`)把 `class_778`(`BlockModelRenderer`)重编译成了与 1.21.1 上同样的损伤形态。做法是:把本产物**自己的补丁类缓存**解包(426 个类,读出时 CRC 校验一致),与 intermediary 客户端 jar 逐类比对,再把交叉线测试用的那 17 个模组的全部 mixin(3414 个类)拿来做交叉引用。结论:
+
+* **只有一处的"丢失成员"被 mixin 按名字引用**:Sodium 的 `features.textures.animations.tracking.BlockModelRendererMixin` 注入 `class_778.method_23073`,而这个方法已被 OptiFine 改名拿走 —— 注入找不到目标会让**整个类**变换失败;
+* `class_778.method_3374` 不再发出 `class_2680.method_26213()I` 调用 —— **与 1.21.x 线修过的完全同一个调用点**;
+* 同一类里 `method_3363`、`method_3370` 也消失了,但**没有任何模组按名字引用它们**,所以本版**不修**;另外 16 个"受损类"(含 `Screen`)同样只被 mixin 触及、无一引用丢失成员,也**不修** —— 那只会是无法验证的改动。
+* 方法学说明:扫描一开始把"匿名内部类消失"也算了进去,但 OptiFine 重编译会**重新编号**这些类,拿同名条目比的是不同的类,属假阳性;剔除后才是上面的结论。
+
+### 改了哪两个文件
+
+* 新增 `InjectionCallPointFix`(从 1.21.x 移植;两条线的 `ClassFixer` 接口形状一致):**保留 OptiFine 的方法体**,只把丢失的调用点重建在方法开头、结果丢弃 —— 注入点因此存在,模组的钩子变成惰性,而不是让类变换失败;
+* `OptifineFixer` 注册两条:`InjectionCallPointFix("class_2680", "method_26213", "()I", "method_3374")` 与 `RestoreVanillaMethodsFix("method_23073")`(后者本来就属于这条线,把原版方法体放回那个名字下)。
+
+### 离线校验
+
+补丁类 **426/426 通过 JVM 自身的加载与链接校验(0 失败、0 跳过)**;ASM 数据流校验 425/426,唯一一条报告是 `class_156` 上「预期 `Thread`、实际 `class_156$7`」,而 `javap` 显示该类**正是** `extends java.lang.Thread`、且 JVM 权威校验对它通过 —— 属校验器的层级解析限制,不是缺陷。
+
+**尚未证实的一点**:这两个修复器只在**打补丁时**生效,所以**运行期效果还没有观测到**;确证需要清空 `.optifine/` 后启动一次(日志里应出现 `Re-created the injection point net/minecraft/class_2680.method_26213()I …`,且 Sodium 不再报找不到 `method_23073`)。
+
 ## 1.1.4-reforged+mc1.20.6 — 按平台要求移除运行时下载与进程启动;C2ME 垫片改为「打印指引并结束本次启动」;同时提供 GitHub-only 的 `-full` 构建
 
 ### 为什么改:平台的审核意见(原文与译文)
