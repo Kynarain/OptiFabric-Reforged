@@ -35,6 +35,34 @@
 
 *前提说明:单机单次(测试机 i5-12600KF + RX 7800 XT、Java 22、堆 5836 MB)、每组只跑一轮、只用一个基准。你自己的数字会不同。*
 
+<details>
+<summary><b>完整测试环境(点击展开)</b></summary>
+
+四组共用,唯一变量就是模组集:
+
+| 项 | 值 |
+|---|---|
+| Minecraft / 加载器 | 1.21.1 / Fabric Loader 0.19.5 |
+| Java / 堆 | Java 22.0.2(HotSpot 64-Bit)/ 启动器默认,max heap 5836 MB |
+| 机器 | Intel i5-12600KF(16 核)· AMD Radeon RX 7800 XT(OpenGL 3.2 Core,驱动 25.12.1.251128)· Windows 10 10.0 amd64 |
+| 基准 | `fpstest-1.0.jar` —— FPS Benchmark,mod id `fpstest`,sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56` |
+| 场景 | 一键 *Base FPS Benchmark*(showcase):19 段脚本化运镜(森林、村庄、战斗、红石、洞穴、下界、末地…),≈194.5 秒,固定种子 `27182` |
+| 冻结设置 | 四个实例的 `options.txt` 逐字节相同(sha256 `AC506701…`):`renderDistance:8`、`enableVsync:false`、`maxFps:260`(在 1.21.1 里等于"无限")、`graphicsMode:1`、`ao:true`、`entityShadows:true`、`fov:0.0`、`guiScale:0`、`particles:0`,光影关闭 |
+| 运行方式 | 一次只跑一个客户端;在标题界面按 `Run Base Benchmark`;每组跑一轮 |
+
+各组模组与每个 jar 的 sha256:
+
+| 组 | 模组 |
+|---|---|
+| A | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4…` + `fpstest-1.0.jar` `F1168191…` |
+| C | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34…` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14…` |
+| D | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98…` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D…` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C…` |
+| B | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98…` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149…` |
+
+分辨率未强制(各实例用自己的窗口尺寸)。单机、每组一轮、单一基准 —— 这些数字是参考值,不是规格书。
+
+</details>
+
 ## 📖 概览
 
 OptiFine 不是 Fabric 模组:它的 jar 里是针对原版**混淆**客户端类的字节码补丁,加上 OptiFine 自己的类。OptiFabric 在 `preLaunch` 阶段驱动 OptiFine 的补丁器、去混淆、重映射到运行期命名空间、修掉它重编译后留下的结构问题,并在 Mixin 之前把这些补丁类注册进 Loader。

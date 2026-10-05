@@ -35,6 +35,34 @@ Measured on one machine with the third-party **FPS Benchmark** mod (`fpstest-1.0
 
 *Caveats: one machine (i5-12600KF + RX 7800 XT, Java 22, 5836 MB heap), one run per group, one benchmark. Your numbers will differ.*
 
+<details>
+<summary><b>Full test environment (click to expand)</b></summary>
+
+Shared by all four groups — the mod set is the only variable:
+
+| item | value |
+|---|---|
+| Minecraft / Loader | 1.21.1 / Fabric Loader 0.19.5 |
+| Java / heap | Java 22.0.2 (HotSpot 64-Bit) / launcher default, max heap 5836 MB |
+| Machine | Intel i5-12600KF (16 cores) · AMD Radeon RX 7800 XT (OpenGL 3.2 Core, driver 25.12.1.251128) · Windows 10 10.0 amd64 |
+| Benchmark | `fpstest-1.0.jar` — FPS Benchmark, mod id `fpstest`, sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56` |
+| Scene | one-click *Base FPS Benchmark* (showcase): 19 scripted cinematic segments (forest, village, combat, redstone, cave, nether, end…), ≈194.5 s, deterministic seed `27182` |
+| Frozen settings | `options.txt` byte-identical in all four instances (sha256 `AC506701…`): `renderDistance:8`, `enableVsync:false`, `maxFps:260` (= unlimited in 1.21.1), `graphicsMode:1`, `ao:true`, `entityShadows:true`, `fov:0.0`, `guiScale:0`, `particles:0`, shaders off |
+| How it ran | one client at a time; `Run Base Benchmark` pressed from the title screen; one run per group |
+
+Mod sets, with the sha256 of every jar:
+
+| group | mods |
+|---|---|
+| A | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4…` + `fpstest-1.0.jar` `F1168191…` |
+| C | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34…` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14…` |
+| D | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98…` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D…` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C…` |
+| B | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98…` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149…` |
+
+Resolution was not forced (each instance used its own window size). One machine, one run per group, one benchmark — treat the numbers as an indication, not a specification.
+
+</details>
+
 ## 📖 Overview
 
 OptiFine is not a Fabric mod: its jar holds bytecode patches against *obfuscated* vanilla client classes plus its own classes. OptiFabric drives OptiFine's patcher at `preLaunch`, de-obfuscates the result, remaps it into the runtime namespace, repairs what OptiFine's recompiler left behind, and registers the patched classes with Loader before Mixin ever sees them.
