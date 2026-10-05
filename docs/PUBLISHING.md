@@ -2,7 +2,7 @@
 
 本文档记录"把本项目发出去"需要做的步骤。仓库里已经准备好的东西、以及**你还需要自己做的部分**都写在下面。
 
-> 本仓库只有**一条发布线**:**1.21.x** = `2.2.8+mc1.21` … `2.2.8+mc1.21.11`(10 个版本,一份源码;
+> 本仓库只有**一条发布线**:**1.21.x** = `2.2.9+mc1.21` … `2.2.9+mc1.21.11`(10 个版本,一份源码;
 > 仓库根目录就是那个 Gradle 项目,下面各节都以它为例)。
 >
 > **分支:**
@@ -15,7 +15,7 @@
 >
 > ⚠️ **`mc1.21.x` 不是 1.21.x 的开发分支** —— 名字像,内容是 1.1.0 那一刻的快照;从今以后 1.21.x 的修复走 **`1.21.x`**。
 >
-> **发布标签是 `v<版本>+mc<MC版本>`**(例如 `v2.2.8+mc1.21.11`),逐版本唯一 —— 这个仓库同时承载 26.x 线,
+> **发布标签是 `v<版本>+mc<MC版本>`**(例如 `v2.2.9+mc1.21.11`),逐版本唯一 —— 这个仓库同时承载 26.x 线,
 > 该线已占用 `v2.0.0`,而 tag 是仓库级的,所以每个 jar 的 tag 都带上自己的 MC 版本;tag 与产物名、release 标题写同一串。
 > (历史:1.1.0 那次的 10 个 jar 挂在同一个不带 `+mc` 的 `v1.1.0` 条目下;2.0.0 起每个 jar 一个 tag。)
 > `release/publish.ps1` 用 `$defaultTagTarget` 取 tag 的目标分支(当前为 `1.21.x`)。
@@ -29,7 +29,7 @@
 | 项目 | 位置 | 说明 |
 |---|---|---|
 | 源码仓库 | 仓库根目录 | 已配好 `.gitignore`(不含 OptiFine、测试工件、构建产物) |
-| 构建配置 | `build.gradle` / `gradle.properties`(仓库根目录) | 版本号 `2.2.8+mc1.21.11`,产物名 `OptiFabric-2.2.8+mc1.21.11.jar` |
+| 构建配置 | `build.gradle` / `gradle.properties`(仓库根目录) | 版本号 `2.2.9+mc1.21.11`,产物名 `OptiFabric-2.2.9+mc1.21.11.jar` |
 | 许可 | `LICENSE.txt` | MPL-2.0(上游 OptiFabric 的许可,移植必须保留) |
 | 使用者文档 | `README.md` | 原理、安装、已知问题、排查(已按 1.21.11 更新) |
 | 开发记录 | `docs/DEVELOPMENT.md` | 逐轮排查与可复现的离线校验工具(1.21.11 的 9 类崩溃都在里面) |
@@ -46,7 +46,7 @@
 cd I:\mods\OptiFabric-1.21.x   # 1.21.x 的 worktree;父仓库 I:\mods\OptiFabric 停在 wip/26.2,别在那里 checkout
 foreach ($v in @("1.21","1.21.1","1.21.3","1.21.4","1.21.6","1.21.7","1.21.8","1.21.9","1.21.10","1.21.11")) {
 	.\gradlew build "-Pmc=$v" --offline
-	Copy-Item "build\libs\OptiFabric-2.2.8+mc$v.jar" dist -Force
+	Copy-Item "build\libs\OptiFabric-2.2.9+mc$v.jar" dist -Force
 }
 ```
 
@@ -60,8 +60,8 @@ foreach ($v in @("1.21","1.21.1","1.21.3","1.21.4","1.21.6","1.21.7","1.21.8","1
 
 产物在 `build\libs\`(顺手复制到 `dist\`,里面已有一份现成的):
 
-- `OptiFabric-2.2.8+mc<版本>.jar` ← **上传对应版本这个**
-- `OptiFabric-2.2.8+mc<版本>-sources.jar`(可选,一般不用发)
+- `OptiFabric-2.2.9+mc<版本>.jar` ← **上传对应版本这个**
+- `OptiFabric-2.2.9+mc<版本>-sources.jar`(可选,一般不用发)
 
 每个版本发之前建议先跑一遍离线验证(大约 4 分钟一个版本):
 
@@ -74,7 +74,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-versio
 ```powershell
 cd I:\mods\OptiFabric-1.21.x
 git add -A
-git commit -m "OptiFabric 2.2.8+mc1.21.x: OptiFine on Fabric for 1.21 through 1.21.11"
+git commit -m "OptiFabric 2.2.9+mc1.21.x: OptiFine on Fabric for 1.21 through 1.21.11"
 git remote add origin https://github.com/<你的用户名>/<仓库名>.git
 git push -u origin 1.21.x        # 推当前分支(1.21.x)
 ```
@@ -84,12 +84,12 @@ git push -u origin 1.21.x        # 推当前分支(1.21.x)
 
 ```powershell
 # 例:1.21.11 的 2.0.0(标签带上该 MC 版本,否则会和 26.x 线的 v2.0.0 撞名)
-git tag "v2.2.8+mc1.21.11"
-git push origin "v2.2.8+mc1.21.11"
+git tag "v2.2.9+mc1.21.11"
+git push origin "v2.2.9+mc1.21.11"
 ```
 
 然后在 GitHub 网页上基于该 tag 建 Release(`Target` 选 **`1.21.x`** 分支 —— 见文首分支表),
-把 `OptiFabric-2.2.8+mc1.21.11.jar`
+把 `OptiFabric-2.2.9+mc1.21.11.jar`
 (以及 `-sources.jar`,可选)作为附件上传。仓库根目录的发布脚本也能做同样的事:
 
 ```powershell
@@ -116,7 +116,7 @@ git push origin "v2.2.8+mc1.21.11"
    - 模组加载器:**Fabric**
    - 许可:**MPL-2.0**(与上游一致,必须一致)
    - 分类建议:Optimization / Miscellaneous
-2. **上传文件**:10 个 jar **各传一个文件**,版本名用同一个格式 `2.2.8+mc<版本>`,并在文件设置里把**对应的那一个游戏版本**勾上(例如 `OptiFabric-2.2.8+mc1.21.8.jar` 只勾 1.21.8)。changelog 用 `docs/RELEASE_NOTES_1.21.x.md` 里对应那一节。
+2. **上传文件**:10 个 jar **各传一个文件**,版本名用同一个格式 `2.2.9+mc<版本>`,并在文件设置里把**对应的那一个游戏版本**勾上(例如 `OptiFabric-2.2.9+mc1.21.8.jar` 只勾 1.21.8)。changelog 用 `docs/RELEASE_NOTES_1.21.x.md` 里对应那一节。
    - 也可以先只发几个版本(1.21.1 / 1.21.4 / 1.21.8 这类用的人多),其余随时补传。
 3. **项目描述**:`docs/DESCRIPTION.md` 里给了成套文案 —— "简介"栏粘贴**简要描述**(英文在前、中文在后,CF 要求英文排最前),项目正文粘贴**详细描述**(有中文和英文两版,CF 支持 Markdown;里面已经带了"支持的版本"表)。
    GitHub 仓库的 About 也可以直接用那句简要描述。
@@ -181,7 +181,7 @@ git push origin "v2.2.8+mc1.21.11"
 
   # 已发布的正文与笔记逐字符相等(正文按 LF 规范化)
   $note = ([IO.File]::ReadAllText("release\notes\mc1.21.11.md", [Text.Encoding]::UTF8)) -replace "`r`n", "`n"
-  gh release view "v2.2.8+mc1.21.11" --json body --jq .body > "$env:TEMP\body.txt"
+  gh release view "v2.2.9+mc1.21.11" --json body --jq .body > "$env:TEMP\body.txt"
   $body = ([IO.File]::ReadAllText("$env:TEMP\body.txt", [Text.Encoding]::UTF8)) -replace "`r`n", "`n"
   $body -ceq $note   # 必须是 True
   ```
