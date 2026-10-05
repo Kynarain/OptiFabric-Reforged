@@ -8,24 +8,23 @@
 完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。The full MC 1.21.1 compatibility list is in [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
 
-## 📊 跑分实测(1.21.x 线,第三方基准)
+## 📊 跑分实测 —— 所有环境与结果都在这一张表里(1.21.x 线)
 
-> 本段数据属于 **1.21.x 线**;完整表格与英文版见 [`1.21.x` 分支的 README](https://github.com/Kynarain/OptiFabric-Reforged/blob/1.21.x/README.md#-benchmarks--optifabric-vs-a-sodium-stack-vs-vanilla)。
+用第三方基准 **FPS Benchmark**(`fpstest-1.0.jar`,sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56`)测得:每组跑一次 3 分钟脚本化 *Base*(19 段运镜 —— 森林、村庄、战斗、红石、洞穴、下界、末地;固定种子 `27182`)。**原始报告(含逐帧样本)**见 [`benchmarks/2026-10-05-fps-benchmark/`](https://github.com/Kynarain/OptiFabric-Reforged/tree/1.21.x/benchmarks/2026-10-05-fps-benchmark)。
 
-用第三方基准 **FPS Benchmark**(`fpstest-1.0.jar`,sha256 `F1168191…`)在同一台机器上测得:3 分钟脚本化 *Base* 跑分,19 个场景,固定种子 `27182`,视距 8,关闭垂直同步,四个实例的 `options.txt` 完全一致。
+| 组 | 角色 | 模组(sha256 前 8) | 运行环境 —— 四组完全相同 | 平均 FPS | 1% low | 0.1% low | p99 帧 | 最大帧 | 最低帧 | 标准差 | 原始结果 |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| **A** | 纯净基线 | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` | Minecraft 1.21.1 · Fabric Loader 0.19.5 · Java 22.0.2 · max heap 5836 MB · Intel i5-12600KF · AMD RX 7800 XT(驱动 25.12.1.251128)· Windows 10 amd64 · 视距 8 · VSync 关 · `maxFps:260`(等于"无限")· 光影关 · `options.txt` 四份逐字节相同(sha256 `AC506701…`)· 种子 27182 | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 | [report.md](https://github.com/Kynarain/OptiFabric-Reforged/blob/1.21.x/benchmarks/2026-10-05-fps-benchmark/A-vanilla-baseline/report.md) |
+| **C** | 仅 OptiFabric + OptiFine | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` | *(同上)* | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 | [report.md](https://github.com/Kynarain/OptiFabric-Reforged/blob/1.21.x/benchmarks/2026-10-05-fps-benchmark/C-OptiFabric-OptiFine/report.md) |
+| **D** | 推荐组合 | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` | *(同上)* | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | **319** | **747** | [report.md](https://github.com/Kynarain/OptiFabric-Reforged/blob/1.21.x/benchmarks/2026-10-05-fps-benchmark/D-OptiFabric-OptiFine-LiFeC2ME/report.md) |
+| **B** | Sodium 路线(与 OptiFine 不兼容) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` | *(同上)* | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 | [report.md](https://github.com/Kynarain/OptiFabric-Reforged/blob/1.21.x/benchmarks/2026-10-05-fps-benchmark/B-Sodium-Lithium/report.md) |
 
-| 装的模组 | 平均 FPS | 1% low | 0.1% low | 最大帧时间 | 最低 FPS |
-|---|---:|---:|---:|---:|---:|
-| 仅 Fabric API(纯净基线) | 3631 | 774 | 442 | 17.21 ms | 58.1 |
-| **OptiFabric + OptiFine** | **5040** | **1098** | **713** | **3.31 ms** | 302 |
-| OptiFabric + OptiFine + Lithium + FerriteCore + C2ME | 4475 | 1077 | 721 | 3.14 ms | 319 |
-| Sodium + Lithium | **5680** | 1017 | 349 | 12.47 ms | 80.2 |
+- **C 平均比纯净基线高 38.8%**,最大帧时间还好 5 倍(3.31 ms vs 17.21 ms)—— OptiFine 自带的优化确实在干活,兼容层在这里是净收益而不是代价。
+- **B(Sodium)平均最快(比 C 高约 13%),但尾部最差**:0.1% low 349 vs 713、最大帧 12.47 ms vs 3.31 ms、最低帧 80 vs 302。
+- **那三个"性能模组"在本场景中性偏负收益**(C 5040 → D 4475)—— 该基准刻意让世界生成与 tick 保持轻量,而那正是 C2ME / Lithium / FerriteCore 的主场。**不要把这一行读成"那些模组没用"**。
 
-- **OptiFabric + OptiFine 平均比纯 Fabric 快 38.8%**,最大帧时间好 5 倍 —— OptiFine 自带的优化确实在干活。
-- 对上 Sodium 栈平均差约 13%,但**尾部反过来**:OptiFabric + OptiFine 的 0.1% low 好一倍、最大帧好 3.8 倍、最低帧高 3.8 倍。
-- 三个"性能模组"在**本场景**中中性偏负收益(该基准刻意让世界生成与 tick 保持轻量,而那正是它们的主场);不要读成"那些模组没用"。
+*单机、每组一轮、单一基准,分辨率未强制。数字是参考值,不是规格书。完整英文版见 [`1.21.x` 分支 README](https://github.com/Kynarain/OptiFabric-Reforged/blob/1.21.x/README.md#-benchmarks--every-environment-and-every-result-in-one-table)。*
 
-*单机单次、每组一轮,你自己的数字会不同。*
 ## 支持的版本
 
 | Minecraft | 产物 | OptiFine 构建 | Java |
