@@ -451,6 +451,32 @@ public class OptifineFixer {
 		//was registered: with method_3353 restored the class transforms, the run gets several seconds further and
 		//the next failure is class_778's, not this one.
 		registerFix("class_776", new RestoreVanillaMethodsFix(true, "method_3353"));
+
+		//net/minecraft/client/render/LevelRenderer once more, and the last shape of this family: the call itself.
+		//OptiFine's recompile of method_22710 does not make the particle call the game makes - it makes the same
+		//call to a method of its own, render(Lnet/minecraft/class_765;Lnet/minecraft/class_4184;FLnet/minecraft/class_4604;)V,
+		//with the receiver and the three arguments byte for byte the same and the camera frustum added as a fourth.
+		//(The game's method_22710 has two calls to class_702.method_3049(...)V, OptiFine's has three of these, one
+		//per shader branch; both sets are mutually exclusive branches, so one call runs per frame either way.)
+		//carryon 2.2.6.13's LevelRendererMixin is an @Inject whose refmap target is a call to
+		//class_702.method_3049(Lclass_765;Lclass_4184;F)V inside that method, so it scans 0 targets and, with
+		//carryon.fabric.mixins.json's defaultRequire = 1, it fails the whole class:
+		//  InjectionError: Critical injection failure: Callback method onRenderLevel(...)V in
+		//  carryon.fabric.mixins.json:LevelRendererMixin from mod carryon failed injection check, (0/1) succeeded.
+		//  Scanned 0 target(s). Using refmap carryon.refmap.json
+		//-> "Mixin transformation of net.minecraft.class_761 failed" during OptiFine's own Reflector bootstrap,
+		//before the title screen. InjectionCallPointFix is the wrong instrument here: what that point wraps is a
+		//*draw*, so a re-created call would run the particle pass a second time, and that fixer puts its call in
+		//front of the method body, which would move the mixin's handler to before the frame is drawn at all. The
+		//game's call and OptiFine's differ only in the callee, and OptiFine's class_702.method_3049 is still on the
+		//class as its own six-instruction forwarder to render(..., null) - so the call is aimed back where the game
+		//aimed it and executes exactly once. The frustum is the one argument that has to go, and OptiFine's render
+		//uses it for one thing only (per-particle frustum culling); null is what OptiFine's own forwarder passes.
+		//Proved on an edited patch cache before it was registered: with method_22710 carrying this redirect the
+		//class transforms and the run reaches the title screen with every counter clean - see the report.
+		registerFix("class_761", new RestoreVanillaCallFix("class_702", "render",
+				"(Lnet/minecraft/class_765;Lnet/minecraft/class_4184;FLnet/minecraft/class_4604;)V", "method_3049",
+				"(Lnet/minecraft/class_765;Lnet/minecraft/class_4184;F)V", "method_22710"));
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
