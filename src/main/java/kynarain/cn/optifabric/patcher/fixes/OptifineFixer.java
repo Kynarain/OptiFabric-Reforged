@@ -477,6 +477,29 @@ public class OptifineFixer {
 		registerFix("class_761", new RestoreVanillaCallFix("class_702", "render",
 				"(Lnet/minecraft/class_765;Lnet/minecraft/class_4184;FLnet/minecraft/class_4604;)V", "method_3049",
 				"(Lnet/minecraft/class_765;Lnet/minecraft/class_4184;F)V", "method_22710"));
+
+		//sodium itself, and the five rows that only stage sodium with it. OptiFine did not drop either call: it
+		//compiled the same arguments to methods of its own, with a return type of its own, so what is missing is a
+		//call instruction and not a method. Both are @Redirects whose refmap target is the game's call:
+		//  Redirector redirectSampleColor(Lnet/minecraft/class_243;Lnet/minecraft/class_6491$class_4859;)Lnet/minecraft/class_243;
+		//    in sodium-common.mixins.json:features.render.world.sky.ClientLevelMixin from mod sodium ... Scanned 0 target(s)
+		//  Redirector redirectGetFancyWeather()Z
+		//    in sodium-common.mixins.json:features.options.weather.LevelRendererMixin from mod sodium ... Scanned 0 target(s)
+		//Both fail the whole class through their configs' defaultRequire = 1, which is why sodium cannot start on
+		//this stack once the loader's `breaks` gate is out of the way. The two sites need different repairs and the
+		//difference is in their arguments, not in their return types:
+		//  - class_638.method_23777 builds its second argument (a class_6491$class_4859 resolver) with an
+		//    invokedynamic a few instructions earlier, so it is neither a parameter nor a field and the call cannot
+		//    be rebuilt - but OptiFine's replacement takes the very same arguments, so RestoreSiblingCallFix
+		//    duplicates them (DUP2) and makes the game's call from the copies, discarding its class_243 result.
+		//  - class_310.method_1517 takes no arguments at all, so InjectionCallPointFix's ordinary repair - re-create
+		//    the call at the top of the method and discard the result - is exact and costs nothing.
+		//Neither changes what OptiFine's own code reads: every value OptiFine computed is still computed.
+		registerFix("class_638", new RestoreSiblingCallFix("class_6491", "sampleM",
+				"(Lnet/minecraft/class_243;Lnet/minecraft/class_6491$class_4859;)Lnet/optifine/Vec3M;", "method_24895",
+				"(Lnet/minecraft/class_243;Lnet/minecraft/class_6491$class_4859;)Lnet/minecraft/class_243;", "method_23777"));
+		registerFix("class_761", new InjectionCallPointFix("class_310", "method_1517", "()Z", "method_22714"));
+
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
