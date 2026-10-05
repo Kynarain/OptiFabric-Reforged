@@ -18,50 +18,22 @@ Load **OptiFine** under **Fabric Loader**. Put OptiFine's jar next to this mod a
 This branch is the **1.21.x line** and covers Minecraft **1.21 – 1.21.11** (all ten releases OptiFine ever shipped a build for). The 26.x line (Minecraft 26.2 and 26.1.2) lives on its own branch/worktree and is developed separately; jars from the two lines are **not interchangeable**.
 完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。The full MC 1.21.1 compatibility list is in [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
-## 📊 Benchmarks — OptiFabric vs a Sodium stack vs vanilla
+## 📊 Benchmarks — every environment and every result in one table
 
-Measured on one machine with the third-party **FPS Benchmark** mod (`fpstest-1.0.jar`, sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56`), 3-minute scripted *Base* run — 19 scenes (forest, village, combat, redstone, cave, nether, end) — deterministic seed `27182`, render distance 8, VSync off, identical `options.txt` in all four instances.
+Measured with the third-party **FPS Benchmark** mod (`fpstest-1.0.jar`, sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56`): one 3-minute scripted *Base* run per group (19 cinematic segments — forest, village, combat, redstone, cave, nether, end; deterministic seed `27182`). Raw reports, including every per-frame sample: **[`benchmarks/2026-10-05-fps-benchmark/`](benchmarks/2026-10-05-fps-benchmark/)**.
 
-| mods | avg FPS | 1% low | 0.1% low | p99 frame | worst frame | lowest FPS | std dev |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Fabric API only (baseline) | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 |
-| **OptiFabric + OptiFine** | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 |
-| OptiFabric + OptiFine + Lithium + FerriteCore + C2ME | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | 319 | 747 |
-| Sodium + Lithium | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 |
+| group | role | mods (sha256 prefix) | environment — identical in all four runs | avg FPS | 1% low | 0.1% low | p99 frame | worst frame | lowest FPS | std dev | raw results |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| **A** | vanilla baseline | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` | Minecraft 1.21.1 · Fabric Loader 0.19.5 · Java 22.0.2 · max heap 5836 MB · Intel i5-12600KF · AMD RX 7800 XT (driver 25.12.1.251128) · Windows 10 amd64 · render distance 8 · VSync off · `maxFps:260` (= unlimited) · shaders off · identical `options.txt` (sha256 `AC506701…`) · seed 27182 | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 | [report.md](benchmarks/2026-10-05-fps-benchmark/A-vanilla-baseline/report.md) |
+| **C** | OptiFabric + OptiFine only | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` | *(same)* | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 | [report.md](benchmarks/2026-10-05-fps-benchmark/C-OptiFabric-OptiFine/report.md) |
+| **D** | the recommended set | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` | *(same)* | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | **319** | **747** | [report.md](benchmarks/2026-10-05-fps-benchmark/D-OptiFabric-OptiFine-LiFeC2ME/report.md) |
+| **B** | Sodium route (not compatible with OptiFine) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` | *(same)* | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 | [report.md](benchmarks/2026-10-05-fps-benchmark/B-Sodium-Lithium/report.md) |
 
-- **OptiFabric + OptiFine averages 38.8% above plain Fabric here**, and its worst frame is 5× better (3.31 ms vs 17.21 ms) — OptiFine's own optimisations are doing real work.
-- Against a Sodium stack the average gap is ~13%, while **the tail favours OptiFabric + OptiFine**: 0.1% low 713 vs 349, worst frame 3.31 ms vs 12.47 ms, lowest FPS 302 vs 80.
-- The three "performance" mods measured **neutral to negative in this scene** (5040 → 4475): this benchmark keeps worldgen and ticking deliberately light, which is exactly where C2ME / Lithium / FerriteCore normally earn their keep. Do not read that row as "those mods are useless".
+- **C averages 38.8% above the vanilla baseline** and its worst frame is 5× better (3.31 ms vs 17.21 ms) — OptiFine's own optimisations are doing real work, so the compatibility layer is a net gain here, not a tax.
+- **B (Sodium) is fastest on average (~13% over C) but has the worst tail**: 0.1% low 349 vs 713, worst frame 12.47 ms vs 3.31 ms, lowest FPS 80 vs 302.
+- **The three "performance" mods measured neutral-to-negative in this scene** (C 5040 → D 4475) — this benchmark deliberately keeps worldgen and ticking light, which is exactly where C2ME / Lithium / FerriteCore normally earn their keep. Do not read that row as "those mods are useless".
 
-*Caveats: one machine (i5-12600KF + RX 7800 XT, Java 22, 5836 MB heap), one run per group, one benchmark. Your numbers will differ.*
-
-<details>
-<summary><b>Full test environment (click to expand)</b></summary>
-
-Shared by all four groups — the mod set is the only variable:
-
-| item | value |
-|---|---|
-| Minecraft / Loader | 1.21.1 / Fabric Loader 0.19.5 |
-| Java / heap | Java 22.0.2 (HotSpot 64-Bit) / launcher default, max heap 5836 MB |
-| Machine | Intel i5-12600KF (16 cores) · AMD Radeon RX 7800 XT (OpenGL 3.2 Core, driver 25.12.1.251128) · Windows 10 10.0 amd64 |
-| Benchmark | `fpstest-1.0.jar` — FPS Benchmark, mod id `fpstest`, sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56` |
-| Scene | one-click *Base FPS Benchmark* (showcase): 19 scripted cinematic segments (forest, village, combat, redstone, cave, nether, end…), ≈194.5 s, deterministic seed `27182` |
-| Frozen settings | `options.txt` byte-identical in all four instances (sha256 `AC506701…`): `renderDistance:8`, `enableVsync:false`, `maxFps:260` (= unlimited in 1.21.1), `graphicsMode:1`, `ao:true`, `entityShadows:true`, `fov:0.0`, `guiScale:0`, `particles:0`, shaders off |
-| How it ran | one client at a time; `Run Base Benchmark` pressed from the title screen; one run per group |
-
-Mod sets, with the sha256 of every jar:
-
-| group | mods |
-|---|---|
-| A | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4…` + `fpstest-1.0.jar` `F1168191…` |
-| C | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34…` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14…` |
-| D | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98…` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D…` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C…` |
-| B | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98…` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149…` |
-
-Resolution was not forced (each instance used its own window size). One machine, one run per group, one benchmark — treat the numbers as an indication, not a specification.
-
-</details>
+*One machine, one run per group, one benchmark, resolution not forced. Treat these numbers as an indication, not a specification — yours will differ.*
 
 ## 📖 Overview
 
