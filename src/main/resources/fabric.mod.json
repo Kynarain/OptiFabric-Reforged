@@ -39,14 +39,11 @@
     "minecraft": "${minecraft_version}"
   },
 
-  "conflicts": {
-    "sodium": "*"
-  },
-
   "breaks": {
     "no_fog": "*",
     "thallium": "*",
     "xradiation": "*",
-    "ryoamiclights": "*"
+    "ryoamiclights": "*",
+    "sodium": "*"
   }
 }

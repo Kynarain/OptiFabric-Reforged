@@ -174,16 +174,16 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 
 | Minecraft | 产物 | OptiFine 构建 | 状态 |
 |---|---|---|---|
-| 1.21 | `OptiFabric-2.2.10+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
-| 1.21.1 | `OptiFabric-2.2.10+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
-| 1.21.3 | `OptiFabric-2.2.10+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
-| 1.21.4 | `OptiFabric-2.2.10+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
-| 1.21.6 | `OptiFabric-2.2.10+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
-| 1.21.7 | `OptiFabric-2.2.10+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
-| 1.21.8 | `OptiFabric-2.2.10+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
-| 1.21.9 | `OptiFabric-2.2.10+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
-| 1.21.10 | `OptiFabric-2.2.10+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
-| 1.21.11 | `OptiFabric-2.2.10+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
+| 1.21 | `OptiFabric-2.2.11+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
+| 1.21.1 | `OptiFabric-2.2.11+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
+| 1.21.3 | `OptiFabric-2.2.11+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
+| 1.21.4 | `OptiFabric-2.2.11+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
+| 1.21.6 | `OptiFabric-2.2.11+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
+| 1.21.7 | `OptiFabric-2.2.11+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
+| 1.21.8 | `OptiFabric-2.2.11+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
+| 1.21.9 | `OptiFabric-2.2.11+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
+| 1.21.10 | `OptiFabric-2.2.11+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
+| 1.21.11 | `OptiFabric-2.2.11+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
 
 表里这一列是该 MC 版本**最新的正式版** OptiFine;若该版本官方还没有正式版,则用**最新的预览版**代替
 (所以 1.21.4 写的是 J3,而不是更新的预览 J4_pre2)。同一 MC 版本的其它构建同样可用 —— 游戏内提示只在你 mods/ 里的
@@ -197,16 +197,16 @@ OptiFine 没出过 **1.21.2 / 1.21.5** 的构建,所以这两版没有对应 jar
 
 | OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 |
 |---|---|---|
-| `2.2.10+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
-| `2.2.10+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
-| `2.2.10+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
-| `2.2.10+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
-| `2.2.10+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
-| `2.2.10+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
-| `2.2.10+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
-| `2.2.10+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
-| `2.2.10+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
-| `2.2.10+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
+| `2.2.11+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
+| `2.2.11+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
+| `2.2.11+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
+| `2.2.11+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
+| `2.2.11+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
+| `2.2.11+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
+| `2.2.11+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
+| `2.2.11+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
+| `2.2.11+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
+| `2.2.11+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
 
 当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是弹出一个界面告诉你缺哪个文件:上面有 `下载 OptiFine` 按钮,从 OptiFine **官网**(`optifine.net`,也是本模组唯一会去下载的地方)取回它,旁边就是打开 mods 文件夹;按钮上方的地址栏可以换成你自己的地址,那样就只从你填的地方取。
 
@@ -248,7 +248,7 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 | `architectury >1.2.72 <1.3.77` | 1.16/1.17 时代的范围,而且它背后那个冲突在 1.21.1 上已经**被修好**(见下) |
 | `meteor-client >=0.4.1` | 1.16/1.17 时代的条目 |
 
-`ryoamiclights` 是本移植自己加的,原因见上面那张表。`sodium` **没有**写进 `breaks`:2.2.8 曾经把它同时写进 `breaks` 和 `conflicts`,等于把警告变成了闸门(见下一段),2.2.10 又把它从 `breaks` 里拿了出来 —— 上游只在 `conflicts` 里声明它,本移植现在也一致。
+`ryoamiclights` 是本移植自己加的,原因见上面那张表。**`sodium` 从 2.2.11 起重新写进 `breaks`** —— 与 2.2.8 / 2.2.9 用的是同一个字段,但理由不同:不再是"还有没修完的级联",而是"**能找到的缺口都修完了,这个组合仍然渲染不出画面**"。2.2.10 曾经只把它留在 `conflicts`;详见下一段与 [`CHANGELOG.md`](CHANGELOG.md)。
 
 **两个字段不是一回事:`conflicts` 只警告,`breaks` 会被执行。** Sodium 只写在 `conflicts` 里。在 **Fabric Loader 0.19.5** 上实测:
 `conflicts` 条目根本不会给加载器的依赖求解器添加任何约束 —— `ModSolver` 里 `CONFLICTS` 分支至今还是一句
@@ -256,10 +256,13 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 而 `breaks` 点到**已存在**的模组时是另一回事:求解器给出 `NEG_HARD_DEP`,加载器**拒绝这个组合**,不是放行。
 本仓库记录到的一次运行里写着 `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`;另一侧是
 `NEG_HARD_DEP optifabric_reforged 2.2.9+mc1.21.1 {breaks sodium @ [*]}`,后面紧跟 `Incompatible mods found!`。
-所以 `breaks` 是**闸门**,不是声明 —— 装了 sodium 整个实例就起不来。**2.2.8 到 2.2.9 两处都写,于是任何同时装了
-sodium 的实例都被加载器直接拒绝;2.2.10 只写在 `conflicts`,实例能起来,日志里留一条警告。** 这才是当前已知状态
-的诚实说法:sodium 自己的若干 mixin 在本模组所服务的类上确实不成立(调用点见
-[`docs/COMPATIBILITY_CN.md`](docs/COMPATIBILITY_CN.md)),但那只能支持"警告",不支持把整个整合包一起拒掉。
+所以 `breaks` 是**闸门**,不是声明 —— 装了 sodium 整个实例就起不来。**2.2.8 到 2.2.9 两处都写;2.2.10 只写在
+`conflicts`,实例能起来、日志里留一条警告;2.2.11 重新写回 `breaks`。** 理由随证据变了:在 1.21.1 + Sodium 0.8.13 上,
+那些缺失调用点背后的级联已经被走完(五处修复,见 [`CHANGELOG.md`](CHANGELOG.md)),而**五处全部到位之后**,
+sodium 自己的 mixin 全部应用成功(`Mixin transformation of` 与 `InjectionError` 均为 0)、客户端到了标题界面、
+也进了世界,但**画面全黑**。随后两次单变量实验排除了仅剩的解释:把那个唯一的渲染槽让给 sodium(而不是本模组的
+占位渲染器)、以及关掉 OptiFine 的 Fast Render —— 两者都仍然全黑。所以这里选择**拒载**而不是警告:
+警告只会让用户拿到一个"能启动、永远不画画"的游戏。
 
 **Sodium 这一对只有一侧还在声明。** Sodium 只在 `breaks` 里声明这一对 —— 我们手上的 sodium 构建都没有 `conflicts`(`sodium-fabric` `0.5.11+mc1.21`、`0.6.13+mc1.21.1`、`0.8.13+mc1.21.1` 都是 `"breaks": {"optifabric": "*"}`)—— 而它点名的是**旧 mod id `optifabric`**;本线从 2.0.0 起以 `optifabric_reforged`(显示名 *OptiFabric Reforged*)发布,那条规则根本不会命中,所以你在 sodium 上看到的那条警告来自**本模组这一侧**。承担这条声明的字段是 `conflicts`,所以它写在 `conflicts` 里,不再写进 `breaks`。
 

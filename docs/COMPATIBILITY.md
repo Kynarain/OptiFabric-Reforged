@@ -14,8 +14,11 @@
 >
 > **The whole 33-row failure block has been re-attributed since.** All of it was re-run with a control that can fail:
 > **27 of the 33 are gaps on this side**, **6 pass both arms** and were never incompatible, **0 fail the plain-Fabric
-> control**, and `sodium`'s `breaks` gate is gone in 2.2.10 while the sodium stack itself is still unsupported. See
-> the box at the end of §5; the per-row verdicts are in the repository-root `COMPATIBILITY.md`.
+> control**, and the sodium stack itself is still unsupported. Since **2.2.11** `sodium` is declared under `breaks`
+> again: the cascade behind its missing call sites was worked through (five repairs), Sodium's mixins then all apply
+> and the client loads a world with a **black frame**, and the two explanations that were left — the single renderer
+> slot, and OptiFine's Fast Render — were ruled out by single-variable runs. See the box at the end of §5; the per-row
+> verdicts are in the repository-root `COMPATIBILITY.md`.
 
 ## 1. What was tested, and how
 
@@ -93,10 +96,12 @@ no-OptiFine control run gives:
 unknown (`carpet-fixes`, the row whose rig run failed); Wilson 95 % upper bound 1.5 %.** Of the 27 control-passing
 failures, 11 name a `net.minecraft` class that is in OptiFine's extracted rewritten set (`class_761` WorldRenderer,
 `class_702` ParticleManager, `class_757`, `class_1921`, `class_309`, `class_332`, …), 15 name no class at all, and
-`sodium` is declared by this mod's own `fabric.mod.json` under `conflicts` only (2.2.8 and 2.2.9 also carried it
-in `breaks`, which refused the whole instance; 2.2.10 took it back out), so it is a declared limitation rather than a
-discovered defect. That declaration is a warning, not a diagnosis: the re-attribution in §5 shows the failure behind
-it is a gap in the classes this mod serves, so "declared" is not the same as "external".
+`sodium` is declared by this mod's own `fabric.mod.json` under `breaks` since 2.2.11 (2.2.8 and 2.2.9 carried it in both
+fields, which refused the whole instance; 2.2.10 took it back out to `conflicts` only), so it is a declared limitation
+rather than a discovered defect. Since 2.2.11 the declaration is enforced, and for a reason this document's own
+re-attribution produced: the gaps behind it are on this side and were worked through (five repairs, §5), after which the
+pairing loaded a world and rendered nothing — refused rather than warned about. "Declared" is still not the same as
+"external".
 
 **The sample-based acceptance criterion has not been measured.** A 100-row random sample was drawn (seed
 `optifabric-compat-matrix/random-sample/2026-10-03T09:20Z`, 61 Modrinth + 39 CurseForge rows), 6 of the hundred were
@@ -148,8 +153,8 @@ those the renderer family is over-represented — `sodium`, `iris`, `immediately
 others are all tagged "renderer overhaul" in the matrix. The typical evidence is
 `Mixin transformation of net.minecraft.class_<n> failed`, where that class is one OptiFine rewrote.
 
-- **`sodium` is a declared conflict, and the declaration is a warning — the failure behind it is ours.**
-  `fabric.mod.json` lists sodium under `conflicts` only (2.2.10). The two fields do different things on the loader
+- **`sodium` is a declared conflict, and since 2.2.11 the declaration is enforced — the failure behind it is ours.**
+  `fabric.mod.json` lists sodium under `breaks` (2.2.11; 2.2.10 had it under `conflicts` only). The two fields do different things on the loader
   measured for that section: a `conflicts` entry only warns — `ModSolver`'s `CONFLICTS` case adds no constraint at
   all — so the instance starts with a `Warnings were found!` line and then a normal `Loading N mods:`. A `breaks`
   entry against a mod that is present **is enforced**: the solver reports `NEG_HARD_DEP` and the loader **refuses the

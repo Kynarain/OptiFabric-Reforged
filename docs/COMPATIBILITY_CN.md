@@ -9,8 +9,9 @@
 > [`RELEASE_NOTES.md`](RELEASE_NOTES.md) 与 `release/notes/mc1.21.1.md`。
 >
 > **那 33 行失败后来整体重新归因过。** 全部重跑了一遍,对照臂**能失败**:**33 行里 27 行是我们这边的缺口**、
-> **6 行两臂都通过**(根本不属于不兼容)、**0 行在不装 OptiFabric 的原版 Fabric 对照里失败**;`sodium` 的 `breaks`
-> 闸门在 2.2.10 已撤,但 sodium 这套仍然不被支持。见第五节的提示框;逐行结论在本线仓库根目录的 `COMPATIBILITY.md`。
+> **6 行两臂都通过**(根本不属于不兼容)、**0 行在不装 OptiFabric 的原版 Fabric 对照里失败**;**`sodium` 自 2.2.11 起重新
+> 写回 `breaks`(硬拒载)** —— 把能找到的缺口修完之后它仍然整帧全黑,所以这里选择拒载而不是警告。见第五节的提示框;
+> 逐行结论在本线仓库根目录的 `COMPATIBILITY.md`。
 >
 > 完整数据(每一行、每一句原始日志、方法与限制)在
 > [`docs/compatibility/`](compatibility/)(先看 [`INDEX.md`](compatibility/INDEX.md));
