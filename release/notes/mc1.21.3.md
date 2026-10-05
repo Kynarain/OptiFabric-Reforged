@@ -1,8 +1,71 @@
-# OptiFabric 2.2.8+mc1.21.3
+# OptiFabric 2.2.9+mc1.21.3
 
 **Minecraft 1.21.3** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `OptiFine_1.21.3_HD_U_J2.jar`
 
 状态:**已实测正常(含抗锯齿)**
+
+## 2.2.9 的改动
+
+**Carry On 在 OptiFabric + OptiFine 下能用了。** 1.21.1 + `carryon-fabric-1.21.1-2.2.6.13.jar`
+(sha256 `76b57c1b25a0…`)此前在标题界面之前就死;本版之后实测到**标题界面**(32 s,日志 0 条 `/ERROR`,
+七项计数器全 0)并且**进了世界**(预置存档 `level.dat` 2,302 → 2,308 B、SHA-256 改变、四个 region 文件被改写;
+日志里有 `Starting integrated minecraft server version 1.21.1` 与 `logged in with entity id 70`)。
+**这是我们的漏洞,不是 OptiFine 与 Carry On 的冲突。** 报错出在**我们服务出去的那个类**上:OptiFine 把 `class_761`
+里那条对 `class_702.method_3049(...)V` 的调用改瞄到了它自己多一个参数的 `render(..., Frustum)V` 上,而 Carry On 的
+refmap 要的正是那条原版调用。既不是 OptiFine 的缺陷,也不是 Carry On 的缺陷 —— 是**我们的移植**在 OptiFine 重编译之后
+没有把这条调用点还回去;任何模组只要也用这条调用点就会撞上同一堵墙,所以修在我们这边。
+
+**失败长什么样。** Carry On 的 `LevelRendererMixin.onRenderLevel` 是一条 `@Inject`,refmap 把它的注入点解析成
+`class_761.method_22710`(`renderLevel`)里**对 `class_702.method_3049(Lclass_765;Lclass_4184;F)V` 的一次调用**。
+游戏自己的 `class_761` 里有两次这样的调用,**OptiFine 补丁后的 `class_761` 一次都没有** —— 它调的是自己新增的
+`class_702.render(Lclass_765;Lclass_4184;FLclass_4604;)V`,**接收者与前三个参数逐字节相同**,只多了一个参数(相机视锥)。
+于是 Mixin 扫到 0 个目标,而 `carryon.fabric.mixins.json` 的 `defaultRequire = 1` 让整个类失败:
+
+```
+InjectionError: Critical injection failure: Callback method onRenderLevel(...)V in
+carryon.fabric.mixins.json:LevelRendererMixin from mod carryon failed injection check, (0/1) succeeded.
+Scanned 0 target(s). Using refmap carryon.refmap.json
+```
+
+它在 OptiFine 自己的 `Reflector` 引导期间以 `Mixin transformation of net.minecraft.class_761 failed` 的面目出现,
+客户端在标题界面之前就退出。
+
+**修法。** 新 fixer `RestoreVanillaCallFix`,**只登记 `class_761` + `method_22710`**:把这次调用**瞄回游戏自己调的那个方法**。
+OptiFine 的 `class_702.method_3049` 仍在补丁后的类上(它自己把方法体换成了六条指令的转发器 `render(..., null)`),
+所以 mixin 要的调用点真的存在、而且**每帧只执行一次**,位置和原版一样。多出来的视锥参数用一条 `NOP` 顶掉
+(不删指令,指令表、偏移、标签与栈映射帧都不动);视锥在 OptiFine 的 `render` 里只有一处用处(逐粒子视锥剔除),
+传 null 正是 OptiFine 自己那条转发器做的事。OptiFine 的方法体、着色器阶段(`Shaders.beginParticles` /
+`endParticles`)、`AFTER_PARTICLES` 分发以及 `renderLevel` 的其余部分一律未动。补丁后的 `class_761.method_22710` 里
+`method_3049` 的调用点是**三个**(OptiFine 那三个分别在不同分支里:第一个被 `goto` 跳过,另两个是
+`Shaders.isParticlesBeforeDeferred()` 的两支),所以每帧仍然只有一次,和原版那两次(同样互斥)一样。
+
+**代价(必须一起说)。** 改瞄之后,**这一次调用不再走 OptiFine 的逐粒子视锥剔除**(视锥参数被顶成 `null`,
+OptiFine 自己的 `method_3049` 转发器就是这么做的):视锥外的粒子仍然会被提交。这是**纯性能差异,不是正确性问题**
+(屏幕外的几何体不落像素);凡是经原版 API 调进 OptiFine 的模组拿到的都是这个行为。
+
+**为什么不用既有的 `InjectionCallPointFix`。** 那个 fixer 是在方法体前面**补一次调用**、并丢弃返回值,前提是它包的调用是
+**纯取值**:这里包的是一次**绘制**,补出来的调用会让粒子 pass 跑第二遍(所有粒子渲染类型都设 `depthMask(true)`),
+而且那个 fixer 把调用插在 `instructions.getFirst()`,会把 mixin 的处理器挪到整帧绘制之前。两个都不是可接受的行为变化,
+所以这次是**把已有调用改瞄**,不是补一次新调用。
+
+**验证。** 先在**私有 `.optifine` 缓存副本**上做:改服务出的 `class_761`、重算 CRC、普通启动 → 标题界面 11.5 s、
+七项计数器全 0;然后才落代码、重编、用重编出来的 jar 再跑一遍:标题界面 32 s(0 `/ERROR`)、进世界(服务器 25.7 s、
+`logged in with entity id` 27.8 s)、`-Dmixin.debug.export=true` 导出 JVM 实际拿到的类,里面有
+`handler$zzc000$carryon$onRenderLevel` 紧贴在**改瞄后的** `class_702.method_3049` 调用之前,该处理器无条件调用
+Carry On 自己的 `CarriedObjectRender.drawThirdPerson`。回归:1.21.1 + ShoulderSurfing 标题界面 17.9 s、
+1.21.6 与 1.21.8 标题界面、暮色森林那条臂都过。
+(仍未由机器验证的一点:把方块/实体**实际抱起来**要人在键盘前操作,见报告。)
+
+**边界(别把这一版读大)。** 上面每一次都只启动**一次**,一个实例副本、一个新建的 `.optifine` 缓存,`-Xmx2048M`,
+**没有光影包、没有压测、没有长时间游玩、没有多人**;失败计数器(`/ERROR`、`Cannot @Coerce`、
+`InvalidInjectionException`、`Mixin apply … failed`、`Mixin transformation … failed`、`LVTGeneratorError`、
+`SugarApplicationException`)在这几条臂里逐条为 0。**进世界那一条只量了 1.21.1**:这十个版本里只有 1.21.1 做了
+「抱 Carry On 的 jar 进世界」,其余九版只做了标题界面启动与上面那几条回归,它们**没有**被单独量过。
+**Carry On 自己的功能在这条通道上无法由机器验证**:把方块或实体真的抱起来是**键盘/鼠标交互**(要瞄准、要按键),
+所以本版只声称「注入点回来了、处理器挂上了、客户端在世界里跑帧不报错」,**不声称**「抱起一个方块」已经验过 ——
+那一步要人在键盘前做:进世界、看着一个方块、按 Carry On 的抱起键,确认方块被抱住并在第三人称里画出来,再看开它。
+另外,`restorevanillacallfix` 对 **1.21.6 与 1.21.8 是 no-op**(那两版的 OptiFine 用 `class_702.renderParticles`
+换掉了另一处调用),两版的标题界面启动结果与 2.2.8 相同。
 
 ## 2.2.8 的改动
 
@@ -796,14 +859,14 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.8+mc1.21.3.jar` — 827356 字节
+`OptiFabric-2.2.9+mc1.21.3.jar` — 831430 字节
 
-`SHA-256: 4C21105A13F2FF7E9D8A3F597D71B8778D29DEF72C2004835673940843CDCA27`
+`SHA-256: 089488CC21009130FDA65613684A18681A88F12AE1041363558D83C64B011ACB`
 ---
 
 ## 这一版有两条产物(装之前请看这一段)
 
-- `OptiFabric-2.2.8+mc1.21.3.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
+- `OptiFabric-2.2.9+mc1.21.3.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
   运行时**不下载任何东西**,也**不启动任何进程**(平台的规则不允许模组在游戏运行时下载文件或启动进程)。
   OptiFine 要你自己从官网 <https://optifine.net/downloads> 下载,把 jar 放进这个 mod 旁边的 `mods` 文件夹;
   装好之后**手动重新启动游戏一次**(本产物不会自动重启)。找不到 OptiFine 时游戏仍会走到标题界面,并按 **2.1.0 的老办法**
@@ -811,7 +874,7 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
   版本换成正在运行的版本);对话框的两个按钮**只做复制**(mods 文件夹路径 / 帮助链接,内部错误时是堆栈或 `logs` 路径),
   **不打开文件夹、不打开网页、不启动任何进程**。装了**比本产物认识的最新构建更旧的预览版**时,同一个对话框**每个构建只弹
   一次**(已提示的构建记在 `config/optifabric-mismatch-ack.txt`);同版、更新版与任何正式版**从不提示**。
-- `OptiFabric-2.2.8+mc1.21.3-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
+- `OptiFabric-2.2.9+mc1.21.3-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
   「自动重启」这两项。除了这两项,它与默认产物是同一版修复。
 
 两条产物的 **mod id 相同**,所以配置与世界通用,但**只能装其中一个**。默认产物构建自 `9ec748c`,
