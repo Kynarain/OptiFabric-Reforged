@@ -3,12 +3,18 @@
 MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 debug 开关），每行一次启动。兼容与不兼容**分开列出**，每块内按首字母排序；**本文件收录全部 651 行，不做任何剔除**。
 （`_baseline` 是装置自建的对照行 —— 「不装主题模组」，其余全是模组。）
 
+> **这份清单量的是 OptiFabric 2.2.1 时代的那次扫描；其中「不兼容」那一块后来在 2.2.8 / 2.2.10 上逐行重新归因过**
+> （对照臂不带 OptiFabric、也不带 OptiFine）：**6 行两臂都通过**（已移出「不兼容」块）、**27 行是我们这边的缺口**、
+> **0 行在原版 Fabric 对照里失败**；**sodium 自 2.2.11 起重新写回 `breaks`（硬拒载）** —— 把能找到的缺口修完之后它仍然
+> 整帧全黑，所以这里选择拒载而不是警告。除这 6 行的块归属外，逐行数据未改动、未重排。各块自己的说明见下。
+
 | 结果 | 数量 |
 |---|---:|
 | 兼容（已进世界） | 465 |
-| 与 OptiFine 不兼容 | 33 |
+| 与 OptiFine 不兼容 | 27 |
+| 复测：两臂都通过，与 OptiFine 无冲突 | 6 |
 | 纯 Fabric 即坏（与本模组无关） | 8 |
-| 声明性拒载 | 1 |
+| 声明冲突（2.2.11 起为硬拒载 `breaks`） | 1 |
 | 仅到标题界面，未进世界 | 10 |
 | 依赖未解析 | 8 |
 | 不可测 | 112 |
@@ -489,25 +495,22 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | Zombie Awareness | zombie-awareness | 27.7 |
 | Zume | zume | 29.0 |
 
-## 与 OptiFine 不兼容（33）
+## 与 OptiFine 不兼容（27）
 
-不装本模组（纯 Fabric + OptiFine）能过标题界面，装了过不去 —— 是 OptiFine 与这些模组的冲突。
+不装本模组（纯 Fabric + OptiFine）能过标题界面，装了过不去。**但这 27 行要修的是我们这边，不是模组作者那边**：逐行复测的对照臂是「原版 Fabric + 该模组 + 扫描当时暂存的那套依赖」，**不带 OptiFabric、也不带 OptiFine**；同一批模组在对照里全部到得了标题界面，而失败发生在**本模组交给加载器的那些类**上 —— 也就是说这是「我们还没修好」，不是「这个模组有毛病」。原「33」行里另有 6 行两臂都通过、根本不属于不兼容，已移到下面的「复测：两臂都通过」一块。
+机理上：25 行各对应一处具体的字节码缺口（OptiFine 重新编译时改掉或内联掉的调用点，或者删掉、改名的辅助方法），另 2 行（`ebe`、`sample--mr-betternether`）是 OptiFine `Config` 在 Fabric 客户端入口点阶段还没初始化的生命周期问题，没有任何 fixer 覆盖它。**2.2.10 关掉了下面十行「已记录的那处失败」**：`cut-through`、`deeperdarker`、`modernfix`、`no-chat-reports`、`particle-core`、`moreculling`、`shatterbyte-lib`（这一行还进到了世界）、`supplementaries` 的 `class_836` 那处，以及两个 `immediatelyfast` 行的**第一处**失败；下表的 iris 与 immediatelyfast 两行就是反例——它们只是走到了同一个模组里的下一处，并**没有**修好。
 
 | 模组 | slug | 进世界(秒) |
 |---|---|---:|
 | (Sodium) Chloride | chloride |  |
 | [EMF] Entity Model Features | entity-model-features |  |
-| Bobby | bobby |  |
 | Carry On | carry-on |  |
-| Concurrent Chunk Management Engine (Fabric) | c2me-fabric |  |
 | Cut Through | cut-through |  |
 | Deeper and Darker | deeperdarker |  |
 | Enhanced Block Entities | ebe |  |
-| Falling Leaves | fallingleaves |  |
-| Freecam | freecam |  |
-| ImmediatelyFast | immediatelyfast |  |
+| ImmediatelyFast | immediatelyfast | 未进世界（2.2.10：前两处已修，第三个 mixin 仍失败；与下面 sample--mr-immediatelyfast 同一个 jar） |
 | Indium | indium |  |
-| Iris Shaders | iris |  |
+| Iris Shaders | iris | 未进世界（2.2.10：`class_761` 那处已修，仍在更后面的 iris mixin 上失败） |
 | Modern UI | modern-ui |  |
 | ModernFix | modernfix |  |
 | More Culling | moreculling |  |
@@ -518,9 +521,7 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | Puzzle | puzzle |  |
 | Reese's Sodium Options | reeses-sodium-options |  |
 | ReplayMod | replaymod |  |
-| sample--mr-bedrockify | sample--mr-bedrockify |  |
 | sample--mr-betternether | sample--mr-betternether |  |
-| sample--mr-c2me-fabric | sample--mr-c2me-fabric |  |
 | sample--mr-immediatelyfast | sample--mr-immediatelyfast |  |
 | sample--mr-spectrumjei | sample--mr-spectrumjei |  |
 | ShatterLib / OctoLib | shatterbyte-lib |  |
@@ -528,6 +529,22 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | Sodium Shadowy Path Blocks (SSPB) | sodium-shadowy-path-blocks |  |
 | Supplementaries | supplementaries |  |
 | ToolTipFix | tooltipfix |  |
+
+> **这一块里有 7 行根本不是被点名模组自己的问题，只写模组 jar 名字的逐行清单会一直把它们归错**：5 行是经由暂存依赖 **sodium** 暴露出来的（`sodium-extra`、`reeses-sodium-options`、`indium`、`sodium-shadowy-path-blocks`、`chloride` —— 失败的是 sodium 自己的 mixin，不是这些模组），`sample--mr-betternether` 是暂存依赖 **bclib** 的客户端入口点，`sample--mr-spectrumjei` 是暂存依赖 **modonomicon** 的 mixin。（重新归因报告正文把这一项写成「6 行」，但它列出的正是这 7 行；这里按逐行数据记 7 行。）
+
+## 复测：两臂都通过，与 OptiFine 无冲突（6）
+
+这 6 行原先被列进「与 OptiFine 不兼容」，逐行复测量到**两臂都通过**：不带 OptiFabric 的原版 Fabric 对照到得了标题界面，装本模组的栈（2.2.8，2.2.10 复测同样）也到得了，两边都没有点名该模组的 mixin / 注入错误。所以它们**不属于不兼容**，原先那条结论是 2.2.1 时代那套对照方法的产物。
+**C2ME 在 1.21.1 上明确不是不兼容**：它到得了标题界面，也进得了世界（在世界里连续跑 113 秒、零条 `[ERROR]`）；`docs/compatibility/MATRIX.md` 里那条 `class_761` 失败量的是 2.2.1，2.2.3 的 `LambdaMethodRefFix` / `LocalSlotLayoutFix` 登记已经把它去掉了。C2ME 自己元数据里那条 `breaks: optifabric` 点的是旧 id，本线用的 id 是 `optifabric_reforged`，所以那条声明在本线上根本不会命中。
+
+| 模组 | slug | 进世界(秒) |
+|---|---|---:|
+| Bobby | bobby | 两臂均到标题界面（2.2.10 复测） |
+| Concurrent Chunk Management Engine (Fabric) | c2me-fabric | 两臂均到标题界面（2.2.10 复测；2.2.3 起进过世界） |
+| Falling Leaves | fallingleaves | 两臂均到标题界面（2.2.10 复测） |
+| Freecam | freecam | 两臂均到标题界面（2.2.10 复测） |
+| sample--mr-bedrockify | sample--mr-bedrockify | 两臂均到标题界面（2.2.10 复测） |
+| sample--mr-c2me-fabric | sample--mr-c2me-fabric | 两臂均到标题界面（2.2.10 复测；与 c2me-fabric 同一个 jar） |
 
 ## 纯 Fabric 即坏（与本模组无关）（8）
 
@@ -549,17 +566,17 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 > mixin 变换;这两处后来都在 **2.2.3** 修好,2.2.8 又把 `class_5944`(`ShaderProgram`)的 null 补完。最新一次专项调查
 > (`tf-must`,1.21.1)量到 **Twilight Forest 能进世界,但是间歇性的(11 个带 TF 的臂里 4 个;不带 TF 的同一套 3/3)**,失败的那次
 > 是客户端里一处闲置的「世界打开交接」被丢掉、没有异常;**重试有效,但别急着判它卡死** —— 最慢的一次是标题界面后 122.7 s
-> 才进场,给世界加载**两到三分钟**再下结论;真没打开就重启客户端,失败那次的存档不会坏。本表 651 行**逐行未动、未重排**,上面两行也保留原样,
+> 才进场,给世界加载**两到三分钟**再下结论;真没打开就重启客户端,失败那次的存档不会坏。本表的逐行数据**未改动、未重排**:唯一动了位置的是下面那条重新归因说明涉及的 6 行(它们从「与 OptiFine 不兼容」移到了「复测:两臂都通过」),上面两行也保留原样,
 > 只在这一条下面加了这段说明;**完整结论见 1.21.x 线上仓库的 `docs/COMPATIBILITY.md` 与 `docs/COMPATIBILITY_CN.md`
 > (以及 `release/notes/mc1.21.1.md`)。**
 
-## 声明性拒载（1）
+## 声明冲突（2.2.11 起为硬拒载）（1）
 
-模组自己在元数据里声明拒绝本模组，或本模组声明拒绝它。
+模组自己在元数据里声明与本模组冲突。**2.2.11 起写进 `breaks`**：本模组 `fabric.mod.json` 的 `breaks` 里含 sodium（2.2.8 加过、2.2.10 撤掉、2.2.11 又加回来），`breaks` 点到已存在的模组是硬拒载（求解器给 `NEG_HARD_DEP`，加载器直接 `Incompatible mods found!`，整个实例都起不来），而 `conflicts` 只打印一条 `Warnings were found!`、实例照常启动。**为什么这次选择拒载**：在 1.21.1 + Sodium 0.8.13 上，那串缺口已经被走完 —— 五处修复全部到位之后，sodium 自己的 mixin **全部应用成功**（`Mixin transformation of` 与 `InjectionError` 均为 0）、客户端到得了标题界面、也进得了世界（区块构建线程已启动、无崩溃报告），但**整帧全黑**；随后两次单变量实验排除了仅剩的解释（把唯一的渲染槽让给 sodium、以及关掉 OptiFine 的 Fast Render），两者都仍然全黑。也就是说**渲染器确实不是"某一处调用点"的问题，而是两个渲染器争同一条地形管线**，这不再是逐个修缺口能解决的事；警告只会让用户拿到一个"能启动、永远不画画"的游戏。
 
 | 模组 | slug | 进世界(秒) |
 |---|---|---:|
-| Sodium | sodium |  |
+| Sodium | sodium | 无法启动（2.2.11：`breaks` 硬拒载。实测：修完五处缺口后 mixin 全通、能进世界，但整帧全黑） |
 
 ## 仅到标题界面，未进世界（10）
 

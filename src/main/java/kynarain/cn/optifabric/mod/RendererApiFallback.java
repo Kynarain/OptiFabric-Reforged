@@ -109,6 +109,13 @@ public final class RendererApiFallback {
 			return;
 		}
 
+		if (sodiumWillRegister()) {
+			System.out.println("[OptiFabric] Sodium is present, so it registers Fabric's rendering plug-in itself -"
+					+ " not registering a placeholder, because the registry refuses a second one and the first one to"
+					+ " arrive keeps the slot");
+			return;
+		}
+
 		Class<?> renderer = null;
 
 		for (String candidate : RENDERER_API_CLASSES) {
@@ -171,6 +178,46 @@ public final class RendererApiFallback {
 		MethodHandle register = MethodHandles.publicLookup().findVirtual(access, "registerRenderer",
 				MethodType.methodType(void.class, renderer));
 		register.invoke(registry, placeholder);
+	}
+
+	/**
+	 * Whether Sodium is about to register a rendering plug-in of its own, in which case it has to be left to do it -
+	 * exactly the race {@link #indigoWillRegister()} describes, with a mod that really is a renderer.
+	 *
+	 * <p>Sodium 0.8.13 declares {@code fabric-renderer-api-v1:contains_renderer} too, so Indigo stays away for the
+	 * same reason it does for OptiFine, and its client entrypoint registers
+	 * {@code net.caffeinemc.mods.sodium.client.render.frapi.SodiumRenderer} through the same slot. The registry
+	 * refuses the second registration, and the first one to arrive keeps the slot: with the placeholder registered
+	 * first, Sodium dies on its own entrypoint with "A second rendering plug-in attempted to register", which is a
+	 * crash during startup rather than the missing drawing it looks like. Measured on 1.21.1 / Sodium 0.8.13: with
+	 * the placeholder suppressed and Sodium's registration allowed through, the client reaches the title screen and
+	 * loads a world (log lines, not a claim from the code).
+	 *
+	 * <p>The placeholder exists because Fabric API's hooks ask the registry for a renderer and throw when it is
+	 * empty. With Sodium present it will not be empty, and what FRAPI mods get is a real renderer instead of the
+	 * inert placeholder - a strict improvement, not a trade.
+	 *
+	 * <p>If the mod list cannot be read, this answers "no" and the placeholder is registered as before: the failure
+	 * this avoids is a hard crash when Sodium is there, and guessing "Sodium is here" wrongly would leave Fabric
+	 * API's own hooks with nothing at all.
+	 *
+	 * <p><b>Unreachable in the jars this line ships.</b> fabric.mod.json declares {@code breaks: sodium}, so a
+	 * loader refuses an instance that has Sodium before any of this runs - the two cannot share the terrain pipeline
+	 * (measured: with every repair in place the client loads a world and renders nothing, and neither the renderer
+	 * slot nor OptiFine's Fast Render accounted for it). This branch is kept as the starting point if that is ever
+	 * revisited, and it is deliberately left as the answer that would be right if Sodium were allowed in.
+	 */
+	private static boolean sodiumWillRegister() {
+		try {
+			for (ModContainer mod : FabricLoader.getInstance().getAllMods()) {
+				if ("sodium".equals(mod.getMetadata().getId())) return true;
+			}
+		} catch (Throwable t) {
+			System.err.println("[OptiFabric] Could not read the mod list to tell whether Sodium is present ("
+					+ t + "), registering a placeholder as before");
+		}
+
+		return false;
 	}
 
 	/**

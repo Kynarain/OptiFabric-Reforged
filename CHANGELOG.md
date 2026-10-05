@@ -1,5 +1,35 @@
 # 更新日志
 
+## 2.2.11+mc1.21 … 2.2.11+mc1.21.11 - sodium 重新成为闸门(实测:把能找到的缺口全修完后画面仍然全黑),并修掉五处 OptiFine 通用损伤
+
+**一句话:** 本版把 `sodium` 从 `conflicts` 移回 `breaks`。依据不再是推断,而是这一轮的**实测**:把能找到的缺口全部修完之后,这个组合仍然渲染不出画面。同时修掉五处与 sodium 无关的通用损伤 —— 它们是 OptiFine 通用损伤,对别的渲染/优化模组同样有效。
+
+### 为什么这次把闸门装回去
+
+2.2.10 的口径是"sodium 撞的是一串**可能修完**的普通缺口,所以只警告"。这一轮把那串缺口走完了,结论因此改变:
+
+* 修好下面五处之后,sodium 自己的 mixin **全部应用成功**(`Mixin transformation of` 与 `InjectionError` 计数均为 0);
+* 客户端**到了标题界面、也进了世界**,sodium 的区块构建工作线程已启动,**没有任何崩溃报告** —— 但**整帧全黑**,连 HUD 都没有;
+* 两次单变量实验排除了仅剩的解释:①把那个唯一的渲染槽让给 sodium 的 `SodiumRenderer`(而不是本模组的惰性占位渲染器)—— 仍全黑;②把 OptiFine 的 Fast Render 关掉(`ofFastRender:false`)—— 仍全黑;
+* 结论:两个模组各自接管同一条地形管线,同时在场时**谁都不负责最终那一笔绘制**。这不是能逐个修掉的字节码缺口。
+
+所以本版选择**拒载**而不是警告:警告只会让用户拿到一个"能启动、永远不画画"的游戏。
+
+### 五处通用修复
+
+都先在**私有 `.optifine` 缓存副本**上用 fixer 类本身验过,再放进注册表:
+
+* `class_329.method_55798`:OptiFine 把首条指令从 `class_310.method_1517()Z` 改成自己的 `Config.isVignetteEnabled()Z` —— 用 `InjectionCallPointFix` 把无参调用重建回来(与 `class_761.method_22714` 同一形状);
+* `class_758.method_3210`:OptiFine 把 `class_6491.method_24895(…)Lclass_243;` 改成 `sampleM(…)Lnet/optifine/Vec3M;` —— 复用 `RestoreSiblingCallFix`(与 `class_638.method_23777` 逐字节同型);
+* `class_630$class_628.method_32089`:同一个 `sampleM` 形状的第三处,同上;
+* `class_630$class_628.<init>`:`field_3645:F` 的存储在原版构造函数里,而 OptiFine 把它搬进了新的私有构造函数 —— 新增修复器 `InjectionFieldPointFix` 在委托构造函数里重建这条存储(按字段类型选 `FLOAD`,值取该构造函数自己的第 4 个参数,语义与原版一致);
+* `class_7764.<init>`:`field_40539`(sprite 的 `NativeImage`)同一种"存储被搬进新构造函数"的形状,同一个新修复器处理。
+
+### 其它改动
+
+* 新增通用修复器 `InjectionFieldPointFix`:当 mixin 锚在一个**字段存储**上、而 OptiFine 把那条存储搬进新的兄弟方法时,在方法末尾的 `RETURN` 之前把存储重建出来(按描述符选择正确的加载指令;失败时打印原因并放弃,不猜);
+* `RendererApiFallback`:检测到 `sodium` 在场时**不再注册惰性占位渲染器**,把那个唯一的渲染槽让给 sodium 的 `SodiumRenderer`(FRAPI 模组因此拿到真渲染器)。**注意:由于本版把 sodium 写进了 `breaks`,这条分支在当前发布里不可达**,保留它是为了将来重新研究时有个正确的起点,注释里已写明。
+
 ## 2.2.10+mc1.21 … 2.2.10+mc1.21.11 - sodium 从"拒绝整个实例"改回"只警告",并修掉重新归因证明属于我们的第一处失败(级联未修完)
 
 **一句话:** 2.2.8 / 2.2.9 把 sodium 写进 `breaks`,于是**整个实例被加载器拒绝**;本版把那条声明去掉,实例能起来、日志里只留一条警告,
@@ -334,8 +364,8 @@ process-spawning functionality.
 
 | 产物 | 内容 | 去处 |
 |---|---|---|
-| `OptiFabric-2.2.10+mc<版本>.jar` | **无**运行时下载、**无**任何进程启动/重启 | CurseForge / Modrinth / GitHub |
-| `OptiFabric-2.2.10+mc<版本>-full.jar` | 保留自动下载(只从 optifine.net)与自动重启 | **仅** GitHub |
+| `OptiFabric-2.2.11+mc<版本>.jar` | **无**运行时下载、**无**任何进程启动/重启 | CurseForge / Modrinth / GitHub |
+| `OptiFabric-2.2.11+mc<版本>-full.jar` | 保留自动下载(只从 optifine.net)与自动重启 | **仅** GitHub |
 
 两者 **mod id 相同**,所以配置与世界通用;**只能装一个**。`-full` 是「同一版修复 + 那两个便利功能」,
 不是绕过审核:上架的那一份确实没有这两项能力。

@@ -140,16 +140,16 @@ The development environment is not supported: `gradlew runClient` is refused out
 
 | Minecraft | jar | OptiFine build | State |
 |---|---|---|---|
-| 1.21 | `OptiFabric-2.2.10+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ verified |
-| 1.21.1 | `OptiFabric-2.2.10+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ verified |
-| 1.21.3 | `OptiFabric-2.2.10+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ verified |
-| 1.21.4 | `OptiFabric-2.2.10+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ verified |
-| 1.21.6 | `OptiFabric-2.2.10+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ starts and plays, **crashes as soon as shaders are enabled** (below) |
-| 1.21.7 | `OptiFabric-2.2.10+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ same |
-| 1.21.8 | `OptiFabric-2.2.10+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ verified |
-| 1.21.9 | `OptiFabric-2.2.10+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ verified |
-| 1.21.10 | `OptiFabric-2.2.10+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ verified |
-| 1.21.11 | `OptiFabric-2.2.10+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ verified |
+| 1.21 | `OptiFabric-2.2.11+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ verified |
+| 1.21.1 | `OptiFabric-2.2.11+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ verified |
+| 1.21.3 | `OptiFabric-2.2.11+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ verified |
+| 1.21.4 | `OptiFabric-2.2.11+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ verified |
+| 1.21.6 | `OptiFabric-2.2.11+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ starts and plays, **crashes as soon as shaders are enabled** (below) |
+| 1.21.7 | `OptiFabric-2.2.11+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ same |
+| 1.21.8 | `OptiFabric-2.2.11+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ verified |
+| 1.21.9 | `OptiFabric-2.2.11+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ verified |
+| 1.21.10 | `OptiFabric-2.2.11+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ verified |
+| 1.21.11 | `OptiFabric-2.2.11+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ verified |
 
 OptiFine never shipped a build for **1.21.2 / 1.21.5**, so there is no jar for those.
 
@@ -164,16 +164,16 @@ This is the same list the mod itself carries (and `release\notes\mc<MC>.md` stat
 
 | OptiFabric version | Minecraft version | Required OptiFine build |
 |---|---|---|
-| `2.2.10+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
-| `2.2.10+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
-| `2.2.10+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
-| `2.2.10+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
-| `2.2.10+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
-| `2.2.10+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
-| `2.2.10+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
-| `2.2.10+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
-| `2.2.10+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
-| `2.2.10+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
+| `2.2.11+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
+| `2.2.11+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
+| `2.2.11+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
+| `2.2.11+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
+| `2.2.11+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
+| `2.2.11+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
+| `2.2.11+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
+| `2.2.11+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
+| `2.2.11+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
+| `2.2.11+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
 
 When OptiFabric loads and that jar is missing, or is not the build its Minecraft version expects, the game says so on a screen instead of starting silently: it names the file, offers a `Download OptiFine` button that fetches it from OptiFine's **official** site (`optifine.net`, the only source this mod ever uses), and opens the mods folder for you — the URL field above the buttons can be replaced with a source of your own, which is then the only place the jar is fetched from.
 
@@ -215,11 +215,11 @@ The `sodium` conflict and three of those five `breaks` are **inherited from upst
 | `architectury >1.2.72 <1.3.77` | a 1.16/1.17-era range, and the underlying conflict is *fixed* on 1.21.1 (below) |
 | `meteor-client >=0.4.1` | a 1.16/1.17-era entry |
 
-`ryoamiclights` is this fork's own addition, for the reason in the table above. `sodium` is **not** in `breaks`: 2.2.8 put it there as well as in `conflicts`, which turned a warning into a gate (see the paragraph below), and 2.2.10 took it back out. Upstream declares it only under `conflicts`, and this fork does the same again.
+`ryoamiclights` is this fork's own addition, for the reason in the table above. **`sodium` is in `breaks` again since 2.2.11** — same field 2.2.8/2.2.9 used, for a different reason this time: it is no longer "a cascade we have not finished repairing" but "**every gap that could be found has been repaired and the pairing still renders nothing**". 2.2.10 had it under `conflicts` only; see the paragraph below and [`CHANGELOG.md`](CHANGELOG.md).
 
-**The two fields are not the same thing: `conflicts` only warns, `breaks` is enforced.** Sodium is declared under `conflicts` **only**. Measured on **Fabric Loader 0.19.5**: a `conflicts` entry adds no constraint to the loader's dependency solver at all — in `ModSolver` the `CONFLICTS` case is still a `// TODO: soft negative dep?` — so the game starts with `Warnings were found!` and then a normal `Loading 56 mods:`. A `breaks` entry against a mod that **is** present is a different animal: the solver emits `NEG_HARD_DEP` and the loader **refuses the combination** rather than starting. Runs recorded here logged `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}` and, on the other side, `NEG_HARD_DEP optifabric_reforged 2.2.9+mc1.21.1 {breaks sodium @ [*]}` followed by `Incompatible mods found!`. So a `breaks` entry is a gate, not a declaration — the loader will not start at all. **2.2.8 through 2.2.9 declared sodium in both fields and therefore refused to load in any instance that also contains sodium; 2.2.10 declares it under `conflicts` only, so the instance starts and the log carries a warning.** That is the honest statement of what is known: sodium's own mixins do not all apply against the classes this mod serves (the call sites are listed in [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md)), but that is a reason to warn, not to refuse every other mod in the pack.
+**The two fields are not the same thing: `conflicts` only warns, `breaks` is enforced.** Sodium is declared under `conflicts` **only**. Measured on **Fabric Loader 0.19.5**: a `conflicts` entry adds no constraint to the loader's dependency solver at all — in `ModSolver` the `CONFLICTS` case is still a `// TODO: soft negative dep?` — so the game starts with `Warnings were found!` and then a normal `Loading 56 mods:`. A `breaks` entry against a mod that **is** present is a different animal: the solver emits `NEG_HARD_DEP` and the loader **refuses the combination** rather than starting. Runs recorded here logged `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}` and, on the other side, `NEG_HARD_DEP optifabric_reforged 2.2.9+mc1.21.1 {breaks sodium @ [*]}` followed by `Incompatible mods found!`. So a `breaks` entry is a gate, not a declaration — the loader will not start at all. **2.2.8 through 2.2.9 declared sodium in both fields; 2.2.10 declared it under `conflicts` only, so the instance started and the log carried a warning; 2.2.11 puts it back under `breaks`.** The reason changed with the evidence. On 1.21.1 with Sodium 0.8.13 the cascade behind those missing call sites was worked through — five repairs, listed in [`CHANGELOG.md`](CHANGELOG.md) — and with every one of them in place Sodium's own mixins all apply (`Mixin transformation of` and `InjectionError` both zero), the client reaches the title screen and loads a world, and the frame is **black**. Two single-variable runs then ruled out what was left: handing the single renderer slot to Sodium instead of this mod's placeholder, and turning OptiFine's Fast Render off — both still black. So the pairing is refused rather than warned about, because a warning would leave the user with a game that starts and never draws.
 
-**The sodium pairing is declared on one side only.** Sodium declares it under `breaks` only — `conflicts` is absent from every sodium build measured (`sodium-fabric` `0.5.11+mc1.21`, `0.6.13+mc1.21.1` and `0.8.13+mc1.21.1` all carry `"breaks": {"optifabric": "*"}`) — and it names the **old** mod id `optifabric`. Since 2.0.0 this line ships as `optifabric_reforged` (display name *OptiFabric Reforged*), so that entry cannot fire at all, and the warning you see for sodium is the one from this mod's side. `conflicts` is what carries it, which is why it is back there and no longer in `breaks`.
+**The sodium pairing is declared on one side only.** Sodium declares it under `breaks` only — `conflicts` is absent from every sodium build measured (`sodium-fabric` `0.5.11+mc1.21`, `0.6.13+mc1.21.1` and `0.8.13+mc1.21.1` all carry `"breaks": {"optifabric": "*"}`) — and it names the **old** mod id `optifabric`. Since 2.0.0 this line ships as `optifabric_reforged` (display name *OptiFabric Reforged*), so that entry cannot fire at all, and the warning you see for sodium is the one from this mod's side. Up to 2.2.10 `conflicts` was what carried it; since 2.2.11 this mod declares it under `breaks`, which the loader enforces.
 
 **Architectury is the reverse story, and worth keeping.** Upstream declared architectury broken, and architectury's own metadata declares `breaks: optifabric <1.13.0`. On 1.21.1 this fork fixed the real conflict behind that declaration: OptiFine inserts its own locals into the middle of `GameRenderer.render`, which shifts the vanilla slots that Mixin's `LocalCapture` hands to a handler, so `LocalSlotLayoutFix` moves the extra slots to the end of the local variable range. `architectury-api` `13.0.11` now passes the sweep (row #14 of the matrix), and the rename to `optifabric_reforged` is what stops architectury's own declaration from firing. The measurements are in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) and [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md).
 

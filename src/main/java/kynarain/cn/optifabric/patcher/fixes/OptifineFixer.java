@@ -500,6 +500,76 @@ public class OptifineFixer {
 				"(Lnet/minecraft/class_243;Lnet/minecraft/class_6491$class_4859;)Lnet/minecraft/class_243;", "method_23777"));
 		registerFix("class_761", new InjectionCallPointFix("class_310", "method_1517", "()Z", "method_22714"));
 
+		//The same call, re-aimed by the same recompile, in the other class sodium injects into it. OptiFine compiled
+		//class_329.method_55798's first instruction to net/optifine/Config.isVignetteEnabled()Z where the game calls
+		//class_310.method_1517()Z; instructions 3..n are byte-identical, so nothing was dropped and nothing moved -
+		//only that one call's callee changed. sodium 0.8.13's features.options.overlays.GuiMixin redirects it:
+		//
+		//  @Redirect(method = "method_55798", at = @At(value = "INVOKE",
+		//      target = "Lnet/minecraft/class_310;method_1517()Z"))   // redirectFancyGraphicsVignette()Z
+		//
+		//and sodium-common.mixins.json sets defaultRequire = 1, so the whole class fails with "(0/1) succeeded.
+		//Scanned 0 target(s)". The call takes no arguments, so InjectionCallPointFix's ordinary repair - make the call
+		//at the top of the method and discard the result - is exact here, exactly as it is for method_22714 above,
+		//and it costs nothing: OptiFine's own isVignetteEnabled() call is still there and is still what the frame
+		//reads.
+		registerFix("class_329", new InjectionCallPointFix("class_310", "method_1517", "()Z", "method_55798"));
+
+		//class_758.method_3210 (FogRenderer.setupColor, the world-colour sampling) has OptiFine's
+		//class_6491.sampleM(Lclass_243;Lclass_6491$class_4859;)Lnet/optifine/Vec3M; at offset 495 where the game
+		//calls class_6491.method_24895(Lclass_243;Lclass_6491$class_4859;)Lclass_243; - byte for byte the same shape
+		//as class_638.method_23777 above, same arguments, same return type difference, so the same repair applies and
+		//the entry is registered for the second class rather than a second fixer being written. sodium's
+		//features.options.weather mixins redirect that call in both classes.
+		registerFix("class_758", new RestoreSiblingCallFix("class_6491", "sampleM",
+				"(Lnet/minecraft/class_243;Lnet/minecraft/class_6491$class_4859;)Lnet/optifine/Vec3M;", "method_24895",
+				"(Lnet/minecraft/class_243;Lnet/minecraft/class_6491$class_4859;)Lnet/minecraft/class_243;", "method_3210"));
+
+		//class_630$class_628 is ModelPart$Cube. OptiFine turned method_32089 into a thirteen-byte forwarder to its own
+		//compile(MatrixStack$Entry, VertexConsumer, int, int, int, VertexPosition[][]) and moved the vanilla body -
+		//including the matrix read sodium's features.render.entity.CubeMixin anchors on - into that new method:
+		//
+		//  @Inject(method = "method_32089", cancellable = true,
+		//      at = @At(value = "INVOKE", target = "Lnet/minecraft/class_4587$class_4665;method_23761()Lorg/joml/Matrix4f;"))
+		//  private void onCompile(...)                                    // sodium$...  expected 1 invocation(s), 0 succeeded
+		//
+		//The anchor instruction is at offset 1 of the sibling, so the game's call is re-created at the top of the
+		//forwarder. The injection is cancellable and runs before the matched call, so the re-created getter is the
+		//instruction sodium's handler replaces - it is not a second execution of anything, and OptiFine's own body and
+		//its callers stay untouched. This is the failure that stalls startup: it happens inside a future drained by
+		//runTick, Minecraft catches it, drops the resource packs and retries, and the retry stops silently.
+		registerFix("class_630$class_628", new InjectionCallPointFix("class_4587$class_4665", "method_23761",
+				"()Lorg/joml/Matrix4f;", "method_32089"));
+
+		//class_7764 is SpriteContents. OptiFine's recompile turned the five-argument constructor into a delegator and
+		//moved the vanilla body - the store of the sprite's own image, field_40539, included - into a new private
+		//constructor. sodium's features.textures.mipmaps / .scan SpriteContentsMixin wraps that store:
+		//
+		//  @WrapOperation(method = "<init>", at = @At(value = "FIELD", opcode = 181,
+		//      target = "Lnet/minecraft/class_7764;field_40539:Lnet/minecraft/class_1011;"))
+		//
+		//The annotation names no descriptor, so Mixin binds to the first exact match, which the class file lists as the
+		//delegator - where no store happens. Re-creating the store just before its RETURN keeps OptiFine's body, its
+		//scaleFactor store and its callers exactly as they are, which restoring the vanilla body would not.
+		registerFix("class_7764", new InjectionFieldPointFix("class_7764", "field_40539",
+				"Lnet/minecraft/class_1011;", 3, "<init>"));
+
+		//class_630$class_628 again, the second of the two injections sodium puts into it. OptiFine's recompile moved
+		//the vanilla constructor's body - the store of field_3645, the cube's first geometry float, included - into a
+		//new private constructor of its own and left the vanilla-shaped one as a delegator. sodium's features.render.
+		//entity.CubeMixin redirects that store:
+		//
+		//  @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = 181, ordinal = 0,
+		//      target = "Lnet/minecraft/class_630$class_628;field_3645:F"))   // onInit(...)
+		//
+		//Mixin binds by descriptor, so it lands in the delegator - where no store happens - and fails the class.
+		//Measured against the vanilla class (client-intermediary.jar, sha256 E1E8705718DA4A8A), the store reads
+		//slot 3, and the delegator keeps the vanilla parameter list, so slot 3 is the same float there. Re-creating
+		//the store before its RETURN restores exactly the value the game's own constructor wrote, and OptiFine's
+		//constructor with its own store (the fload_2 one) is left alone because it already has it.
+		registerFix("class_630$class_628", new InjectionFieldPointFix("class_630$class_628", "field_3645", "F", 3,
+				"<init>"));
+
 		//class_918.method_23182 again, and the third shape of this family: OptiFine's recompile of the method
 		//inlined the enum's own values() call into a read of the enum's static $VALUES field, one instruction for
 		//one instruction, so the call two mods inject at is not there any more. ClassCompare, class_918.method_23182:

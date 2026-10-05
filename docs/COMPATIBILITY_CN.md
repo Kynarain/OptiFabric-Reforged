@@ -1,7 +1,19 @@
 # 兼容性:1.21.1 实测扫描的结果
 
 > 本文件汇总一次**实测**兼容性扫描:**OptiFabric Reforged 2.2.1 + OptiFine** 搭配 1.21.1 上流行的 Fabric 模组。
-> 它只汇报测量结果,不做宣传。完整数据(每一行、每一句原始日志、方法与限制)在
+> 它只汇报测量结果,不做宣传。
+>
+> **本快照里有一行后来重新量过:The Twilight Forest。** 下面它那条 FAIL 是 **2.2.1 时代、只判"到标题界面"** 的结果;
+> 在 **2.2.8** 上专门做的那次调查量到它在 1.21.1 上**能进世界,但是间歇性的**(带 TF 的那一套 11 个臂里 4 个,
+> 不带 TF 的同一套 3/3),重试有效、丢掉的那次不会弄坏存档。见第五、第六节,以及当前数字:
+> [`RELEASE_NOTES.md`](RELEASE_NOTES.md) 与 `release/notes/mc1.21.1.md`。
+>
+> **那 33 行失败后来整体重新归因过。** 全部重跑了一遍,对照臂**能失败**:**33 行里 27 行是我们这边的缺口**、
+> **6 行两臂都通过**(根本不属于不兼容)、**0 行在不装 OptiFabric 的原版 Fabric 对照里失败**;**`sodium` 自 2.2.11 起重新
+> 写回 `breaks`(硬拒载)** —— 把能找到的缺口修完之后它仍然整帧全黑,所以这里选择拒载而不是警告。见第五节的提示框;
+> 逐行结论在本线仓库根目录的 `COMPATIBILITY.md`。
+>
+> 完整数据(每一行、每一句原始日志、方法与限制)在
 > [`docs/compatibility/`](compatibility/)(先看 [`INDEX.md`](compatibility/INDEX.md));
 > 声明式的不兼容清单见 [`README_CN.md`](../README_CN.md#声明的不兼容以及加载器实际会怎么做)。
 
@@ -76,8 +88,10 @@ CurseForge 批次和抽样。它们一律标成 `not run`,从不计入通过。
 **归因于 OptiFabric 自身字节码改写的:0** —— 确切表述是:**在 255 条已分类的行里为 0,另有 1 条未知
 (`carpet-fixes`,那一行是运行装置本身失败);Wilson 95% 置信上界 1.5%。** 在 27 条对照通过的失败里,11 条点名的
 `net.minecraft` 类**确实**在 OptiFine 改写过的集合里(`class_761` WorldRenderer、`class_702` ParticleManager、
-`class_757`、`class_1921`、`class_309`、`class_332` 等),15 条没点名任何类,还有 1 条 —— `sodium` —— 是本模组自己的
-`fabric.mod.json` 声明的(`conflicts` 与 `breaks` 两处都有),因此属于**事先声明的限制**,而不是新发现的缺陷。
+`class_757`、`class_1921`、`class_309`、`class_332` 等),15 条没点名任何类,还有 `sodium` —— 本模组自己的
+`fabric.mod.json` 只在 `conflicts` 里声明它(2.2.8 与 2.2.9 那时 `breaks` 里也有一份,会把整个实例拒掉;2.2.10 把它
+从 `breaks` 撤了),因此属于**已声明的限制**,而不是新发现的缺陷。但"已声明"不等于"外部问题":第五节的重新归因量到,
+它背后的失败是本模组所提供的那些类上的缺口。
 
 **基于抽样的验收标准还没有被测过。** 100 行随机样本已经抽出(种子
 `optifabric-compat-matrix/random-sample/2026-10-03T09:20Z`,61 行 Modrinth + 39 行 CurseForge),其中 6 行在启动前
@@ -126,23 +140,67 @@ unexplained,而它的逐行数据只给出 **3** 条(第 4 条是 `carpet-fixes`
 `sodium-shadowy-path-blocks` 等在矩阵里都标着"渲染器重构"。典型证据是
 `Mixin transformation of net.minecraft.class_<n> failed`,而那个类正是 OptiFine 改写过的。
 
-- **`sodium` 是事先声明的不兼容**,不是这次新发现的:本模组 `fabric.mod.json` 在 `conflicts` 与 `breaks` 两处都写了它,
-  而这两个字段在实测的那版加载器上做的事完全不同:`conflicts` 条目**只警告**(`ModSolver` 的 `CONFLICTS` 分支连约束都不加),
-  点到**已存在**模组的 `breaks` 条目**会被执行** —— 求解器给出 `NEG_HARD_DEP`,加载器**拒绝**这个组合
-  (记录到的一次运行里写着 `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`)。所以 `breaks` 那一条是闸门,不只是声明。
-  Sodium 自己的元数据只在 `breaks` 里声明这一对(没有 `conflicts`),点名的又是旧 id `optifabric`,所以那条声明在本线上根本不会命中:加载器唯一会理会的只有我们这一条。它的对照是能启动的,见
-  [`README_CN.md`](../README_CN.md#声明的不兼容以及加载器实际会怎么做)。
+- **`sodium` 是已声明的冲突,而这条声明只是一条警告 —— 它背后的失败在我们这边。** `fabric.mod.json` 只在
+  `conflicts` 里声明 sodium(2.2.10)。这两个字段在实测的那版加载器上做的事不一样:`conflicts` 条目**只警告**
+  (`ModSolver` 的 `CONFLICTS` 分支连约束都不加),所以实例照常启动,日志里先是一条 `Warnings were found!`,接着是正常的
+  `Loading N mods:`;点到**已存在**模组的 `breaks` 条目**会被执行** —— 求解器给出 `NEG_HARD_DEP`,加载器**拒绝**这个组合
+  (记录到的一次运行里写着 `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`,已发布的 2.2.9 jar 上则是
+  `NEG_HARD_DEP optifabric_reforged 2.2.9+mc1.21.1 {breaks sodium @ [*]}` 加 `Incompatible mods found!`),
+  代价是用户包里其余的所有模组。**2.2.8 与 2.2.9 两个字段都写了,所以只要实例里有 sodium 就整个拒载;2.2.10 把
+  `breaks` 那一条撤掉了**,含 sodium 的实例现在能带着一条警告启动。这不等于"sodium 能用了":sodium 这套**仍然过不去**,
+  它撞的是一串没有上限的普通调用点缺口 —— `class_638.method_23777` 里的 `class_6491.method_24895`、
+  `class_761.method_22714` 里的 `class_310.method_1517`(这两处在 2.2.10 已修)、`class_918.method_23182` 里的
+  `class_2350.values()`,再往后是 sodium 在 `class_329` 上的 `GuiMixin` redirect,而且没有任何证据说明那是最后一处 ——
+  所以 **sodium 仍是"不支持:已记录,未修好"**。测量排除掉的是那个最常见的解释:**渲染器不是障碍**。这些是一处没了的
+  调用点、一个被 OptiFine 重编译器改了名的辅助方法,与这份清单里其它行需要的是同一批普通家族;每修一处,只是把这次运行
+  推到下一处。Sodium 自己的元数据只在 `breaks` 里声明这一对(没有 `conflicts`),点名的又是旧 id `optifabric`,
+  所以那条声明在本线上根本不会命中:你看到的那条警告来自我们。它的对照是能启动的,见
+  [`README_CN.md`](../README_CN.md#声明的不兼容以及加载器实际会怎么做)以及下面的提示框。
 - **The Twilight Forest**(`twilightforest-fabric-1.21.1-4.8.734.jar`,CurseForge file id 9003337)是 FAIL
   (`mixin-transform`,涉及 `class_156` / `class_638`)—— 但它是**只发在 CurseForge** 的 1.21.1 Fabric 移植,
   且不带 OptiFine 的对照**同样失败**(原因不同),因此归属是 `mod-broken-on-plain-fabric`:**不能算到 OptiFabric 头上**。
   只扫 Modrinth 的流程根本碰不到这个模组。
+  **这一行已经作废,而且它点名的那两个类今天都不是障碍**:它量的是 **OptiFabric 2.2.1**;`class_156` 与 `class_638`
+  各自在 **2.2.3** 拿到了修复(`RestoreVanillaMethodsFix(true, "method_29191")` 与 `LambdaMethodRefFix()`,见上文),
+  所以今天在 1.21.1 上,**The Twilight Forest 能到标题界面**,并且 **2.2.8** 上专门做的那次调查量到**进世界是间歇性的
+  —— 带 TF 的那一套 11 个臂里进了 4 个,不带 TF 的同一套 3/3 —— 重试有效**;丢掉的那一次不会弄坏存档。
+  停住的地方是客户端里一处**闲置的"世界打开交接"**,不是崩溃,也不归因于本模组;这一路上需要的那处着色器修复
+  (`class_5944` 的 `field_29494` null)在 **2.2.8** 里。现在该看的行:[`RELEASE_NOTES.md`](RELEASE_NOTES.md) 与
+  `release/notes/mc1.21.1.md`。
 - 有一个第三方个案是已知的、上游有报告、我们这边已修:**ShoulderSurfing** 的 `Camera` 局部槽位冲突,上游报告在
   `Exopandora/ShoulderSurfing#476`,本线在 2.2.1 里处理(实测记录见 [`DEVELOPMENT.md`](DEVELOPMENT.md) 与
   [`RELEASE_NOTES.md`](RELEASE_NOTES.md))。它**不在本次扫描范围内**,这里只作为背景引用。
 - `structory` 跑不了:它 1.21.1 Fabric 文件的记录里没有 `downloadUrl`,文件存在,但不走 CurseForge 官方 API 就取不到。
   这一条记为"无法测试",而不是悄悄丢掉。
 
+> **这 33 行 `mod-incompatible-with-optifine` 后来整体重新归因过,原分类在两个方向上都错了。** 第二次测量把 33 行
+> (外加作为第 34 行的 `sodium`)在 1.21.1 上全部重跑了一遍:对照臂是**能失败的对照** —— 原版 Fabric + 该模组 + 扫描当时
+> 暂存的那套依赖 jar,**不带 OptiFabric、也不带 OptiFine** —— 再用我们的栈(2.2.8,然后是 2.2.10 的修复)跑一遍。
+> 结果:**33 行里有 27 行是我们这边的缺口**(25 行可归到某一家 fixer,2 行是 OptiFine `Config` 的生命周期问题),
+> **6 行两臂都通过**、根本不属于不兼容(`c2me-fabric`、`sample--mr-c2me-fabric`、`freecam`、`bobby`、
+> `sample--mr-bedrockify`、`fallingleaves`),**0 行在不装 OptiFabric 的原版 Fabric 对照里失败**。特别是
+> **C2ME 在 1.21.1 上并不不兼容**:装我们的栈时它到得了标题界面、也进得了世界(在世界里连跑 113 秒、零条 `[ERROR]`);
+> 矩阵里说它不兼容的那一行是 2.2.1 时代的一次 `class_761` mixin 失败,2.2.3 的 `LambdaMethodRefFix` /
+> `LocalSlotLayoutFix` 登记已经把它去掉了。扫描那套对照("同一个模组不带 OptiFine")分不开"与 OptiFine 的代码冲突"
+> 和"与我们提供的那些类冲突" —— 没有 OptiFabric,OptiFine 的 jar 是死的 —— 所以第三节的归属计数与本节"是 OptiFine 加
+> 那个模组的性质,不是 OptiFabric 的性质"这句读法,对这一块都已经作废:要修的是我们这边;而第五节开头说的
+> "渲染器家族"描述的是症状,不是原因。2.2.10 的重测把十行**已记录的那处失败**关掉了 —— `cut-through`、
+> `deeperdarker`、`modernfix`、`no-chat-reports`、`particle-core`、`moreculling`、`shatterbyte-lib`(这一行还进到了
+> 世界)、`supplementaries` 的 `class_836` 那一处,以及两个 `immediatelyfast` 行的**第一处**失败 —— 并证明 `sodium`、
+> `iris`、`immediatelyfast` 与 `sample--mr-spectrumjei` 是**级联**而不是单点缺口:每修一处,这次运行就走到同一个模组里的
+> 下一处;这正是"每行只跑一次"的清单只记到第一处的原因。**这 33 行里有 7 行根本不是被点名模组自己的问题** ——
+> 5 行是经由暂存依赖 sodium 暴露出来的(`sodium-extra`、`reeses-sodium-options`、`indium`、
+> `sodium-shadowy-path-blocks`、`chloride`),`sample--mr-betternether` 是 bclib 的客户端入口点,
+> `sample--mr-spectrumjei` 是 modonomicon 的 mixin(报告正文把这项写成"6 行",但它列出的正是这 7 行;以逐行为准) ——
+> 所以只写模组 jar 名字的逐行清单会一直把它们归错。逐行结论见本线仓库根目录的 `COMPATIBILITY.md`,以及
+> `CHANGELOG.md` 的 2.2.10 一节。
+
 ## 六、这次扫描没有覆盖什么
+
+> **这里有一行后来重新量过。** 第五节里的 The Twilight Forest:在装齐 2.2.3–2.2.8 的修复之后,它在 1.21.1 上
+> **能进世界,但只是间歇性的(11 个带 TF 的臂里 4 个)** —— 这次扫描看不到这一点:它的判定是"到标题界面",
+> 每个模组只跑一次,而丢掉的那次"世界打开交接"看起来与"这个模组根本没跑出结论"一模一样。当前数字见
+> `release/notes/mc1.21.1.md` 与 [`RELEASE_NOTES.md`](RELEASE_NOTES.md)。
 
 1. **不开世界、不渲染、不开光影** —— 见第一节的提示框。最大的盲区是:任何只在世界加载之后才出现的失败。
 2. **一次一个模组。** 不测组合、不测整合包、不测两个非基础模组之间的相互作用。

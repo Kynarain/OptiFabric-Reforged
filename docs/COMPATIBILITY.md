@@ -5,6 +5,20 @@
 > every quoted log line, the method and the limitations — is in [`docs/compatibility/`](compatibility/) (start with
 > [`INDEX.md`](compatibility/INDEX.md)). Declared incompatibilities are listed in
 > [`README.md`](../README.md#declared-incompatibilities-and-what-the-loader-actually-does).
+>
+> **One row in this snapshot has been measured again since: The Twilight Forest.** Its FAIL verdict below is a
+> 2.2.1-era **title-screen** result; the dedicated investigation run on **2.2.8** measured the mod **reaching a world
+> on 1.21.1, intermittently** (4 entries in 11 arms of the TF-bearing set, against 3/3 for the same set without TF),
+> with retrying working and a lost attempt leaving the save usable. See §5 and §6, and the current numbers in
+> [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and `release/notes/mc1.21.1.md`.
+>
+> **The whole 33-row failure block has been re-attributed since.** All of it was re-run with a control that can fail:
+> **27 of the 33 are gaps on this side**, **6 pass both arms** and were never incompatible, **0 fail the plain-Fabric
+> control**, and the sodium stack itself is still unsupported. Since **2.2.11** `sodium` is declared under `breaks`
+> again: the cascade behind its missing call sites was worked through (five repairs), Sodium's mixins then all apply
+> and the client loads a world with a **black frame**, and the two explanations that were left — the single renderer
+> slot, and OptiFine's Fast Render — were ruled out by single-variable runs. See the box at the end of §5; the per-row
+> verdicts are in the repository-root `COMPATIBILITY.md`.
 
 ## 1. What was tested, and how
 
@@ -81,9 +95,13 @@ no-OptiFine control run gives:
 **Attributable to OptiFabric's own transformations: 0** — stated exactly: **0 among 255 classified rows, with 1
 unknown (`carpet-fixes`, the row whose rig run failed); Wilson 95 % upper bound 1.5 %.** Of the 27 control-passing
 failures, 11 name a `net.minecraft` class that is in OptiFine's extracted rewritten set (`class_761` WorldRenderer,
-`class_702` ParticleManager, `class_757`, `class_1921`, `class_309`, `class_332`, …), 15 name no class at all, and 1
-— `sodium` — is declared by this mod's own `fabric.mod.json` (in both `conflicts` and `breaks`), so it is a
-pre-declared limitation rather than a discovered defect.
+`class_702` ParticleManager, `class_757`, `class_1921`, `class_309`, `class_332`, …), 15 name no class at all, and
+`sodium` is declared by this mod's own `fabric.mod.json` under `breaks` since 2.2.11 (2.2.8 and 2.2.9 carried it in both
+fields, which refused the whole instance; 2.2.10 took it back out to `conflicts` only), so it is a declared limitation
+rather than a discovered defect. Since 2.2.11 the declaration is enforced, and for a reason this document's own
+re-attribution produced: the gaps behind it are on this side and were worked through (five repairs, §5), after which the
+pairing loaded a world and rendered nothing — refused rather than warned about. "Declared" is still not the same as
+"external".
 
 **The sample-based acceptance criterion has not been measured.** A 100-row random sample was drawn (seed
 `optifabric-compat-matrix/random-sample/2026-10-03T09:20Z`, 61 Modrinth + 39 CurseForge rows), 6 of the hundred were
@@ -135,19 +153,38 @@ those the renderer family is over-represented — `sodium`, `iris`, `immediately
 others are all tagged "renderer overhaul" in the matrix. The typical evidence is
 `Mixin transformation of net.minecraft.class_<n> failed`, where that class is one OptiFine rewrote.
 
-- **`sodium` is a declared incompatibility**, not a discovered one: this mod's `fabric.mod.json` lists it in both
-  `conflicts` and `breaks`, and those two fields do different things on the loader measured for that section. A
-  `conflicts` entry only warns — `ModSolver`'s `CONFLICTS` case adds no constraint at all. A `breaks` entry
-  against a mod that is present **is enforced**: the solver reports `NEG_HARD_DEP` and the loader refuses the
-  combination (a recorded run logged `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`). So the `breaks`
-  entry is a gate, not just a declaration. Sodium's own metadata
-  declares the pairing under `breaks` only (no `conflicts`) and names the old id `optifabric`, so that entry
-  cannot fire on this line: our entry is the only one a loader acts on. Its control run passes; see
-  [`README.md`](../README.md#declared-incompatibilities-and-what-the-loader-actually-does).
+- **`sodium` is a declared conflict, and since 2.2.11 the declaration is enforced — the failure behind it is ours.**
+  `fabric.mod.json` lists sodium under `breaks` (2.2.11; 2.2.10 had it under `conflicts` only). The two fields do different things on the loader
+  measured for that section: a `conflicts` entry only warns — `ModSolver`'s `CONFLICTS` case adds no constraint at
+  all — so the instance starts with a `Warnings were found!` line and then a normal `Loading N mods:`. A `breaks`
+  entry against a mod that is present **is enforced**: the solver reports `NEG_HARD_DEP` and the loader **refuses the
+  combination** (recorded runs logged `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}` and, on the published
+  2.2.9 jar, `NEG_HARD_DEP optifabric_reforged 2.2.9+mc1.21.1 {breaks sodium @ [*]}` followed by
+  `Incompatible mods found!`), which costs the user every other mod in the pack. **2.2.8 and 2.2.9 carried both fields
+  and therefore refused to load in any instance containing sodium; 2.2.10 removed the `breaks` entry**, so a sodium
+  instance now loads with a warning. That is not "sodium works": a sodium stack **still fails**, on an unbounded
+  cascade of ordinary call-site gaps — `class_6491.method_24895` in `class_638.method_23777` and
+  `class_310.method_1517` in `class_761.method_22714` (both repaired in 2.2.10), `class_2350.values()` in
+  `class_918.method_23182`, then sodium's `class_329` `GuiMixin` redirect, with no evidence that it is the last — so
+  **sodium remains unsupported: documented, not fixed**. What the measurements rule out is the usual explanation:
+  **the renderers are not the blocker.** These are a call site that is gone and a helper method OptiFine's recompiler
+  renamed — the same ordinary families the rest of this list needs — and each repair simply moves the run to the next
+  one. Sodium's own metadata declares the pairing under `breaks` only (no `conflicts`) and names the old id
+  `optifabric`, so that entry cannot fire on this line: the warning you see is ours. Its control run passes; see
+  [`README.md`](../README.md#declared-incompatibilities-and-what-the-loader-actually-does) and the box below.
 - **The Twilight Forest** (`twilightforest-fabric-1.21.1-4.8.734.jar`, CurseForge file id 9003337) is FAIL
   (`mixin-transform` on `class_156` / `class_638`) — but it is a CurseForge-only 1.21.1 Fabric port and its
   no-OptiFine control **also fails**, for a different reason, so it is owned `mod-broken-on-plain-fabric`: not
   attributable to OptiFabric. A Modrinth-only sweep could not have reached that mod at all.
+  **This verdict is superseded, and the two named classes are not the blocker any more.** It was measured with
+  **OptiFabric 2.2.1**; `class_156` and `class_638` were each given a fix in **2.2.3**
+  (`RestoreVanillaMethodsFix(true, "method_29191")` and `LambdaMethodRefFix()`, both above), so today
+  **The Twilight Forest reaches the title screen** next to OptiFabric + OptiFine on 1.21.1, and the dedicated
+  investigation run on **2.2.8 measures world entry as intermittent — 4 entries in 11 arms of the TF-bearing set,
+  against 3/3 for the same set without TF — and retrying works**; the attempt that is lost leaves the save usable.
+  The stop is an idle world-open hand-off in the client, not a crash and not attributable to this mod; the shader fix
+  that was needed along the way (`class_5944`, `field_29494` null) is in **2.2.8**. The current numbers are in
+  [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and `release/notes/mc1.21.1.md`.
 - One third-party case is known, reported upstream and patched from this side: **ShoulderSurfing**'s `Camera`
   local-slot conflict, reported at `Exopandora/ShoulderSurfing#476` and addressed in this line in 2.2.1 (its
   measurement is in [`DEVELOPMENT.md`](DEVELOPMENT.md) and [`RELEASE_NOTES.md`](RELEASE_NOTES.md)). It is **not part
@@ -155,7 +192,38 @@ others are all tagged "renderer overhaul" in the matrix. The typical evidence is
 - `structory` could not be run: its 1.21.1 Fabric file record carries no `downloadUrl`, so the file exists but
   cannot be fetched without CurseForge's official API. It is recorded as untestable rather than dropped.
 
+> **The 33-row `mod-incompatible-with-optifine` block has been re-tested since, and the heading it is filed under is
+> wrong in both directions.** A second pass re-ran all 33 rows (plus `sodium` as the 34th) on 1.21.1 with a control
+> that can fail — plain Fabric + the mod + exactly the dependency jars the sweep staged, **no OptiFabric and no
+> OptiFine** — and then with our stack (2.2.8, then the 2.2.10 fixes). **27 of the 33 are gaps on this side** (25
+> traced to a named fixer family, 2 to OptiFine's `Config` lifecycle), **6 pass both arms** and were never
+> incompatible at all (`c2me-fabric`, `sample--mr-c2me-fabric`, `freecam`, `bobby`, `sample--mr-bedrockify`,
+> `fallingleaves`), and **0 fail the plain-Fabric control**. **C2ME is not incompatible on 1.21.1**: it reaches the
+> title screen *and* a world with this stack (113 s in a world, zero `[ERROR]` lines), and the matrix row that says
+> otherwise is a 2.2.1-era `class_761` mixin failure that the 2.2.3 `LambdaMethodRefFix` / `LocalSlotLayoutFix`
+> registrations removed. The sweep's control run cannot separate "conflicts with OptiFine's code" from "conflicts
+> with the classes OptiFabric serves" — without OptiFabric the OptiFine jar is inert — so §3's owner counts and this
+> section's "a property of OptiFine plus that mod, not of OptiFabric" reading are superseded for this block: the fix
+> belongs on this side, and §5's "renderer family" is a description of the symptom, not of the cause. The 2.2.10
+> re-test closed the recorded failure of ten rows — `cut-through`, `deeperdarker`, `modernfix`, `no-chat-reports`,
+> `particle-core`, `moreculling`, `shatterbyte-lib` (which now also reaches a world), `supplementaries`' `class_836`
+> gap and both `immediatelyfast` rows' first failure — and it proved that `sodium`, `iris`, `immediatelyfast` and
+> `sample--mr-spectrumjei` are **cascades** rather than single gaps: each fix moves the run to the next failure
+> inside the same mod, which is why a per-row list built from one run of each recorded only the first one. **Seven of
+> the 33 rows are not about the named mod at all** — five are sodium's failure reached through a staged dependency
+> (`sodium-extra`, `reeses-sodium-options`, `indium`, `sodium-shadowy-path-blocks`, `chloride`),
+> `sample--mr-betternether` is bclib's client entrypoint and `sample--mr-spectrumjei` is modonomicon's mixin (the
+> source report says "six" of the 33 while listing these seven rows; the enumeration is what was measured) — so a
+> per-row list that names only the mod jar keeps mis-attributing them. The per-row verdicts are in this line's
+> `COMPATIBILITY.md` (repository root) and the 2.2.10 section of `CHANGELOG.md`.
+
 ## 6. What this does not cover
+
+> **One row here has been measured again since.** The Twilight Forest (the bullet in §5) does enter a world on
+> 1.21.1 with OptiFabric + OptiFine once the 2.2.3–2.2.8 fixes are in, but only intermittently (4 of 11 arms), and
+> this sweep could not have seen that: its verdict is the title screen, it ran one launch per mod, and a lost
+> world-open hand-off looks exactly like a mod that never got a verdict. The current numbers are in
+> `release/notes/mc1.21.1.md` and [`RELEASE_NOTES.md`](RELEASE_NOTES.md).
 
 1. **No world, no rendering, no shaders** — see the box in §1. The single biggest blind spot is any failure that
    only appears after a world is loaded.
