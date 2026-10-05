@@ -500,6 +500,44 @@ public class OptifineFixer {
 				"(Lnet/minecraft/class_243;Lnet/minecraft/class_6491$class_4859;)Lnet/minecraft/class_243;", "method_23777"));
 		registerFix("class_761", new InjectionCallPointFix("class_310", "method_1517", "()Z", "method_22714"));
 
+		//class_918.method_23182 again, and the third shape of this family: OptiFine's recompile of the method
+		//inlined the enum's own values() call into a read of the enum's static $VALUES field, one instruction for
+		//one instruction, so the call two mods inject at is not there any more. ClassCompare, class_918.method_23182:
+		//  vanilla  [10] CALL net/minecraft/class_2350.values()[Lnet/minecraft/class_2350;
+		//  served   [10] FIELD net/minecraft/class_2350.field_11040 [Lnet/minecraft/class_2350;
+		//It is one registration for two rows, because both name the same call in the same method:
+		//  - moreculling: renderers.ItemRenderer_faceCullingMixin, @Redirect moreculling$modifyDirections()[Lnet/minecraft/class_2350;
+		//      "... failed injection check, (0/1) succeeded. Scanned 0 target(s). No refMap loaded."
+		//  - sodium 0.8.13: features.render.model.item.ItemRendererMixin, @WrapOperation
+		//      renderModelFastDirections(Operation)[Lnet/minecraft/class_2350; on the same method_23182, whose @At
+		//      target is Lnet/minecraft/class_2350;values()[Lnet/minecraft/class_2350;
+		//      "... failed injection check, (0/1) succeeded. Scanned 0 target(s). No refMap loaded." -> "Mixin
+		//      transformation of net.minecraft.class_918 failed" -> Reflector's static init fails -> the client dies.
+		//The re-created call takes no arguments, so InjectionCallPointFix's ordinary repair - make the call at the top
+		//of the method and discard the result - is exact here, and a pure static enum getter is precisely the contract
+		//that fixer documents. Both mods replace that call with their own handler, which returns a cached array; the
+		//discarded values() call is only reached if neither mixin applies.
+		registerFix("class_918", new InjectionCallPointFix("class_2350", "values",
+				"()[Lnet/minecraft/class_2350;", "method_23182"));
+
+		//class_1008.method_4224, and the second failing mixin of the immediatelyfast jar. The re-attribution report
+		//already recorded both failures for that row ("Scanned 0 target(s)=2, InjectionError=2, Mixin apply
+		//failed=2"), so this is not a new discovery - it is the other half of a row the report's registration list
+		//covered only once. ImmediatelyFast's core.MixinGlDebug is
+		//  @Redirect(method = "method_4224", at = @At(value = "INVOKE",
+		//           target = "Lorg/slf4j/Logger;info(Ljava/lang/String;Ljava/lang/Object;)V"))
+		//  private static void appendStackTrace(Logger, String, Object)
+		//and OptiFine's recompile of the method (vanilla 86 instructions -> served 303) no longer contains that
+		//call, so the redirect scans 0 targets and fails the whole class:
+		//  Mixin transformation of net.minecraft.class_1008 failed
+		//  ... Redirector appendStackTrace(Lorg/slf4j/Logger;...)V ... (0/1) succeeded. Scanned 0 target(s).
+		//Neither existing instrument fits: the call's arguments are a String and an Object that are not parameters
+		//of method_4224(IIIIIJJ)V and not fields, so InjectionCallPointFix cannot rebuild it, and there is no
+		//sibling call to duplicate. What the method is, is a GL debug logger - so the game's own body goes back
+		//over OptiFine's, which is RestoreVanillaMethodsFix's replace mode and the same trade-off as class_702's
+		//entry above: OptiFine's own additions to this one logging method stop being used.
+		registerFix("class_1008", new RestoreVanillaMethodsFix(true, "method_4224"));
+
 		//The RestoreVanillaMethodsFix batch: OptiFine's recompiler removed or renamed a method a mixin names as its
 		//own target, so Mixin reports "could not find any targets matching <owner>.<name><desc>" and fails the whole
 		//class through the mixin config's defaultRequire = 1. Every line names the method its own log named, and the
@@ -511,6 +549,14 @@ public class OptifineFixer {
 		//  class_836.method_3580(Ljava/util/HashMap;)V    removed, OptiFine's lambda$static$0(Ljava/util/HashMap;)V added
 		//      deeperdarker (ShatteredHeadRenderMixin, @Inject addModel) and supplementaries (SkullBlockRendererMixin,
 		//      @Inject supp$addExtraTextures) name the same method, so one registration covers both rows
+		//  class_983.method_17958(Lclass_4587;ZLclass_1657;Lclass_2487;Lclass_4597;IFFFFLclass_1299;)V
+		//                                                 removed, OptiFine's lambda$renderParrot$1(...)V added
+		//      supplementaries: ParrotLayerMixin, @WrapOperation supp$renderParty. This one is NOT in the
+		//      re-attribution report's list: that lane's supplementaries run died on the class_836 registration
+		//      above, before class_983 was ever transformed, so its log never reached this failure. It was found by
+		//      measuring this lane's own arms - with class_836 restored the client runs on, ParrotRenderer loads and
+		//      the same "could not find any targets matching 'method_17958'" failure appears. Same family, same
+		//      repair, so supplementaries needs two registrations rather than one.
 		//  class_1043.method_22793()V                     removed, OptiFine's lambda$new$0()V added
 		//      modernfix: safety.DynamicTextureMixin, @Inject checkNullPixels
 		//  class_442.method_55814(Lclass_4185)V           removed, OptiFine's lambda$init$1..5(Lclass_4185)V added
@@ -526,6 +572,7 @@ public class OptifineFixer {
 		//reach. That is the trade-off this fixer has always made and it is stated in the report per row.
 		registerFix("class_757", new RestoreVanillaMethodsFix("method_18144"));
 		registerFix("class_836", new RestoreVanillaMethodsFix("method_3580"));
+		registerFix("class_983", new RestoreVanillaMethodsFix("method_17958"));
 		registerFix("class_1043", new RestoreVanillaMethodsFix("method_22793"));
 		registerFix("class_442", new RestoreVanillaMethodsFix("method_55814"));
 		registerFix("class_1921", new RestoreVanillaMethodsFix("method_34834", "method_34833", "method_36437",
