@@ -1,4 +1,4 @@
-# NOTE: keep this file UTF-8 WITH BOM. Windows PowerShell reads .ps1 as ANSI when there is no BOM, and the
+﻿# NOTE: keep this file UTF-8 WITH BOM. Windows PowerShell reads .ps1 as ANSI when there is no BOM, and the
 # Chinese text below then mis-parses (a trailing quote gets eaten and the whole file fails to load).
 <#
     把 dist/ 里十版 jar 逐个发到三个平台。逐版一个发布条目,版本号就是 <版本>+mc<MC版本>。

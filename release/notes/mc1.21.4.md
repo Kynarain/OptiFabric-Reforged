@@ -1,8 +1,146 @@
-# OptiFabric 2.2.9+mc1.21.4
+# OptiFabric 2.2.10+mc1.21.4
 
 **Minecraft 1.21.4** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `OptiFine_1.21.4_HD_U_J3.jar`
 
 状态:**已实测正常(含抗锯齿)**
+
+## 2.2.10 的改动
+
+**一句话:** 2.2.8 / 2.2.9 把 sodium 写进 `breaks`,于是**整个实例被加载器拒绝**;本版把那条声明去掉,实例能起来、日志里只留一条警告,
+并修掉**重新归因那一轮证明属于我们这一侧的第一处失败**——而 sodium、iris、immediatelyfast 都不是单个坑,是**连着的坑**,
+本版只关掉了每一串的头几处。
+
+### sodium 不再是闸门
+
+`fabric.mod.json` 里从 2.2.8 起把 `sodium` **同时**写进了 `conflicts` 与 `breaks`。在 Fabric Loader 0.19.5 上这两者不是一回事:
+`conflicts` 只是 `Warnings were found!`(`ModSolver` 里那条 `// TODO: soft negative dep?` 至今没有约束),而 `breaks` 点到已存在的
+模组是 `NEG_HARD_DEP`,加载器**拒绝整个实例**。2.2.9 实测:
+
+```
+[main/INFO]: Immediate reason: [HARD_DEP chloride 1.8.1 {depends sodium @ [>=0.8.12]},
+    NEG_HARD_DEP optifabric_reforged 2.2.9+mc1.21.1 {breaks sodium @ [*]}, …]
+[main/ERROR]: Incompatible mods found!
+```
+
+代价是包里**其它所有模组**(chloride 这类 sodium 附属模组还会以 `HARD_DEP` 一起失败)。2.2.10 只保留 `conflicts`:
+实例能起来,日志里留一条警告。README 与 README_CN 里那张声明表、表上的摘要行与相关段落都已按实测改写,两次运行都引在正文里。
+
+### sodium **仍然是级联**:不要把这一版读成"sodium 能用了"
+
+两个调用点都修好了,而且都先在**私有 `.optifine` 缓存副本**上用 fixer 类本身验过才提交:
+
+* `class_761.method_22714` 丢了 `class_310.method_1517()Z`(OptiFine 换成了自己的 `Config.isRainFancy()Z`,一个**无参**静态取值器):
+  `InjectionCallPointFix` 按"从方法自己的参数重建调用"把它补回来(无参调用可以精确重建),登记为
+  `registerFix("class_761", new InjectionCallPointFix("class_310", "method_1517", "()Z", "method_22714"))`;
+* `class_638.method_23777` 丢的是 `class_6491.method_24895(Lclass_243;Lclass_6491$class_4859;)Lclass_243;`,OptiFine 换成了自己的
+  `class_6491.sampleM(...)Lnet/optifine/Vec3M;` —— **同样的两个参数、不同的被调方与返回类型**。第二个参数是方法自己在四条指令
+  之前用 `invokedynamic` 造出来的解析器,既不是参数也不是字段,`InjectionCallPointFix` 按设计拒绝它(没有地方去取这个实参);
+  但那两个值**此刻已经在操作数栈上**(就在 OptiFine 自己那次调用之前),所以新 fixer `RestoreSiblingCallFix` 把它们复制一份
+  (`DUP2`,两个 category-1 引用),再调游戏自己的方法、丢弃它的 `class_243` 结果。
+
+两个 mixin 现在都能应用,加载器也不再拒绝这个组合。**但 sodium 0.8.13 不是死在第一处,而是死在第三处、第四处**:
+
+| 臂 | 结果 | 证明它的那行 |
+|---|---|---|
+| 只有这两个调用点(私有缓存) | CLIENT-DIED | `ItemRendererMixin … renderModelFastDirections(Operation)[Lnet/minecraft/class_2350; … (0/1) succeeded. Scanned 0 target(s)` → `Mixin transformation of net.minecraft.class_918 failed` |
+| 再加上 `class_918`(私有缓存) | CLIENT-DIED | `Redirector redirectFancyGraphicsVignette()Z in sodium-common.mixins.json:features.options.overlays.GuiMixin … (0/1) succeeded` → `Mixin transformation of net.minecraft.class_329 failed` |
+| 本版构建的 jar | 同上 | 同样两行,停在 `class_329` |
+
+也就是说 sodium 至少还需要第四处修复(`class_329` 上那处布尔重定向),而且**没有任何证据说它是最后一处**;`indium`(sodium 0.5.11)
+单独验过:同样关掉那两个命名调用点、同样停在 `class_329`。这些失败**不是"两个渲染器打架"**——逐行看,它们和前面那些是**同两个族**的
+普通缺失:OptiFine 挪走或内联掉的调用点(`InjectionCallPointFix` / `RestoreSiblingCallFix`),以及被重编译改名或清空的辅助方法
+(`RestoreVanillaMethodsFix`)。**渲染器并不是卡住的原因,级联才是。** 所以这一版把 sodium 以及只带 sodium 的那五行
+(`sodium`、`sodium-extra`、`reeses-sodium-options`、`chloride`、`sodium-shadowy-path-blocks`、`indium`)写成**"能起、还差得远"**,
+而不是"已修好";本版**不声称** sodium(或 sodium + iris 那套组合)可用,**它的定位是"不受支持,但不再拒绝加载"**。
+
+### 六处 `RestoreVanillaMethodsFix` 登记:标题界面逐行验证
+
+每一处都先读**服务出去的那个类**拿到字节证据(不是猜的),再在私有缓存副本上用同一个 fixer 类验一遍:
+
+| class.method | OptiFine 换成了什么 | 行 |
+|---|---|---|
+| `class_757.method_18144(Lclass_1297;)Z` | `lambda$pick$57(Lclass_1297;)Z` | `cut-through` |
+| `class_836.method_3580(Ljava/util/HashMap;)V` | `lambda$static$0(Ljava/util/HashMap;)V` | `deeperdarker` **和** `supplementaries` |
+| `class_1043.method_22793()V` | `lambda$new$0()V` | `modernfix` |
+| `class_442.method_55814(Lclass_4185;)V` | `lambda$init$1..5(Lclass_4185;)V` | `no-chat-reports` |
+| `class_1921` 的六个候选方法 | `lambda$static$N` | 两条 `immediatelyfast` 行 |
+| `class_702.method_3049(Lclass_765;Lclass_4184;F)V`(**replace 模式**) | 六条指令的转发器,转给 OptiFine 自己的 `render(…,class_4604)` | `particle-core` |
+
+**量到标题界面的六行是** `cut-through`、`deeperdarker`、`supplementaries`、`modernfix`、`no-chat-reports`、`particle-core`
+(其中五条计数器全 0;`supplementaries` 到标题界面,但它自己的 `ParrotLayerMixin` 仍然失败,见下)。`immediatelyfast` 的两行**没有**到
+标题界面:它的前两处失败关掉了(`class_1921` 的六个方法 + `class_1008.method_4224`),运行撞上**第三处**(`class_327$class_5232`)。
+
+**为什么六个候选方法全登记(而不是挑一个)。** `immediatelyfast` 的 `core.MixinRenderLayer` 是
+`@ModifyArg(method = {"method_34834","method_34833","method_36437","method_36436","method_37348","method_37347"}, … index = 5)`
+(用 `javap -v` 从 jar 里读出来的)。六个方法都被 OptiFine 的重编译删掉了,而游戏自己的 `class_1921` 里**六个都在、且六个都含**
+`@At` 点名的 `method_24049` 调用(`Query callers` 对 `client-intermediary.jar` 查过),所以全恢复才等于"这个模组在普通 Fabric 上看到的东西"。
+
+### 另外两处(同一轮,标题界面验证)
+
+* **`moreculling`** —— `class_918.method_23182` 里 OptiFine 把 `class_2350.values()[Lnet/minecraft/class_2350;` **内联**成了对枚举
+  自己 `$VALUES` 字段的读取(一换一:`vanilla [10] CALL class_2350.values()` / `served [10] FIELD class_2350.field_11040`)。
+  sodium 0.8.13 的 `ItemRendererMixin` 与 `moreculling` 的 `ItemRenderer_faceCullingMixin` 都注入这条调用,登记
+  `InjectionCallPointFix("class_2350", "values", "()[Lnet/minecraft/class_2350;", "method_23182")` 即可(无参调用,普通修法就是精确的)。
+  结果:**标题界面,`/ERROR` 也是 0**。
+* **`shatterbyte-lib`(OctoLib)、`iris`、`sample--mr-spectrumjei`(modonomicon)共用的 `class_761.method_22710` 调用点** —— 既有的
+  `RestoreVanillaCallFix` 一处登记覆盖三行:`shatterbyte-lib` **到标题界面并进了世界**(计数器全 0);另外两行的**那一处**不再报错,
+  然后各自撞上更后面的坑(iris 的 `skipLocalBlockEntities`、spectrum 的 `class_329` 上的 `InGameHudMixin`)。
+
+### 一处写了、验过、然后**撤掉**的修复(别再盲试)
+
+`supplementaries` 的 `ParrotLayerMixin` 需要 `class_983.method_17958` 回来,它确实不在服务出的类里,按同一族恢复也"成功"了
+—— **但它会把被修的那个类弄坏**:恢复方法之后流水线要重算 `class_983` 的栈映射帧(被 fixer 改过的类都走 `FrameComputingWriter`),
+重算出来的帧把实体局部变量判成 `java/lang/Object`:
+
+```
+java.lang.VerifyError: Bad type on operand stack in putfield
+Location: net/minecraft/class_983.lambda$renderParrot$1(…)V @100: putfield
+Reason:   Type 'java/lang/Object' (current frame, stack[0]) is not assignable to 'net/minecraft/class_1297'
+```
+
+于是资源重载直接失败(`Caught error loading resourcepacks, removing all selected resourcepacks`);把这条登记拿掉,同一条臂
+**0 个 VerifyError** 并照常到标题界面。**这个修复比它要修的故障更糟**,所以没有发布,只写在 `OptifineFixer` 的注释里
+(同族的 `class_983` 地雷在 1.21.8 那一侧也已经记在 `OptifineInjector#patch` 里,1.21.1 上换一个方法照样踩得到)。
+下一次想修 `supplementaries` 的人请从这条注释开始,别先把方法恢复回去再来查。
+
+### 诚实的边界:上一份报告漏掉了三处,因为每条臂都停在第一次失败
+
+重新归因那一轮的运行**在每条行的第一处失败就结束**(一次致命的 Mixin 失败会终止整条臂),所以有三处只有在修完第一处之后才会被
+变换到的类**从来没有进过报告**。本轮靠测量(而不是读报告)找到了它们:
+
+1. `class_983.method_17958`(`supplementaries`)—— 写了、证明有害、撤回(见上);
+2. `class_918.method_23182` —— 一处调用点、**两行**(`moreculling` 与 sodium),本版已修;
+3. `class_1008.method_4224` —— `immediatelyfast` 的**第二处**失败(那份报告已经记了它的计数器 `Scanned 0 target(s)=2`、
+   `InjectionError=2`、`Mixin apply failed=2`,但没有把它列进登记表)。`core.MixinGlDebug` 包的是 `Logger.info(String,Object)`,
+   OptiFine 重编译后(原版 86 条指令 → 服务出的 303 条)那个调用已经不存在;两个实参既不是 `method_4224(IIIIIJJ)V` 的参数也不是字段,
+   也没有可复制的兄弟调用,所以只有 `RestoreVanillaMethodsFix(true, "method_4224")` 把游戏自己的方法体放回去 —— 它是一个 GL 调试
+   日志方法,代价只是 OptiFine 对这一个日志方法的补充。
+
+因此**不要把本版的"已修"读成那 27 行都修好了**:真正修好并量到标题界面的是上面那六行 + `moreculling`,再加 `shatterbyte-lib` 的进世界;
+`sodium` / `iris` / `immediatelyfast` / `sample--mr-spectrumjei` 是**级联**,本版只关掉了头几处。
+
+### 只诊断、没改代码的两处
+
+* **`ebe` 与 `sample--mr-betternether`**:Fabric 的 `client` 入口点在静态初始化里读 `net.optifine.Config.gameSettings`,而那个字段是
+  OptiFine 自己在游戏构造 `GameSettings` 时才填的,晚于入口点阶段。我们**无法**在那之前给它一个正确的值:给一个默认对象会让模组按
+  默认值静默注册错误的模型(它们读 `ofRandomEntities` 来决定注册什么),比现在这个清楚的 NPE 更糟。诚实的做法是把它写成文档里的
+  **顺序注意事项**:入口点里不要读 `Config` 字段,改到客户端 tick 或客户端生命周期回调里读。
+* **`open-parties-and-claims`**:崩溃报告一直没写出来,因为 OptiFine 自己的崩溃报告扩展先死了(`Shaders.<clinit>` 在
+  `Minecraft.getInstance()` 还是 null 时读 `options`)。本轮用 javaagent 探针在报告生成**之前**抓到了真正的 throwable:是这个模组
+  自己的 OptiFine 专用 mixin(`optifine.breaks.MixinFabricMob` 的 `onAiStepItemPickup`,`LocalCapture` 局部变量)在
+  `class_1308.method_6007` 上因局部变量槽位不匹配而失败,连带 `class_2246`(`Blocks`)静态初始化失败。族别因此从"候选"变成**确认**:
+  `LocalSlotLayoutFix`;修复没做 —— 那是所有实体都继承的类,需要自己的缓存验证和世界验证。
+
+### 验证与边界
+
+每条修复都是**普通启动**(没有用 `-Dmixin.debug.export=true`;要看真实服务出去的字节就直接读 `.optifine` 缓存),计数器是
+`latest.log` + stdout + stderr 三者之和,以标题界面为界。回归:**Carry On 2.2.6.13**(1.21.1)、**ShoulderSurfing 5.2.0**(1.21.1)、
+**1.21.6**、**1.21.8** 标题界面、**暮色森林 4.8.734** —— 全部 TITLE-SCREEN,除 TF 那条已知的空 refmap 警告(2 条 `/ERROR`)之外
+计数器为 0,`field_4172` 崩溃 0 次。
+
+**别把这一版读大。** 每一次都只启动**一次**,一个实例副本、一个新建的 `.optifine` 缓存、`-Xmx2048M`,**没有光影包、没有压测、
+没有长时间游玩、没有多人**;进世界那条只量了 1.21.1(`shatterbyte-lib`),其余九版只做了标题界面与上面那几条回归。
+sodium / iris / immediatelyfast 的**级联没有修完**,`class_983` 那条撤掉的修复**没有发布**,`class_1308.method_6007` 只确认了族别。
 
 ## 2.2.9 的改动
 
@@ -859,14 +997,14 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.9+mc1.21.4.jar` — 839214 字节
+`OptiFabric-2.2.10+mc1.21.4.jar` — 842901 字节
 
-`SHA-256: AF455C9A16475A75EC7A5219F8D789277057C9AA19279FB02142B2376190F782`
+`SHA-256: 39A3A6B11400333BABA93B8E21385D79645A4082A6DBA422F93FB09167A14965`
 ---
 
 ## 这一版有两条产物(装之前请看这一段)
 
-- `OptiFabric-2.2.9+mc1.21.4.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
+- `OptiFabric-2.2.10+mc1.21.4.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
   运行时**不下载任何东西**,也**不启动任何进程**(平台的规则不允许模组在游戏运行时下载文件或启动进程)。
   OptiFine 要你自己从官网 <https://optifine.net/downloads> 下载,把 jar 放进这个 mod 旁边的 `mods` 文件夹;
 装好之后**手动重新启动游戏一次**(本产物不会自动重启)。找不到 OptiFine 时游戏仍会走到标题界面,并按 **2.1.0 的老办法**
@@ -874,7 +1012,7 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
   版本换成正在运行的版本);对话框的两个按钮**只做复制**(mods 文件夹路径 / 帮助链接,内部错误时是堆栈或 `logs` 路径),
   **不打开文件夹、不打开网页、不启动任何进程**。装了**比本产物认识的最新构建更旧的预览版**时,同一个对话框**每个构建只弹
   一次**(已提示的构建记在 `config/optifabric-mismatch-ack.txt`);同版、更新版与任何正式版**从不提示**。
-- `OptiFabric-2.2.9+mc1.21.4-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
+- `OptiFabric-2.2.10+mc1.21.4-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
   「自动重启」这两项。除了这两项,它与默认产物是同一版修复。
 
 两条产物的 **mod id 相同**,所以配置与世界通用,但**只能装其中一个**。默认产物构建自 `9ec748c`,

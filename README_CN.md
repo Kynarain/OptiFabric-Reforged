@@ -139,16 +139,16 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 
 | Minecraft | 产物 | OptiFine 构建 | 状态 |
 |---|---|---|---|
-| 1.21 | `OptiFabric-2.2.9+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
-| 1.21.1 | `OptiFabric-2.2.9+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
-| 1.21.3 | `OptiFabric-2.2.9+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
-| 1.21.4 | `OptiFabric-2.2.9+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
-| 1.21.6 | `OptiFabric-2.2.9+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
-| 1.21.7 | `OptiFabric-2.2.9+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
-| 1.21.8 | `OptiFabric-2.2.9+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
-| 1.21.9 | `OptiFabric-2.2.9+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
-| 1.21.10 | `OptiFabric-2.2.9+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
-| 1.21.11 | `OptiFabric-2.2.9+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
+| 1.21 | `OptiFabric-2.2.10+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已实测 |
+| 1.21.1 | `OptiFabric-2.2.10+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已实测 |
+| 1.21.3 | `OptiFabric-2.2.10+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已实测 |
+| 1.21.4 | `OptiFabric-2.2.10+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已实测 |
+| 1.21.6 | `OptiFabric-2.2.10+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能启动能玩,**一开光影就崩**(见下) |
+| 1.21.7 | `OptiFabric-2.2.10+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
+| 1.21.8 | `OptiFabric-2.2.10+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已实测 |
+| 1.21.9 | `OptiFabric-2.2.10+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已实测 |
+| 1.21.10 | `OptiFabric-2.2.10+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已实测 |
+| 1.21.11 | `OptiFabric-2.2.10+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已实测 |
 
 表里这一列是该 MC 版本**最新的正式版** OptiFine;若该版本官方还没有正式版,则用**最新的预览版**代替
 (所以 1.21.4 写的是 J3,而不是更新的预览 J4_pre2)。同一 MC 版本的其它构建同样可用 —— 游戏内提示只在你 mods/ 里的
@@ -162,16 +162,16 @@ OptiFine 没出过 **1.21.2 / 1.21.5** 的构建,所以这两版没有对应 jar
 
 | OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 |
 |---|---|---|
-| `2.2.9+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
-| `2.2.9+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
-| `2.2.9+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
-| `2.2.9+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
-| `2.2.9+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
-| `2.2.9+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
-| `2.2.9+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
-| `2.2.9+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
-| `2.2.9+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
-| `2.2.9+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
+| `2.2.10+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
+| `2.2.10+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
+| `2.2.10+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
+| `2.2.10+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
+| `2.2.10+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
+| `2.2.10+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
+| `2.2.10+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
+| `2.2.10+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
+| `2.2.10+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
+| `2.2.10+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
 
 当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是弹出一个界面告诉你缺哪个文件:上面有 `下载 OptiFine` 按钮,从 OptiFine **官网**(`optifine.net`,也是本模组唯一会去下载的地方)取回它,旁边就是打开 mods 文件夹;按钮上方的地址栏可以换成你自己的地址,那样就只从你填的地方取。
 
