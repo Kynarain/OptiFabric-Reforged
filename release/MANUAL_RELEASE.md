@@ -85,6 +85,20 @@
 > 4. **`version.ps1` 的两条机械事实**(2.2.9 都是手工补的):(a) 只改 `gradle.properties` 与 `release\publish.ps1` 的版本基数**不会**动文档 —— 补丁升版真正改写文档的是 `-Kind` / `-Set` 那一步(`Update-FilePattern`,全文件把 `<旧版本>+mc` 换成 `<新版本>+mc`)。2.2.9 的分支只提交了那两行,157(store)/ 167(convenience)处 `2.2.8+mc` 仍指向不存在的产物,是发布时手工补的,**外加三个 note 标题**(`# OptiFabric <版本>+mc<MC>`,那串也带 `+mc`,同一次替换会一起改);(b) `-RecordDigest` 与 `publish.ps1` 都**写死读 `dist\`**,不是 `build\libs\`,所以两个变体的产物**都要**放进各自的 `dist\`(store 的普通 jar、convenience 的 `-full` jar),否则 `-RecordDigest` 找不到文件、`publish.ps1 -DryRun` 会跳过该 MC。两个工作区的 `dist\` 内容相同时,直接互相补齐 40 个文件最省事。
 >
 
+> **2.2.10 追记的四个发布期坑(都踩过,下次别再踩)**
+>
+> 1. **`release\publish.ps1` 必须保住 UTF-8 BOM —— 这是三个字节的事,不是格式洁癖。** 2.2.10 这条线上两个分支的第一次提交都把 BOM 丢了,于是 `publish.ps1 -DryRun` 在 Windows PowerShell 5.1 下直接死在 `Unexpected token '}' at release\publish.ps1:158`:文件被当 ANSI 读,最后一行那句中文里的引号被吃掉,整个脚本加载失败,**元数据那一步根本走不到**。修法就是把 `EF BB BF` 三个字节加回去,文件其余部分一字未动(提交 `68c7614`)。文件第 1 行本来就写着这条要求;改过 `publish.ps1` 之后当场验一遍:`$b=[IO.File]::ReadAllBytes('release\publish.ps1'); $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF` 必须是 True(下面「文档编码」那一条自查同理)。
+>
+> 2. **别给辅助函数/脚本起 PowerShell 别名重名的短名字:`Rd` 就是这么把一个被跟踪的文件删掉的。** 2.2.10 的店里有个小工具叫 `Rd`,而 `rd` 是 PowerShell 内建别名(`Remove-Item`),于是那一步没走到自己的函数,直接删了 `reattrib-fix\wt\CHANGELOG.md`(当下从 git 恢复,没有进入任何提交、也没有进任何发布产物)。**规则**:辅助名字不要与内建别名同名;**一个短名字行为诡异时,先 `Get-Alias <名字>` 再怀疑自己的代码**(`Get-Alias rd` 会告诉你它就是 `Remove-Item`;`ri` / `rm` / `del` / `erase` / `rd` / `rmdir` 都是它的别名)。
+>
+> 3. **`version.ps1 -Kind patch` 的目标是「当前记录值 + 1」,所以已经升过版的泳道要重跑它,必须先把那两行版本号临时改回旧值。** 2.2.10 的文档改写就是这么做的:分支第一条提交已经把 `gradle.properties` 的 `mod_version_base` 与 `release\publish.ps1` 的 `$defaultModVersion` 开到了 2.2.10,这时再跑 `-Kind patch` 会指向 **2.2.11**,而 `-Set 2.2.10` 会被"新版本号与当前相同"拒绝(`Compare-Version` 判 0 即抛)—— 两条路都拿不到 2.2.10 的文档替换。**改写文档的步骤**(在要改写文档的那个工作区里):
+>    1. 把 `gradle.properties` 的 `mod_version_base=` 与 `release\publish.ps1` 的 `$defaultModVersion =` 临时改回**上一个已发布版本**(2.2.10 那次是 `2.2.9`);
+>    2. 跑 `powershell -NoProfile -ExecutionPolicy Bypass -File release\version.ps1 -Line 1.21.x -Kind patch -DryRun` 看逐文件改动数,确认目标版本号正是要发的那个号,再去掉 `-DryRun` 真跑;
+>    3. 把那两行改回**本版版本号**,`git diff` 复核:两行应当与改前逐字节相同,只剩文档里的替换;
+>    4. 目标版本号不对就**停下**:错位的一跑会把整版文档写成下一个版本(2.2.11 的串写进 2.2.10 的笔记与清单),而 `-Kind patch` 只从 `gradle.properties` 读当前值,不会替你判断。
+>
+> 4. **`Scanned 0 target(s)` 是这一版 Mixin 里的一个常量,不是测量结果 —— 任何"这个注入什么都没找到"的结论都不能只靠它。** 对 `sponge-mixin-0.17.4+mixin.0.8.7.jar` 跑 `javap -p -c org.spongepowered.asm.mixin.injection.struct.InjectionInfo`(类在 `injection.struct`,不在 `injection`):`targetCount` 这个字段**全类只在构造函数里被 `putfield` 写过一次**(`iconst_0` → `putfield targetCount:I`),之后再没被赋值过;而 `Critical injection failure: … Scanned %d target(s)` / `Injection validation failed: … Scanned %d target(s)` 两句里的 `%d` 读的正是这个字段(两处 `getfield targetCount` 都在 `postInject()` 里);真正的计数在 `getTargetCount()` 里,它是 `return this.targets.size()`(`TargetSelectors`),两者根本不是一回事。实测也一致:本仓库泳道日志里出现的每一处 `Scanned N target(s)` 都是 0 —— 只说 reattrib / reattrib-fix / carryon / compat-matrix / c2mefs 这五处的日志,就有 **607 处,607 处全为 0**;另一次全仓扫描记到的是 48 处 / 48 个 0。**所以**:引用这条消息时,能承重的是那句里的 **(注入数/要求数) 对**(`(0/1) succeeded`、`expected N invocation(s) but M succeeded`)以及需要时的**字节级反汇编(对加载器实际拿到的那份类)**,`Scanned N target(s)` 只能当装饰。今天几份泳道报告(包括 Carry On 那条线)都引过这个计数,它们的结论仍然成立 —— 因为它们同时有 `(0/1) succeeded` 与 `ClassCompare` 的反汇编 —— 但今后只靠这个数字下结论的分析,读到的会是一个过期字段。要真正的 selector 数,从 mixin 自己已解析的 selectors 或变换后的类里读,不要从这一行读。
+>
 | 版本 | 版本号 / 标签 | jar | 字节 | SHA-256 | 正文 |
 |---|---|---|---|---|---|
 | 1.21 | 2.2.10+mc1.21 / v2.2.10+mc1.21 | dist\OptiFabric-2.2.10+mc1.21.jar | 803255 | 3FF3F519D46D57B587FD262CF0D618D51B96C638F3E4142EFF0751581AC77CAD | release/notes/mc1.21.md |
