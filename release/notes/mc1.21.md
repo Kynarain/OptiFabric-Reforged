@@ -1,4 +1,4 @@
-# OptiFabric 2.2.11+mc1.21
+# OptiFabric 2.2.12+mc1.21
 
 **Minecraft 1.21** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `preview_OptiFine_1.21_HD_U_J1_pre9.jar`
 
@@ -988,26 +988,26 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.11+mc1.21.jar` — 824504 字节
+`OptiFabric-2.2.12+mc1.21.jar` — 806741 字节
 
-`SHA-256: 39C0EA08ACF93FDD778550D7B6897750A130BB038DD148D6EC1E24F133633CBF`
+`SHA-256: E8D90A0A4D2466296623743959D703C6E2E3F2F5BDF16E37BDFCD9A0170C8E78`
 ---
 
 ## 这一版有两条产物(装之前请看这一段)
 
-- `OptiFabric-2.2.11+mc1.21.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
+- `OptiFabric-2.2.12+mc1.21.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
   运行时**不下载任何东西**,也**不启动任何进程**(平台的规则不允许模组在游戏运行时下载文件或启动进程)。
   OptiFine 要你自己从官网 <https://optifine.net/downloads> 下载,把 jar 放进这个 mod 旁边的 `mods` 文件夹;
-装好之后**手动重新启动游戏一次**(本产物不会自动重启)。找不到 OptiFine 时游戏仍会走到标题界面,并按 **2.1.0 的老办法**
+  装好之后**手动重新启动游戏一次**(本产物不会自动重启)。找不到 OptiFine 时游戏仍会走到标题界面,并按 **2.1.0 的老办法**
   弹出一个确认对话框说明原因(标题 `There was an error loading OptiFabric!`,正文就是 2.1.0 那三行原话,只把写死的 Minecraft
   版本换成正在运行的版本);对话框的两个按钮**只做复制**(mods 文件夹路径 / 帮助链接,内部错误时是堆栈或 `logs` 路径),
   **不打开文件夹、不打开网页、不启动任何进程**。装了**比本产物认识的最新构建更旧的预览版**时,同一个对话框**每个构建只弹
   一次**(已提示的构建记在 `config/optifabric-mismatch-ack.txt`);同版、更新版与任何正式版**从不提示**。
-- `OptiFabric-2.2.11+mc1.21-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
+- `OptiFabric-2.2.12+mc1.21-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
   「自动重启」这两项。除了这两项,它与默认产物是同一版修复。
 
-两条产物的 **mod id 相同**,所以配置与世界通用,但**只能装其中一个**。默认产物构建自 `9ec748c`,
-`-full` 产物构建自 `fb920d7`(`-full` 没有单独的 tag,与默认产物共用同一个 release)。
+两条产物的 **mod id 相同**,所以配置与世界通用,但**只能装其中一个**。2.2.11 的默认产物构建自 `d45c721`,
+`-full` 产物构建自 `2c86edf`(2.2.10 分别是 `82368e2` 与 `84bdeb9`;`-full` 没有单独的 tag,与默认产物共用同一个 release)。
 
 
 > **上架 jar 的合规声明**(逐 jar 机器核对,扫描表见 `cf-resume\cp-table.md`):

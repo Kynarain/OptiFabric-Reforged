@@ -1,12 +1,12 @@
-# GitHub Release notes — tag `v2.2.11+mc1.21.11`(`OptiFabric-2.2.11+mc1.21.11.jar`)
+# GitHub Release notes — tag `v2.2.12+mc1.21.11`(`OptiFabric-2.2.12+mc1.21.11.jar`)
 
 > 复制下面 `---` 之间的内容到 GitHub Release 的说明框里(标题用第一行)。英文在前,末尾附中文摘要。
-> 标签是**版本号 + 该 MC 版本**(`v2.2.11+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
+> 标签是**版本号 + 该 MC 版本**(`v2.2.12+mc1.21.11`):这个仓库同时承载 26.x 线,该线已用掉 `v2.0.0`,而 tag 是仓库级的。
 > 其余版本号由 `release\version.ps1` 统一改写。
 
 ---
 
-## OptiFabric 2.2.11+mc1.21.11 — OptiFine on Fabric 1.21.11
+## OptiFabric 2.2.12+mc1.21.11 — OptiFine on Fabric 1.21.11
 
 Run **OptiFine** and **Fabric** in the same 1.21.11 client. Drop OptiFabric and your own OptiFine jar into `mods/`; at startup OptiFabric runs OptiFine's installer, remaps its patches into Fabric's namespace, repairs the structural conflicts with Fabric API, and hands the result to Fabric Loader's class transformer.
 
@@ -23,6 +23,9 @@ Seven `registerFix` entries and one registry lookup, each read off byte-level ev
 - **FRAPI registration** now goes through `RendererAccess.INSTANCE.registerRenderer(Renderer)` — verified with `javap` against the real `fabric-renderer-api-v1-0.116.17.jar` — instead of the removed static `Renderer.register(Renderer)`. The old lookup threw `NoSuchMethodException`, so no placeholder renderer was ever registered and every FRAPI mod saw a null `getRenderer()`; The Twilight Forest's `ForceFieldModel` died in its static initialiser on it.
 
 **Verified:** C2ME now reaches the title screen and runs **113 s in a world with zero `[ERROR]` lines**. **The Twilight Forest now loads without OptiFine** (it previously could not reach the title screen at all). Its remaining OptiFine-side blocker is a known `LocalSlotLayoutFix` limitation — that fixer remaps per scope rather than per slot, and `class_761.method_22710` has 19 candidate slots against its `MAX_MOVES` of 8, so it declines the method — and that is **not fixed in this release**: The Twilight Forest is **not** fully supported. Still open as exposure for other mods: about **36** patched classes carry unregistered `vtN` / `this$N` synthetic fields.
+
+**Correction (2.2.8) to the Twilight Forest line above.** That paragraph is a 2.2.3-era measurement with the title screen as its ceiling (`Sound engine started`), and the 2.2.6/2.2.7 chain is not in it. Since then: **the `class_156` and `class_638` failures it describes were each given a fix in 2.2.3**, and **2.2.8 completes the `class_5944` (`ShaderProgram`) fix that was missing** - the null that Fabric API's `ShaderProgramMixin` hands to `Identifier.of` is the shadowed name field `field_29494`, not a constructor argument; `DelegatingConstructorFix.parameterState()` now replays the game's own `PUTFIELD` before the re-created call. That one affected **any** mod registering a core shader through `CoreShaderRegistrationCallback` - PortingLib's `rendertype_entity_unlit_translucent`, shipped inside Twilight Forest 4.8.734, was only the first to reach it. Measured on 1.21.1, plain launch: the `stringIn` NPE, the `CompletionException` and the dropped resource packs all go to **0**. **Twilight Forest reaches the title screen**, and the dedicated investigation run on **2.2.8 measures world entry as intermittent: 4 entries in 11 arms of the TF-bearing set, against 3/3 for the same set without TF**, at 46.7 s, ~50 s (twice) and 122.7 s - the slowest entry took over two minutes, so the hand-off has no timing control. Give the world load **at least two to three minutes** before concluding it stalled - this is a **floor, not a rule of thumb** (entries in the dedicated measurement spanned **20.4 s to 152.6 s**, with a `Loaded 1944 advancements` to biome-line gap of **2 s to 135 s**) - and if it still has not opened, close the client and start it again: a lost attempt leaves the save untouched (`level.dat` byte-identical, mtime included) and the next launch opens it normally, so there is nothing to repair. **The earlier `do not cap the framerate` advice is withdrawn**: the cap was measured to be inert (minimised, `maxFps:5` 2/9 vs `maxFps:260` 3/10, two-sided Fisher exact **p = 1.00**). What does predict entry is **whether the client's window is on screen**: minimised arms entered **5/19**, visible arms **13/18** (at a fixed `maxFps:260`, changing only the window from minimised to visible-and-in-front took 3/10 to 8/9, **p = 0.0198**; at fixed visibility, changing the cap from 5 to 260 took 5/9 to 8/9, p = 0.29). So **keep the Minecraft window visible - not minimised, and preferably in front - while the world loads.** The earlier preference for **opening the world from the title screen** over `--quickPlaySingleplayer` is **neither supported nor refuted**: that measurement only ran `--quickPlaySingleplayer`. Its sample is small: 19 minimised arms and 18 visible arms, **1.21.1 only**, one staged save, no shaders, no in-world soak.
+ Honest limits: **one dedicated investigation, one staged save, 11 TF arms, no shaders, no in-world soak, 1.21.1 only**. The same stall happens with `fabric-api + Twilight Forest` without OptiFabric and without OptiFine, so nothing in the remaining race is attributable to this mod; a report has been prepared for the upstream tracker. The stop is an idle world-open hand-off on the client, not code of ours.
 
 **Corrected:** an earlier note here and in the READMEs said `conflicts` and `breaks` both merely warn. Measured behaviour is the opposite way round: a **`conflicts`** entry only warns (Fabric Loader 0.19.5's `ModSolver` adds no constraint for it at all), while a **`breaks`** entry is **enforced** — a run recorded `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}`, i.e. the loader refuses the combination when `breaks` names a present mod.
 
@@ -109,12 +112,12 @@ This is versioned per artifact: 1.21.3 – 1.21.11 are 1.1.2, 1.21 and 1.21.1 ke
 ### Install
 
 1. Install a 1.21.11 Fabric client (Loader 0.19.5+).
-2. Put `OptiFabric-2.2.11+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
+2. Put `OptiFabric-2.2.12+mc1.21.11.jar` **and** your OptiFine 1.21.11 jar into that version's `mods/` folder. Do **not** run OptiFine's installer — dropping the file in is enough. **When upgrading: delete any older `OptiFabric-<version>+mc1.21.11.jar` first** — the mod id changed in 2.0.0, and two ids in `mods/` load both copies.
 3. Start the game with the **Fabric** profile. The first launch spends a few seconds patching and remapping (cached afterwards under `<game dir>/.optifine/<version>/`).
 
 ### What it took for 1.21.11
 
-OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recompiled classes no longer line up with what Fabric API injects into. Every conflict below was found through a real crash and traced down to the bytecode; the fixers are in `patcher/fixes` and the whole story is in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md):
+OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recompiled classes no longer line up with what Fabric API injects into. Every conflict below was found through a real crash and traced down to the bytecode; the fixers are in `patcher/fixes` and the whole story is in [`docs/DEVELOPMENT.md`](DEVELOPMENT.md):
 
 - **Remapping needs the game on the classpath** — member mappings are recorded per declaring class, so overrides in subclasses silently kept OptiFine's names (35 unmapped methods in `class_1308` alone → 281 broken abstract contracts, 254 lost virtual overrides).
 - Injection targets OptiFine's recompiler erased (inlined helpers, renamed lambdas with a different signature) — the vanilla method bodies are restored so Fabric's injections have a target again.
@@ -142,11 +145,11 @@ OptiFine's 1.21.11 build ships its class patches as xdelta diffs, and its recomp
 
 | File | SHA-256 |
 |---|---|
-| `OptiFabric-2.2.11+mc1.21.11.jar` (949633 bytes) | `D6CBB58D769B0DA55D53B504A961FAC9EE58F1DAAFAE95789BEDBB692121E27B` |
+| `OptiFabric-2.2.12+mc1.21.11.jar` (931872 bytes) | `55F5D10D095A6B15F6C239C7DA339589428493EAEED708206452AF9C2C3A6042` |
 
 Other Minecraft releases OptiFine ships a build for — 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9 and 1.21.10 — come out of this same repository root (one Gradle project, no `v1.21.x` subproject) with `.\gradlew build "-Pmc=<version>"`, and each of them passes the same offline verification (see [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)).
 
-Full changelog: [`CHANGELOG.md`](CHANGELOG.md) · Usage, troubleshooting and known issues: [`README.md`](README.md) · Verification tooling: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)
+Full changelog: [`CHANGELOG.md`](../CHANGELOG.md) · Usage, troubleshooting and known issues: [`README.md`](../README.md) · Verification tooling: [`docs/DEVELOPMENT.md`](DEVELOPMENT.md)
 
 ### Credits and license
 
@@ -157,6 +160,16 @@ A port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) by Mod
 ## 中文摘要
 
 把 OptiFine 接进 Minecraft **1.21.11** 的 Fabric。把本 jar 与自备的 `OptiFine_1.21.11_HD_U_J9.jar` 一起放进 `mods/`,用 Fabric 版本启动即可(**不需要**先运行 OptiFine 安装器);首次启动多花几秒做补丁+重映射,之后走缓存。
+
+- **Twilight Forest**:2.2.8 把 `class_5944`(`ShaderProgram`)的 null 补完(影响**任何**注册核心着色器的模组),
+  于是 TF 在 1.21.1 上**能到标题界面**;专门那次调查量到**进世界是间歇性的(11 个带 TF 的臂里 4 个,不带 TF 的对照 3/3)**,
+  **别急着判它卡死** —— 最慢的那次是标题界面后 122.7 s 才进场,给**至少两到三分钟**再下结论(**这是下限,不是经验上限**);
+真没打开就重启客户端,丢掉的那次不会弄坏存档(**`level.dat` 逐字节未动**);**「不要压帧率」这一条本轮收回**
+(窗口最小化时 `maxFps:5` 对 260 是 2/9 对 3/10,p = 1.00,帧率上限是无效的),要治的是**窗口可见性**
+(最小化 5/19 对可见 13/18;固定 `maxFps:260`、只把窗口从最小化改成可见并置前是 3/10 → 8/9,p = 0.0198):
+加载世界期间**让 Minecraft 窗口保持可见(不要最小化,最好放在最前面)**;**「优先从标题界面点开世界」既不成立
+也没被推翻**(只量过 `--quickPlaySingleplayer`);样本很小(19 个最小化臂 + 18 个可见臂,只跑 1.21.1、
+一个预置存档,没有光影、没有压测)
 
 - **2.2.1 的修复**:OptiFabric 换掉游戏类之后,不再让 Mixin 继续用**替换之前**缓存的类元数据 —— 缓存与 OptiFine 改写后的字节
   不一致时,`@ModifyVariable` / 局部变量捕获会在加载期抛 `LVTGeneratorError` 让整个类变换失败(Fabric 只报
