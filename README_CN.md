@@ -18,6 +18,23 @@
 本分支是 **1.21.x 线**,覆盖 Minecraft **1.21 – 1.21.11**(OptiFine 出过构建的全部十个版本)。26.x 线(Minecraft 26.2 与 26.1.2)在自己的分支/worktree 上独立开发,两条线的 jar **不能互相替代**。
 完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
 
+## 📊 跑分实测 —— OptiFabric / Sodium 栈 / 纯原版 对比
+
+用第三方基准 **FPS Benchmark**(`fpstest-1.0.jar`,sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56`)在同一台机器上测得:3 分钟脚本化 *Base* 跑分,19 个场景(森林、村庄、战斗、红石、洞穴、下界、末地),固定种子 `27182`,视距 8,关闭垂直同步,四个实例的 `options.txt` 完全一致。
+
+| 装的模组 | 平均 FPS | 1% low | 0.1% low | p99 帧时间 | 最大帧时间 | 最低 FPS | 标准差 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 仅 Fabric API(纯净基线) | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 |
+| **OptiFabric + OptiFine** | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 |
+| OptiFabric + OptiFine + Lithium + FerriteCore + C2ME | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | 319 | 747 |
+| Sodium + Lithium | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 |
+
+- **OptiFabric + OptiFine 平均比纯 Fabric 快 38.8%**,最大帧时间也好了 5 倍(3.31 ms vs 17.21 ms)—— OptiFine 自带的优化确实在干活。
+- 对上 Sodium 栈,平均差距约 **13%**,但**尾部完全反过来**:0.1% low 713 vs 349、最大帧 3.31 ms vs 12.47 ms、最低帧 302 vs 80 —— **OptiFabric + OptiFine 更稳**。
+- 那三个"性能模组"在**本场景**里是中性偏负收益(5040 → 4475):这个基准刻意让世界生成与 tick 保持轻量,而那正是 C2ME / Lithium / FerriteCore 的主场。**不要把这一行读成"那些模组没用"**。
+
+*前提说明:单机单次(测试机 i5-12600KF + RX 7800 XT、Java 22、堆 5836 MB)、每组只跑一轮、只用一个基准。你自己的数字会不同。*
+
 ## 📖 概览
 
 OptiFine 不是 Fabric 模组:它的 jar 里是针对原版**混淆**客户端类的字节码补丁,加上 OptiFine 自己的类。OptiFabric 在 `preLaunch` 阶段驱动 OptiFine 的补丁器、去混淆、重映射到运行期命名空间、修掉它重编译后留下的结构问题,并在 Mixin 之前把这些补丁类注册进 Loader。

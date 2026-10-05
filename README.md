@@ -18,6 +18,23 @@ Load **OptiFine** under **Fabric Loader**. Put OptiFine's jar next to this mod a
 This branch is the **1.21.x line** and covers Minecraft **1.21 – 1.21.11** (all ten releases OptiFine ever shipped a build for). The 26.x line (Minecraft 26.2 and 26.1.2) lives on its own branch/worktree and is developed separately; jars from the two lines are **not interchangeable**.
 完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。The full MC 1.21.1 compatibility list is in [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
+## 📊 Benchmarks — OptiFabric vs a Sodium stack vs vanilla
+
+Measured on one machine with the third-party **FPS Benchmark** mod (`fpstest-1.0.jar`, sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56`), 3-minute scripted *Base* run — 19 scenes (forest, village, combat, redstone, cave, nether, end) — deterministic seed `27182`, render distance 8, VSync off, identical `options.txt` in all four instances.
+
+| mods | avg FPS | 1% low | 0.1% low | p99 frame | worst frame | lowest FPS | std dev |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Fabric API only (baseline) | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 |
+| **OptiFabric + OptiFine** | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 |
+| OptiFabric + OptiFine + Lithium + FerriteCore + C2ME | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | 319 | 747 |
+| Sodium + Lithium | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 |
+
+- **OptiFabric + OptiFine averages 38.8% above plain Fabric here**, and its worst frame is 5× better (3.31 ms vs 17.21 ms) — OptiFine's own optimisations are doing real work.
+- Against a Sodium stack the average gap is ~13%, while **the tail favours OptiFabric + OptiFine**: 0.1% low 713 vs 349, worst frame 3.31 ms vs 12.47 ms, lowest FPS 302 vs 80.
+- The three "performance" mods measured **neutral to negative in this scene** (5040 → 4475): this benchmark keeps worldgen and ticking deliberately light, which is exactly where C2ME / Lithium / FerriteCore normally earn their keep. Do not read that row as "those mods are useless".
+
+*Caveats: one machine (i5-12600KF + RX 7800 XT, Java 22, 5836 MB heap), one run per group, one benchmark. Your numbers will differ.*
+
 ## 📖 Overview
 
 OptiFine is not a Fabric mod: its jar holds bytecode patches against *obfuscated* vanilla client classes plus its own classes. OptiFabric drives OptiFine's patcher at `preLaunch`, de-obfuscates the result, remaps it into the runtime namespace, repairs what OptiFine's recompiler left behind, and registers the patched classes with Loader before Mixin ever sees them.
