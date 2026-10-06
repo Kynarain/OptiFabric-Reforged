@@ -11,33 +11,69 @@
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/License-MPL--2.0-lightgrey.svg)](LICENSE.txt)
 
-> ⚠️ 此模组由 deepseek 编写并验证,请小心用于生产环境。
+> ⚠️ 此模组由 DeepSeek 编写并验证,请小心用于生产环境。
 
-在 **Fabric Loader** 下加载 **OptiFine**。把 OptiFine 的 jar 和本模组一起放进 `mods/`,启动时会用 OptiFine 自带的补丁器给原版客户端打补丁、重建被搬走的 lambda,并把打过补丁的 Minecraft 类交给 Fabric Loader 的类转换器接管,从而让两者共存。**不包含、也不分发 OptiFine 本体。**
+在 **Fabric Loader** 下加载 **OptiFine**:把 OptiFine 的 jar 和本模组一起放进 `mods/`,启动时会用 OptiFine 自带的补丁器给原版客户端打补丁、重建被搬走的 lambda、修好它重编译留下的缺口,并把打过补丁的 Minecraft 类交给 Loader 的类转换器接管 —— 从而让两者共存于同一个客户端。**不包含、也不分发 OptiFine 本体。**
 
-本分支是 **26.x 线**,对应 **Minecraft 26.2**(当前)与 **Minecraft 26.1.2**。1.21.x 线(Minecraft 1.21 – 1.21.11)在 [`1.21.x` 分支](../../tree/1.21.x)上独立开发,两条线的 jar **不能互相替代**。
-完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
+本分支是 **26.x 线**,对应 **Minecraft 26.2**(当前)与 **Minecraft 26.1.2**。1.21.x 线(Minecraft 1.21 – 1.21.11)在 [`1.21.x` 分支](../../tree/1.21.x)上独立开发,不同线的 jar **不能互相替代**。
 
-## 📖 概览
+**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `2.2.7`
 
-OptiFine 不是 Fabric 模组:它的 jar 里是针对原版客户端类的字节码补丁,加上 OptiFine 自己的类。OptiFabric 在 `preLaunch` 阶段驱动 OptiFine 的补丁器、修掉它重编译后留下的结构问题,并在 Mixin 之前把这些补丁类注册进 Loader。
+## 📦 安装
 
-Minecraft **26.1 起未混淆** —— 官方名就是运行期名字,既没有 yarn,也没有真正可用的 intermediary(26.1.2 只发布占位 `0.0.0`)。所以本线不取任何映射、需要 Loom 的非重映射 flavour,运行期命名空间是 `official`。本线还有**自己的 mod id**:有些模组声明 `"breaks": {"optifabric": "*"}`,而 Fabric Loader 按 **id** 匹配 —— 只改显示名没有用。
+1. 装好 **Fabric Loader ≥ 0.19.5** 与 **Java 25**(这是游戏自身的硬要求 —— Java 21 连窗口都出不来),然后把本线的 jar 与**版本严格一致**的 OptiFine jar 一起放进该实例的 `mods/` 文件夹。**不要**手动运行 OptiFine 安装器。
+2. 启动 **Fabric** 配置 —— 不要用启动器生成的 `26.x-OptiFine_xxx` 配置,那种配置会自己注入 OptiFine,与本模组冲突。
+3. 首次启动会多花几秒打补丁(实测 5–7 秒),之后走缓存(1–2 秒)。
 
-**作者:** kynarain · 上游:Modmuss50、Chocohead
-**版本:** `2.2.6`(`OptiFabric-Reforged-2.2.7+mc26.2.jar`)
-**许可:** MPL-2.0
+这一线叫 **Reforged**,是因为它有**自己的 mod id**(`optifabric_reforged`):有些模组声明 `"breaks": {"optifabric": "*"}`,而 Fabric Loader 按 **id** 匹配,只改显示名没有用。26.x 的两个产物出自同一份源码,不存在需要彼此回避的第二个 26.x 产物。
 
-## ✨ 主要特性
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**:先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods` 文件夹;然后手动启动一次游戏。
+>
+> **OptiFabric cannot assume your launcher installs OptiFine for you**: many launchers only offer **OptiFine _or_ Fabric**, never both. Install **Fabric + OptiFabric** first, download OptiFine from <https://optifine.net/downloads>, put that jar in the `mods` folder, then start the game once.
 
-- 🔄 **不需要手动跑 OptiFine 安装器** —— 安装器形态(含 `patch/` 差分包)或已解包的形态丢进 `mods/` 即可,一切在启动时完成
-- 🆔 **自己的 mod id** —— `optifabric_reforged`,声明 `breaks`/`conflicts` 针对 `optifabric` 的模组不再拦这一线
-- 🎨 **由 Indigo 注册真正的渲染器** —— 26.1 把地形与提交节点的整合搬进了 `fabric-renderer-api-v1` 自身,所以这里的 indigo 不是地形渲染器,本线也不声明"让位键"
-- 🧩 **模组自己生成的几何真的会被画出来** —— Fabric 的地形钩子注入在一个 OptiFine 区块构建器里根本不存在的循环上,于是那次方块 tessellate 调用改走桥,几何由 Fabric 产出后交给 OptiFine 自己的 `BlockQuadOutput`(顶点格式、层级、光照、光影属性都还是 OptiFine 的)
-- 🛠️ **字节码修复成体系** —— OptiFine 重编译会把原版方法掏空、把注入点搬进自己的重载、把子类换掉;fixer 负责补回原版方法体、拆开同名重载(还有人调的改名并把调用者一起改过去,没人调的删掉)、补回 `NEW` 注入点
-- 🧪 **离线验证是一等公民** —— 每个补丁类与每个 OptiFine 类都在与游戏一致的单一加载器里加载,用 JVM 验证器 + ASM 数据流验证器双向检查,再加 5 个扫描器
-- ⚙️ **走缓存** —— 整条流水线的结果缓存在 `.optifine/<OptiFine 版本>/`,之后的启动 1–2 秒
-- 🧯 **失败时说实话** —— 缺 OptiFine / jar 损坏 / 放了两份 / 版本不匹配,都会在标题界面弹错误对话框,并在崩溃报告里追加 `OptiFabric` 一节
+## 🤝 兼容性
+
+| Minecraft | jar | OptiFine 构建 | Java | 状态 |
+|---|---|---|---|---|
+| 26.2 | `OptiFabric-Reforged-2.2.7+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**不能用光影**,见下) |
+| 26.1.2 | `OptiFabric-Reforged-2.2.7+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
+
+两个 OptiFine 构建**都是预览版** —— OptiFine 对这两个 Minecraft 版本都还没有正式构建。
+
+### OptiFabric 版本 → Minecraft 版本 → 建议的 OptiFine 构建
+
+这张表与模组自带的清单、以及 `release\notes\mc<MC>.md` 逐版写的是同一批;发布工具会在几处不一致时报错。
+
+| OptiFabric version | Minecraft version | Recommended OptiFine build | Build kind |
+|---|---|---|---|
+| `2.2.7+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview (no final exists) |
+| `2.2.7+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) |
+
+### 26.2 的光影限制
+
+在 **26.2** 上,在 OptiFine 里选择光影包**没有任何效果**:游戏照常不带光影渲染。它**不是崩溃**,也不是本模组造成的 —— 是那个 OptiFine 构建在这个 Minecraft 版本上不加载光影包。自 **2.2.7** 起,模组一旦看到装的是那个构建,就会在同一个标题界面对话框里直接说明。**26.1.2 不受影响。**
+
+| | |
+|---|---|
+| ✅ 可用 | OptiFine 的视频设置、缩放、连接纹理、动态光源,以及 Fabric 模组提交的方块模型几何(经桥接交给 OptiFine 自己的 `BlockQuadOutput`) |
+| ⚠️ 已中和 | OptiFine 的 `BEFORE_BLOCK_OUTLINE` 事件与移动方块的 FRAPI 钩子为空转,与 1.21.x 线一致 |
+| ❌ 不兼容 | **Sodium**,以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(见下一节) |
+| 🚫 不适用 | 1.21.x 线那条 indigo 说明:26.1 把地形与提交节点的整合搬进了 `fabric-renderer-api-v1` 自身,所以这里的 indigo **不是**地形渲染器,本线也**不声明**"让位键" |
+
+### 声明的不兼容,以及加载器实际会怎么做
+
+本模组声明的不兼容**只写在 `fabric.mod.json` 里**,没有任何界面会显示它 —— 所以这里把它写成文字:
+
+| 声明 | 条目 |
+|---|---|
+| `conflicts` | `sodium`(`*`) |
+| `breaks` | `no_fog`、`thallium`、`xradiation`、`ryoamiclights`、`sodium`(`*`) |
+
+**`breaks` 是闸门,`conflicts` 只是一句警告。** 在 Fabric Loader 0.19.5 上,一条 `conflicts` 根本不会给求解器添加约束(`ModSolver` 的 `CONFLICTS` 分支至今还是一句 `// TODO: soft negative dep?`),所以游戏以 `Warnings were found!` 照常启动;而一条点到**已存在**模组的 `breaks` 会让求解器给出 `NEG_HARD_DEP`,加载器**拒绝整个实例**(`Incompatible mods found!`)。因为这里 `sodium` 同时出现在两个字段里,实际生效的是那道闸门 —— 这是有意的。
+
+**为什么 Sodium 是硬拒载。** 两个地形渲染器无法共用同一条管线。在 1.21.x 线的 1.21.1 目标上配合 Sodium 0.8.13 实测:把所有可修的缺口都补上之后,Sodium 的 mixin 全部应用成功、客户端也进得了世界,但**整帧全黑**;把那个唯一的渲染槽让给 Sodium、以及关掉 OptiFine 的 Fast Render,两次单变量实验都没有改变结果。Sodium 自己那一侧也声明了这组不兼容,但用的是**旧** mod id,所以那条声明在这里根本不会命中。
+
+`no_fog`、`thallium`、`xradiation` 三条继承自上游([Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric));`ryoamiclights` 是本移植自己加的,原因是 OptiFine 会整个替换视频设置界面(连父类一起),而那个模组的 mixin 锚在原版父类上(没有损失:OptiFine 自带动态光源)。
 
 ## 🏗️ 工作原理
 
@@ -47,179 +83,69 @@ mods/<OptiFine jar>
         │  ② LambdaRebuilder:补丁类里的 lambda 指向已被搬走的原方法,需要重建
         ▼
    打补丁后的客户端 jar(OptiFine 的补丁 + OptiFine 的类)
-        │  ④ 拆成两部分(本线没有第 ③ 步重映射)
-        ├── 非 Minecraft 类(OptiFine 自己的类与资源)─────► 加进游戏 classpath
-        └── net/minecraft/** 打过补丁的类 ────────────► ClassCache(替换用)
+        │  ③ 拆成两部分(本线没有重映射这一步 —— 见下)
+        ├── OptiFine 自己的类与资源 ─► 加进游戏 classpath
+        └── net/minecraft/** 打过补丁的类 ───► ClassCache(替换用)
 ```
 
-类替换走 **Fabric Loader 自己的 GameTransformer**:Minecraft 类被加载时,Loader 会先问游戏 provider 的 `GameTransformer.transform(类名)` 有没有现成的字节码 —— 这一步发生在 Mixin **之前**。所以 `preLaunch` 阶段注册进去的补丁类(先经过 `patcher/fixes` 的修正)直接顶替,而 Loader 自己补过的类保持 Loader 的版本。
+**本线没有重映射这一步,而这正是它的要点。** Minecraft **26.1 起未混淆** —— 官方名就是运行期名字,既没有 yarn,也没有真正可用的 intermediary。所以本线不取任何映射、需要 Loom 的非重映射 flavour,运行期命名空间是 `official`。
 
-因此不需要为每个补丁类生成 stub mixin,也不依赖 Mixin 的扩展 API;交出去的是 Mixin 的**输入**而非输出,其它模组针对这些类的 mixin 照常生效。
+类替换走 **Loader 自己的 GameTransformer**:Minecraft 类被加载时,Loader 会先问游戏 provider 的 `GameTransformer.transform(类名)` 有没有现成的字节码 —— 这一步发生在 Mixin **之前**。交出去的是 Mixin 的**输入**而非输出,所以别的模组针对这些类的 mixin 照常生效,也不必为每个补丁类生成 stub mixin。一条硬性约束:**在补丁类交给 Loader 之前,不能对游戏类做任何反射解析** —— 一次 `Class.getMethods()` 就会把类永久钉在原版上 —— 所以这段代码只接触字节。
 
-一条硬性约束:**在补丁类交给 Loader 之前,不能对游戏类做任何反射解析** —— 例如一次 `Class.getMethods()` 就会把方法签名里的游戏类型全部加载掉,这些类会被永久钉成原版。这段代码只接触**字节**(`getClassByteArray` / ASM),不持有 `Class` 对象。
+26.1+ 上,来自 Fabric 模组的几何是个特例:Fabric 的地形钩子注入在一个 OptiFine 区块构建器里**根本不存在**的循环上,于是那次方块 tessellate 调用改走**桥**,把 Fabric 产出的四边形交给 OptiFine 自己的 `BlockQuadOutput` —— 顶点格式、层级、光照、光影属性都仍然是 OptiFine 的。
 
 | 组件 | 作用 |
 |---|---|
 | `OptifabricRuntime` | 整条流水线:找 jar → 打补丁 → 修复 → 注册 |
 | `GameTransformerHook` | 把补丁类注入 Loader 的游戏 transformer |
-| `OptifineMappings` / `OptifineJarFixer` | 名字对齐;修 OptiFine 自己那份 jar |
-| `patcher/fixes/**` | 逐个版本的字节码 fixer(原版方法体、同名重载消歧、`NEW` 注入点……) |
-| `OptifineFrapiBridge` + `FrapiTesselateBridgeFix` | 把方块 tessellate 改走 Fabric 的渲染器,顶点写进 OptiFine 的 `BlockQuadOutput` |
-| `RendererApiFallback` | 只在"让位键"确实被声明时才补惰性占位渲染器 |
+| `OptifineFrapiBridge` | 把 Fabric 的四边形交给 OptiFine 的 `BlockQuadOutput` |
+| `OptifineJarFixer` | 修 OptiFine 自己那份 jar |
+| `patcher/fixes/**` | 字节码 fixer(原版方法体、同名重载消歧、`NEW` 注入点……) |
+| `RendererApiFallback` | 在 Fabric 渲染器 API 本该为空的地方注册惰性占位器 |
 
-中间产物缓存在 `<游戏目录>/.optifine/<OptiFine 版本>/`:
+中间产物缓存在 `<游戏目录>/.optifine/<OptiFine 版本>/`:`cache-format.txt`(缓存格式版本,不一致就整份重建)、`Optifine-mapped.jar`、`Optifine.classes.gz`(供下次启动复用的补丁类)。
 
-| 文件 | 内容 |
-|---|---|
-| `cache-format.txt` | 缓存格式版本(当前 `26`),与代码不一致就整份重建 |
-| `Optifine-mapped.jar` | 处理后的 OptiFine(不含 MC 类),这就是加进 classpath 的 jar |
-| `Optifine.classes.gz` | 打过补丁的 MC 类缓存(ClassCache),供下次启动复用 |
+## ✨ 主要特性
 
-## 📦 安装
+- 🔄 **不需要手动跑安装器** —— 安装器形态(含 `patch/` 差分包)或已解包的形态丢进 `mods/` 即可,一切在启动时完成
+- 🆔 **自己的 mod id** —— `optifabric_reforged`,声明 `breaks`/`conflicts` 针对 `optifabric` 的模组不再拦这一线
+- 🧩 **模组自己生成的几何真的会被画出来** —— 见上面的桥接
+- 🛠️ **字节码修复成体系** —— OptiFine 重编译会把原版方法掏空、把注入点搬进自己的重载、把子类换掉;fixer 负责补回原版方法体、拆开同名重载、删掉没人调的那份、补回 `NEW` 注入点
+- 🧪 **离线验证是一等公民** —— 每个补丁类与每个 OptiFine 类都在与游戏一致的单一加载器里加载,用 JVM 验证器 + ASM 数据流验证器双向检查
+- ⚙️ **走缓存** —— 整条流水线的结果缓存在 `.optifine/<OptiFine 版本>/`,之后的启动 1–2 秒
+- 🧯 **失败时说实话** —— 缺 OptiFine / jar 损坏 / 放了两份 / 版本不匹配,都会在标题界面弹错误对话框,并在崩溃报告里追加 `OptiFabric` 一节
 
-1. 准备与本版本**严格一致**的 OptiFine(见下表) —— OptiFabric 会读 `optifine/Config` 里的 `MC_VERSION` 校验,不一致会直接在标题界面报错。**不需要**先运行 OptiFine 安装器。
-2. 把本模组的 jar **和** OptiFine 的 jar 一起放进该 Fabric 版本自己的 `mods/` 目录。不要放两份 OptiFine(会报 `DUPLICATED`),也不要混进 1.21.x 线的 jar。
+## 📊 验证状态
 
-<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
-     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
-> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
-> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
-> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> start the game once by hand.
->
-> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
-> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹;然后手动启动一次游戏。
+每次发布用与 1.21.x 线相同的办法核对:每个补丁类与每个 OptiFine 类都在单一加载器里加载,过 JVM 验证器 + ASM 数据流验证器,再用扫描器找 `@At` / refmap / 契约 / 句柄问题。本线的两个目标都做过**实机启动**;26.2 那次的结果就是上面写的光影限制。
 
-3. 用 **Fabric 版本**启动,不要用启动器自己注入 OptiFine 的那个版本。
-4. 首次启动会明显变慢(要跑完整条补丁流水线),之后走缓存。标题界面出现 OptiFine 版本号、视频设置里出现 OptiFine 选项即表示成功。
+**已知缺口:**
 
-**26.2 上不要期待光影**:这个 OptiFine 构建下,在 OptiFine 里选光影包不会有任何效果(原因见下面「兼容性」)。世界本身打开、渲染正常。光影在 26.1.2 上是可用的。
-
-PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版本名>/` 下,`.optifine/` 缓存也建在那里。
-
-```text
-# 26.2 和 26.1.2 都只有预览版,两个文件都在同一个页面的「Preview versions」列表里:
-#   https://optifine.net/downloads
-#   Minecraft 26.2   -> preview_OptiFine_26.2_HD_U_K2_pre1.jar
-#   Minecraft 26.1.2 -> preview_OptiFine_26.1.2_HD_U_K1_pre2.jar
-# 打开上面那个页面,展开你的 Minecraft 版本下的「Preview versions」,下载这里写的那个文件。
-# OptiFine 官网是本模组唯一会去下载的地方,也是这份说明里唯一给出的地址。
-```
-
-当 OptiFabric 已加载、而上面那个 jar **不在**,或者 `mods/` 里的 jar 是比它**更旧的预览版**时,游戏不再默默启动,而是弹出一个界面告诉你:上面写着要哪个文件,有一个 `下载 OptiFine` 按钮从 OptiFine **官网**(`optifine.net/adloadx`,本模组唯一会用的来源)取回它,旁边就是打开 mods 文件夹;按钮上方的地址栏可以换成你自己的地址,那样就只从你填的地方取。**缺 jar** 每次启动都会提示(这一次的关闭只在本次会话有效);**旧预览版**每个构建只提示一次,记在 `config/optifabric-mismatch-ack.txt`。已经装了**正式版**则完全不提示,哪怕有更新的正式版。
+1. **不支持开发环境** —— `gradlew runClient` 被拒绝,原因与 1.21.x 线相同
+2. **26.2 的光影** —— 要等一个能在该 Minecraft 版本上加载光影包的 OptiFine 构建
+3. **两处被中和的钩子是占位实现**,不是可用实现
 
 ## 🔨 从源码构建
 
-需要 **JDK 25**,仓库根目录就是 Gradle 项目:
+需要 **JDK 25**(游戏自身的硬要求),而且**仓库根目录就是 Gradle 工程** —— 目标版本取自 `minecraft_version`,所以切换版本用的是属性而不是 `-Pmc`:
 
-```powershell
-.\gradlew build          # -> build/libs/OptiFabric-Reforged-2.2.7+mc26.2.jar
+```bash
+./gradlew build                                      # 默认目标 26.2
+./gradlew build "-Pminecraft_version=26.1.2"          # 本线的另一个目标
 ```
 
-版本号必须与 Minecraft 版本成对出现,而且只通过一个脚本改:
-
-```powershell
-.\release\version.ps1                     # 看当前版本与三类递增各会变成什么
-.\release\version.ps1 -Kind minor         # 给这一线升版
-```
-
-开发环境不受支持:`gradlew runClient` 会被明确拒绝,因为开发环境的命名空间是 `named`,需要额外的映射层。
+产物落在 `build/libs/OptiFabric-Reforged-<版本>+mc<MC>.jar`。
 
 ## 📋 运行要求
 
 | | |
 |---|---|
-| Minecraft | **26.2**(当前目标)—— 以及 **26.1.2**,同一份源码都支持 |
+| Minecraft | **26.2**(当前目标)—— 以及同一份源码出的 **26.1.2** |
 | Fabric Loader | ≥ 0.19.5 |
-| Java | **25**(游戏自身的硬性要求;用 Java 21 会在窗口出现之前就失败) |
+| Java | **25**(游戏自身的硬要求;Java 21 连窗口都出不来) |
 | 侧 | 客户端 |
-| OptiFine | 26.2 用 `preview_OptiFine_26.2_HD_U_K2_pre1.jar`,26.1.2 用 `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`(两个都还是 preview) |
-| Fabric API | 可选 —— 26.2 实测 `0.161.0+26.2`,26.1.2 实测 `0.155.3+26.1.2` |
-
-## 🤝 兼容性
-
-| Minecraft | 产物 | OptiFine 构建 | Java | 状态 |
-|---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.2.7+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**没有光影**,见下) |
-| 26.1.2 | `OptiFabric-Reforged-2.2.7+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
-
-`2.1.1` 是修订版,它**取代 `2.1.0+mc26.2`**:那一版把 OptiFine 取消掉的光影包加载强行打开,而选了光影包之后世界
-**只画粒子、方块透明**(编译了 27 个 shader program,任何日志里都没有报错)。`2.1.1` 把那段字节码**原样留成
-OptiFine 写的样子**。这条线并没有因此变窄:同一份源码仍能为 26.1.2 构建,并跑完整条离线管线、数字与 2.0.0 当时
-记下的完全一致(见下面「验证状态」),所以 26.1.2 没有被丢开 —— 而且从 `2.2.1` 起它也跟着重新出了一份,
-产物是 `2.2.7+mc26.1.2`(`2.0.0+mc26.1.2` 那份仍然发布过、冻结在它自己的发布页上)。
-
-OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26.1.1、26.1.3、26.2.1、26.3 在 OptiFine 的下载页上**一个构建都没有** —— 可以自己核一遍:<https://optifine.net/downloads>,某个版本没有构建时,它标题下面的表格就是空的。
-
-26.2.1 与 26.3 是 26.2 之后的版本,每个都要各自重新移植一遍 —— 而且得先有 OptiFine 的构建才能移,这就是这条线停在 26.2 的原因。
-
-### OptiFabric 版本 → Minecraft 版本 → 建议的 OptiFine 构建
-
-这张表就是模组里自带的那张(`OptifineSupport.BUILDS`),也是游戏内提示会写出来、并主动提供下载的那个构建。规则是:**该 Minecraft 版本有正式版就用最新的正式版,没有才用最新的预览版**。OptiFine 对这条线的两个版本都还没有正式版,所以两行写的都是预览版 —— 哪天某一版出了正式版,那一行的文件就换成正式版。
-
-| OptiFabric 版本 | Minecraft 版本 | 建议的 OptiFine 构建 | 类型 |
-|---|---|---|---|
-| `2.2.7+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 预览版(尚无正式版) |
-| `2.2.7+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 预览版(尚无正式版) |
-
-同一 Minecraft 版本的其它构建同样可用;只有当你 `mods/` 里的 jar 是**预览版**、且比表里这个更旧时,提示才会出现。已经装了**正式版**就不会被打扰,哪怕有更新的正式版。
-
-| | |
-|---|---|
-| ✅ 可用 | OptiFine 的视频设置、缩放、连接纹理、动态光源、**抗锯齿**,以及依赖 FRAPI 的模组自己生成的几何(在 26.1.2 上用 LambdaBetterGrass 实测:更好的草与连接纹理正常,光影开启)。**光影只在 26.1.2 上可用**(2.0.0 的记录);26.2 上**不可用** —— 见下一行 |
-| ⚠️ 26.2 的光影 | **这个 OptiFine 构建上不可用。** 26.2 的 preview 在 `Shaders.loadShaderPack` 里取消了光影包加载(日志 `[Shaders] No shaderpack loaded.`),现在这段字节码**原样留成 OptiFine 写的样子**。OptiFine 的光影设置里仍然可以选包,但选了**什么都不会发生、也不会报错**。把加载强行打开(2.1.0 的做法)只会更糟:日志打出 `[Shaders] Loaded shaderpack: ComplementaryReimagined_r5.9.1.zip`、编译 27 个 program,而世界**只画粒子、方块透明** |
-| ⚠️ 有意停用 | 两条 Fabric 渲染钩子:**移动方块提交**与**方块模型提交**(方块破坏裂纹仍然真的走 Fabric 的渲染器);这两条路径改由原版/OptiFine 绘制 |
-| ❌ 不兼容 | **Sodium**(已声明 `conflicts` 与 `breaks`),以及 `no_fog`、`thallium`、`xradiation`、`ryoamiclights`(已声明 `breaks`)。完整清单、来源与加载器实际会怎么做:[下面这一节](#声明的不兼容以及加载器实际会怎么做) |
-| 📄 OptiFine 侧限制 | OptiFine 看不到 Fabric 模组内部的资源(`[OptiFine] Unknown resource pack type: …ModNioResourcePack`);光影包与你的 OptiFine 版本不匹配时会打印自己的 `[Shaders]` 报错 |
-
-### 声明的不兼容,以及加载器实际会怎么做
-
-本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。两个 `2.2.6` 产物(26.2 与 26.1.2)声明的是:
-
-| 声明 | 条目 |
-|---|---|
-| `conflicts` | `sodium`(`*`) |
-| `breaks` | `no_fog`、`thallium`、`xradiation`、`ryoamiclights`、`sodium`(`*`) |
-
-Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)(其默认分支 `llama` 上的 `fabric.mod.json`,v1.14.3)声明的同样是 `sodium` 冲突,以及 `no_fog`、`thallium`、`xradiation` 三条 `breaks`;它另外还有三条带版本范围的条目,**本移植有意没有带过来**:`cardinal-components-item <2.4.2`、`architectury >1.2.72 <1.3.77`、`meteor-client >=0.4.1` —— 三条都是 1.16/1.17 时代的范围。`ryoamiclights` 是本移植自己加的:OptiFine 把原版视频设置界面**整类替换成自己的实现,连父类都换掉**,而它的 mixin 注入在原版父类上,于是变换失败;OptiFine 自带动态光源,删掉它不会损失功能。把 `sodium` 也列进 `breaks` 同样是本移植自己加的:上游只在 `conflicts` 里声明它,而有些启动器与平台只读 `breaks`。
-
-**加载器在两个字段上都不会拦住这个组合。** Sodium 现在同时写在 `conflicts` 与 `breaks` 里,而在下面实测的加载器版本上,**两个字段都不会阻止游戏启动** —— 它们只是警告,这条不兼容是声明,不是闸门。在 **Fabric Loader 0.19.5** 上、`mods/` 里有 `sodium` 时实测:日志开头是 `Warnings were found!`、点名这条冲突,然后照常进入 `Loading <N> mods:` —— **没有** `Incompatible mods found`,也没有 `HARD_DEP` 之类的拒载。所以这些属于**已声明的、已知的不兼容**:加载器用它自己的措辞警告你,然后照常把游戏载起来。(那次实测是在 1.21.x 线上做的,它要求的加载器世代与此相同;`conflicts` 与 `breaks` 是加载器自己处理的,与本模组无关。)请把这张表读成"作者已知这个组合会坏",而不是"装了会被拦住"。
-
-**Sodium 这一对只有一侧还在声明。** Sodium 只在 `breaks` 里声明这一对 —— 我们手上的 sodium 构建都没有 `conflicts`(`sodium-fabric` `0.5.11+mc1.21`、`0.6.13+mc1.21.1`、`0.8.13+mc1.21.1` 都是 `"breaks": {"optifabric": "*"}`)—— 而它点名的是**旧 mod id `optifabric`**;本线以 `optifabric_reforged`(显示名 *OptiFabric Reforged*)发布,那条规则根本不会命中,所以你在 sodium 上看到的那条警告来自**本模组这一侧**。把 sodium 写进我们自己的 `breaks`,正是把改名弄丢的那条声明补回来:在本线上,它是加载器唯一会理会的 sodium 声明。
-
-**Architectury 是反过来的例子。** 上游声明 architectury 坏(architectury 自己的元数据至今也还写着 `breaks: optifabric <1.13.0`,而本线的 id 已经不再命中它)。在 1.21.x 线上,那个冲突在字节码层面被修掉了 —— OptiFine 往 `GameRenderer.render` 中间插自己的局部变量,把 Mixin `LocalCapture` 交给处理器的槽位整体顶高 —— 那边的 `architectury-api` 通过了实测扫描。**那个 fixer 属于 1.21.x 线,这条线里没有对应实现,也没有为这两个版本做过任何兼容性实测**,所以在 26.2 / 26.1.2 上 architectury 属于**未测**,而不是"已声明可用"。
-
-模组自己的实机记录在 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) 与 [`docs/PORT_26.x.md`](docs/PORT_26.x.md);那次实测的兼容性扫描(**只覆盖 1.21.1,不覆盖 26.x**)写在 1.21.x 线的 `docs/COMPATIBILITY.md` 里;逐行完整列表(**只覆盖 1.21.1,不覆盖 26.x**)在仓库根目录的 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
-
-## 📊 验证状态
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1 -Version 26.2
-```
-
-| 检查项 | **26.2** | 26.1.2(同一份源码,`-Version 26.1.2`) |
-|---|---|---|
-| 补丁过的游戏类(JVM 验证器) | **562 / 562**,0 失败 | **567 / 567**,0 失败 |
-| OptiFine 自身的类(JVM 验证器) | **879 / 879**,0 失败(2 个 NeoForge-only 类不适用) | **879 / 879**,0 失败(2.0.0 当时记下的数字) |
-| ASM 数据流验证器 | **0 问题** | **0 问题** |
-| `@At` 注入点 / mixin 成员引用 / 抽象契约 / 丢失的虚方法覆写 / 无法解析的引用 / invokedynamic 句柄 | **全部 0**(比 1.21.x 线还干净;那一线还剩几条属于已停用 indigo 的) | **全部 0** —— 与 2.0.0 记下的逐个相同 |
-| 真机 | 流水线跑通(`[OptiFabric] Prepared 562 patched classes (0 skipped, 0 failed)`)、世界打开并**正常渲染**、日志 `[Shaders] No shaderpack loaded.` —— **26.2 上光影不可用**(选包也不会有任何效果)、无崩溃、无 mixin 变换失败 | 启动、主界面、单人世界、区块重建、方块/物品/生物渲染、**抗锯齿**、**光影**、多人(2.0.0 的记录) |
-
-26.2 那次真机测的就是光影这件事本身:把被取消的加载强行打开(`2.1.0` 的做法)会编译 27 个 program,然后
-**只画粒子、方块透明**,而且任何日志里都没有报错;把 OptiFine 的取消留着不动则世界正常渲染。多人与抗锯齿没有在
-26.2 上重跑 —— 那两项仍是 26.1.2 / 2.0.0 的记录。
-
-那两个"不适用"的类是 `optifine.OptiFineClassProcessor` 与 `optifine.VirtualJarContents`:它们实现的是 **NeoForge** 的 SPI(`net.neoforged.*`),Fabric 启动里永远不会加载。
-
-逐轮排查过程、每一类的根因与修法见 [`docs/PORT_26.x.md`](docs/PORT_26.x.md) 与 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
-
-**已知缺口:**
-
-1. **不支持开发环境** —— dev 命名空间是 `named`,需要两段式重映射
-2. **那两条被停用的钩子只是占位**,不是能用的实现
-3. **26.2 之后的版本没有移植** —— 26.2.1 与 26.3 都要针对新的官方名逐个重新定位冲突点,而且 OptiFine 对它们至今没有构建
-4. **26.2 上用不了光影** —— 这个 OptiFine 构建里那句取消加载原样留着,在 OptiFine 里选光影包不会有任何效果;强行打开则只画粒子。26.1.2 上光影照旧可用
+| OptiFine | 26.2 用 `preview_OptiFine_26.2_HD_U_K2_pre1.jar`,26.1.2 用 `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`(两个都只有预览版) |
+| Fabric API | 可选 —— 26.2 上用 `0.161.0+26.2` 测过,26.1.2 上用 `0.155.3+26.1.2` 测过 |
 
 ## 📝 项目结构
 
@@ -227,66 +153,46 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-26.ps1
 OptiFabric-Reforged/
 ├── src/main/java/kynarain/cn/optifabric/
 │   ├── Optifabric.java              # preLaunch 入口
-│   ├── mod/                         # 流水线、transformer 钩子、jar 修复器、FRAPI 桥、渲染器兜底
+│   ├── mod/                         # 流水线、变换器钩子、jar 修复器、FRAPI 桥
 │   ├── patcher/                     # ClassCache、LambdaRebuilder 与 fixes/(字节码修复)
-│   ├── mixin/                       # 本模组自己的两个 mixin
-│   └── util/                        # ASM / mixin / remap / zip 工具
+│   ├── mixin/                       # 本项目自带的 mixin
+│   └── util/                        # ASM / mixin / zip 辅助
 ├── src/main/resources/              # fabric.mod.json、optifabric.mixins.json、assets/…/icon.png
-├── COMPATIBILITY.md                 # 逐行完整兼容列表(1.21.1 实测)
-├── docs/                            # PORT_26.x.md、DEVELOPMENT.md、VERSIONING.md、DESCRIPTION.md、PUBLISHING.md
-├── release/                         # version.ps1、publish.ps1、notes/、MANUAL_RELEASE.md
-├── build.gradle · gradle.properties · settings.gradle
-└── gradlew · gradlew.bat
+├── docs/                            # DEVELOPMENT.md、PUBLISHING.md、REFORGED_BUILD.md,……
+└── release/                         # notes/、MANUAL_RELEASE.md、make-metadata.ps1
 ```
-
-## 🔐 许可
-
-**MPL-2.0** —— 见 [`LICENSE.txt`](LICENSE.txt)。核心逻辑移植自 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric),移植文件保留来源说明。OptiFine 本体**不包含、也不随本项目分发** —— 版权归 sp614x,请自行从官网获取:<https://optifine.net/downloads>。
 
 ## 🙋 支持与排查
 
-- **升级本模组后行为没有变化**:先删掉 `<游戏目录>/.optifine/`,缓存里存的是打过补丁的字节码。
-- `[OptiFabric]` 的输出走**启动器控制台**,通常不在 `logs/latest.log` 里;过滤 `[OptiFabric]` 能看到准备了多少补丁类、Loader 接管了多少。
-- 标题界面会弹错误对话框(缺 OptiFine / jar 损坏 / 版本不匹配 / 多份 OptiFine / 内部错误),崩溃报告里会多出一节 `OptiFabric`(OptiFine 版本、jar 状态、重映射 jar 路径)。
-- 显式指定原版 jar:`-Doptifabric.mc-jar=<原版 client jar 路径>`;调试解包:`-Doptifabric.extract=true`。
-- **卡在加载界面**:取两次线程转储(`jstack <pid>`,间隔十几秒)对比。两次栈相同、CPU 不涨即为卡死;栈顶停在原生调用(如 `glfwSwapBuffers`)属于呈现层问题 —— 加载期间不要最小化窗口(开着垂直同步时最小化会让 Render 线程一直阻塞)。
-- **模型/物品/贴图成片消失**:方向是某个 Fabric mixin 变换类失败(最外层消息常把真实原因吃掉)。OptiFine 常把原版方法改成转发给自己重载的瘦包装,注入点会随之搬走。
+- **升级后没有任何变化?** 删掉 `<游戏目录>/.optifine/` —— 缓存里是打过补丁的字节码,会自动重建。
+- `[OptiFabric]` 的输出走**启动器控制台**,不在 `logs/latest.log` 里;过滤 `[OptiFabric]` 能看到准备了多少个类、Loader 接管了多少个。
+- OptiFine 缺失 / 损坏 / 重复 / 版本不匹配时,标题界面会弹对话框,崩溃报告里会多出一节 `OptiFabric`(OptiFine 版本、jar 状态、mapped jar 路径)。
+- **`NoClassDefFoundError: Could not initialize class net.optifine.reflect.Reflector`**(或启动阶段直接死掉、连崩溃报告都没有):另一个模组的 mixin 没能注入到 OptiFine 改写过的类里。给 JVM 参数加上 `-Dmixin.debug=true` 再跑一次 —— Mixin 只在调试模式下会打出出问题的模组名。**处理办法**是删掉那个模组,或者不用 OptiFine;这边修不了。
+- **卡在加载界面:** 隔约 15 秒抓两份线程转储(`jstack <pid>`)对比;栈完全相同且 CPU 平坦是真卡住。
 
-下列日志不影响运行:
+属于正常、可以忽略的日志行:
 
-| 日志 | 说明 |
+| 日志 | 含义 |
 |---|---|
-| `[OptiFine] (Reflector) Class not present: net.minecraftforge.*` / `sun.misc.SharedSecrets` | OptiFine 在探测 Forge 与旧 JDK 的类,Fabric 上本就没有 |
-| `[OptiFabric] Resource not found: minecraft:shaders/post/fxaa_of_{2,4}x.json` | OptiFine 仍会到 1.21.6 之前的老位置探测一次抗锯齿链;真正在用的链在 `post_effect/` |
-| `[Shaders] Unknown macro value: IRIS_VERSION` / `ANGELICA_VERSION` | 光影包在探测 Iris / Angelica |
-| `[Shaders] Invalid macro expression` / `ParseException: Model variable not found: …` | 光影包与本版 OptiFine 不匹配 |
-| `Skipping bad option: lastServer` | 选项文件里的旧字段 |
+| `[OptiFine] (Reflector) Class not present: net.minecraftforge.*` / `sun.misc.SharedSecrets` | OptiFine 在探测 Forge 与老 JDK;Fabric 两样都没有 |
+| `Failed to locate initialiser injection point in <init>(…)` | 应用 OptiFine 那个 `BlockEntity` 补丁的代价 |
+| `[Shaders] Unknown macro value: IRIS_VERSION` / `ANGELICA_VERSION` | 光影包在探测 Iris/Angelica |
+| `Skipping bad option: lastServer` | 选项文件里留下的旧字段 |
 
 ### 已知问题:Litematica 投影 + 光影包会让日志刷满 OpenGL 1282
 
-开着光影包、同时有 Litematica 投影在渲染时,OptiFine 会成千上万次地打:
+开着光影包并渲染 Litematica 投影时,OptiFine 会刷出成千上万条 `[Shaders] OpenGL error: 1282 (Invalid operation), program: gbuffers_terrain, at: pre-useProgram`。那个出错的调用**是 Litematica 自己的**(`WorldRendererSchematic.renderBlockLayer` 上传原版的 `ShaderProgram.chunkOffset` uniform,而在 OptiFine 自己的程序绑定时这个操作非法);OptiFine 只是**报告**它,因为 `Shaders.useProgram` 开头就有一句 `checkGLError("pre-useProgram")`。绕开办法:关掉光影包,或停止渲染投影。
 
-```
-[Shaders] OpenGL error: 1282 (Invalid operation), program: gbuffers_terrain, at: pre-useProgram
-```
+## 🔐 许可
 
-实际查到的:
-
-- 出错的那次调用是 **Litematica 自己的** —— `WorldRendererSchematic.renderBlockLayer` 上传了原版的
-  `ShaderProgram.chunkOffset` uniform,而此时绑定的是 OptiFine 自己的 program;
-- OptiFine 只是**报告**它:`Shaders.useProgram` 开头就是 `checkGLError("pre-useProgram")`,于是把之前挂着的
-  GL 错误算到了它即将绑定的那个 program 头上;
-- `litematica-printer`、Xaero's 系列与 OptiLithium 都逐个查过,**均已排除**。
-
-规避办法:**关掉光影包**,或者**停止渲染投影**。OptiFabric 这边改不了 —— 非法调用不是本模组发出的,那句错误检查
-也是 OptiFine 自己的。(26.2 上这条还用不上:那一版的光影包加载保持被取消,根本没有 program 会被绑定。)
+**MPL-2.0** —— 见 [`LICENSE.txt`](LICENSE.txt)。核心机制移植自 [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric);移植来的文件保留原始头部声明。OptiFine 本身**不**被包含或再分发 —— 那是 sp614x 的作品,请到 [optifine.net](https://optifine.net/) 获取。
 
 ## 🌟 致谢
 
-- **[Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)**(作者 Modmuss50、Chocohead)—— 本移植所依据的原项目
-- **sp614x** —— OptiFine 本体
+- **[Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric)**(Modmuss50 与 Chocohead)—— 本移植所基于的原始项目
+- **sp614x** —— OptiFine 本身
 - **Fabric** 团队 —— Loader、Loom 与 tiny-remapper
 
 ---
 
-**说明:** 这是一个社区移植,与 OptiFine、Fabric 或 Mojang 团队没有隶属关系,也未获其背书或支持。
+**说明:** 这是一个社区移植,与 OptiFine、Fabric、Mojang 团队均无关联,也未获其背书或支持。
