@@ -81,6 +81,9 @@ public class AddInterfaceFix implements ClassFixer {
 	/** The interfaces found for a class, worked out once for the whole run. */
 	private static final Map<String, Set<Candidate>> INTERFACES = new LinkedHashMap<>();
 
+	/** Inputs the search could not read. Counted so a missing candidate can be explained instead of guessed at. */
+	private static int unreadable;
+
 	private final String targetClass;
 
 	/** @param targetClass the internal name of the class whose hierarchy the mixin interface has to join */
@@ -94,7 +97,8 @@ public class AddInterfaceFix implements ClassFixer {
 
 		if (candidates.isEmpty()) {
 			System.err.println("[OptiFabric] No mixin interface in the loaded mods targets " + targetClass
-					+ ", leaving it as OptiFine compiled it");
+					+ ", leaving it as OptiFine compiled it"
+					+ (unreadable > 0 ? " (" + unreadable + " input(s) could not be read, so a candidate may have been missed)" : ""));
 			return;
 		}
 
@@ -281,6 +285,7 @@ public class AddInterfaceFix implements ClassFixer {
 			return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			// silent by design: returns null; the caller treats it as "no text here" and keeps going
+			unreadable++;
 			return null;
 		}
 	}
@@ -315,6 +320,7 @@ public class AddInterfaceFix implements ClassFixer {
 			return new String(in.readAllBytes(), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			// silent by design: returns null; the caller treats it as "no text here" and keeps going
+			unreadable++;
 			return null;
 		}
 	}
@@ -324,6 +330,7 @@ public class AddInterfaceFix implements ClassFixer {
 			return read(in);
 		} catch (IOException | RuntimeException e) {
 			// silent by design: returns null; this candidate is skipped and the search continues
+			unreadable++;
 			return null;
 		}
 	}
@@ -339,6 +346,7 @@ public class AddInterfaceFix implements ClassFixer {
 			return read(in);
 		} catch (IOException | RuntimeException e) {
 			// silent by design: returns null; this candidate is skipped and the search continues
+			unreadable++;
 			return null;
 		}
 	}
