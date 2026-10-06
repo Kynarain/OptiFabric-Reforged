@@ -13,163 +13,25 @@
 
 > ⚠️ This port was written and verified with AI assistance (DeepSeek). Be careful with it in production.
 
-Load **OptiFine** under **Fabric Loader**. Put OptiFine's jar next to this mod and it patches the vanilla client with OptiFine's own patcher, rebuilds the lambdas whose targets moved, remaps OptiFine from its obfuscated names into Fabric's namespace, and hands the patched Minecraft classes to Fabric Loader's class transformer — so both can live in one client. **OptiFine itself is not bundled or redistributed.**
+Load **OptiFine** under **Fabric Loader**: put OptiFine's jar next to this mod and it patches the vanilla client with OptiFine's own patcher, rebuilds the lambdas whose targets moved, remaps OptiFine into Fabric's namespace, repairs what OptiFine's recompiler left behind, and hands the patched Minecraft classes to Loader's class transformer — so both mods can live in one client. **OptiFine itself is not bundled or redistributed.**
 
-This branch is the **1.21.x line** and covers Minecraft **1.21 – 1.21.11** (all ten releases OptiFine ever shipped a build for). The 26.x line (Minecraft 26.2 and 26.1.2) lives on its own branch/worktree and is developed separately; jars from the two lines are **not interchangeable**.
-完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。The full MC 1.21.1 compatibility list is in [`COMPATIBILITY.md`](COMPATIBILITY.md).
+This is the **1.21.x line** and covers Minecraft **1.21 – 1.21.11** (all ten releases OptiFine ever shipped a build for). The 26.x line (Minecraft 26.2 / 26.1.2) and the 1.20.6 line live on their own branches; jars from different lines are **not interchangeable**.
 
-## 📊 Benchmarks — every environment and every result in one table
-
-Measured with the third-party **FPS Benchmark** mod (`fpstest-1.0.jar`, sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56`): one 3-minute scripted *Base* run per group (19 cinematic segments — forest, village, combat, redstone, cave, nether, end; deterministic seed `27182`). Raw reports, including every per-frame sample: **[`benchmarks/2026-10-05-fps-benchmark/`](benchmarks/2026-10-05-fps-benchmark/)**.
-
-| group | role | mods (sha256 prefix) | environment — identical in all four runs | avg FPS | 1% low | 0.1% low | p99 frame | worst frame | lowest FPS | std dev | raw results |
-|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| **A** | vanilla baseline | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` | Minecraft 1.21.1 · Fabric Loader 0.19.5 · Java 22.0.2 · max heap 5836 MB · Intel i5-12600KF · AMD RX 7800 XT (driver 25.12.1.251128) · Windows 10 amd64 · render distance 8 · VSync off · `maxFps:260` (= unlimited) · shaders off · identical `options.txt` (sha256 `AC506701…`) · seed 27182 | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 | [report.md](benchmarks/2026-10-05-fps-benchmark/A-vanilla-baseline/report.md) |
-| **C** | OptiFabric + OptiFine only | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` | *(same)* | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 | [report.md](benchmarks/2026-10-05-fps-benchmark/C-OptiFabric-OptiFine/report.md) |
-| **D** | the recommended set | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` | *(same)* | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | **319** | **747** | [report.md](benchmarks/2026-10-05-fps-benchmark/D-OptiFabric-OptiFine-LiFeC2ME/report.md) |
-| **B** | Sodium route (not compatible with OptiFine) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` | *(same)* | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 | [report.md](benchmarks/2026-10-05-fps-benchmark/B-Sodium-Lithium/report.md) |
-
-- **C averages 38.8% above the vanilla baseline** and its worst frame is 5× better (3.31 ms vs 17.21 ms) — OptiFine's own optimisations are doing real work, so the compatibility layer is a net gain here, not a tax.
-- **B (Sodium) is fastest on average (~13% over C) but has the worst tail**: 0.1% low 349 vs 713, worst frame 12.47 ms vs 3.31 ms, lowest FPS 80 vs 302.
-- **The three "performance" mods barely show up in this still scene** (C 5040 → D 4475) — the *Base* run keeps world generation and ticking deliberately light. The **41-test suite** below tells the opposite story on the scenarios they were built for.
-
-### Full suite — 41 tests, all four configurations
-
-Same machine, same settings, same deterministic scenes as the table above (the mod writes one report per test; raw reports under [`benchmarks/`](benchmarks/2026-10-05-fps-benchmark/)). Category averages, shown as **average FPS / 1% low**:
-
-| category (tests) | A vanilla | B Sodium + Lithium | C OptiFabric + OptiFine | D = C + Lithium + FerriteCore + C2ME |
-|---|---|---|---|---|
-| idle / static (2) | 4579 / 1278 | **5961** / 1712 | 5388 / 1529 | 5670 / 1686 |
-| flyby, 12 biomes (12) | 2606 / 288 | **5254** / 649 | 4220 / 461 | 4382 / **777** |
-| entities (8) | 1496 / 537 | **1861** / 681 | 1595 / 587 | 1626 / 638 |
-| physics (6) | 3066 / 602 | **4040** / 924 | 3915 / 785 | 3979 / 901 |
-| redstone / block entities (5) | 3935 / 1078 | **5537** / 1523 | 4898 / 1369 | 5004 / 1404 |
-| particles (2) | 1972 / 523 | 2634 / 510 | 2331 / 669 | **2670** / **770** |
-
-- **The vanilla baseline is last in all six categories.** Adding OptiFabric + OptiFine (C) is worth roughly +62% on flybys, +28% on physics, +25% on redstone, +18% on particles and +17% at idle — the compatibility layer pays for itself here too.
-- **D is at or above C in almost every category** (idle 5670 vs 5388, flyby 4382 vs 4220, physics 3979 vs 3915, redstone 5004 vs 4898, particles 2670 vs 2331) and its **tails are clearly better** — flyby 1% low 777 vs 461, particles 770 vs 669. So Lithium / FerriteCore / C2ME *do* earn their keep in real scenarios; the still *Base* scene simply cannot show it.
-- **The single clearest case is the falling-sand wall**: 1% low is 32 (A), 66 (B), **34 (C)** and **73 (D)**. Without the three performance mods, C's tail is as bad as vanilla's — D is what rescues it. Same shape in falling gravel (34 / 74 / 34 / 68).
-- **Particle diversity is the one scenario no mod set fixes**: all four land between 437 and 495 fps. That bottleneck is not ours.
-
-*One machine, one run per group, one benchmark, resolution not forced. Treat these numbers as an indication, not a specification — yours will differ.*
-
-## 📖 Overview
-
-OptiFine is not a Fabric mod: its jar holds bytecode patches against *obfuscated* vanilla client classes plus its own classes. OptiFabric drives OptiFine's patcher at `preLaunch`, de-obfuscates the result, remaps it into the runtime namespace, repairs what OptiFine's recompiler left behind, and registers the patched classes with Loader before Mixin ever sees them.
-
-**One jar per Minecraft release** — every jar carries that release's `official → intermediary` mapping table (the obfuscated names differ per release, and the wrong table turns OptiFine into garbage) and pins its `minecraft` dependency to that exact version.
-
-**Author:** kynarain · upstream: Modmuss50, Chocohead
-**Version:** `2.2.1` for all ten releases (1.21 – 1.21.11)
-**License:** MPL-2.0
-
-## ✨ Key Features
-
-- 🔄 **No OptiFine installer run by hand** — drop the installer jar (with its `patch/` diffs) or an already-extracted OptiFine into `mods/`; the patching happens at startup
-- 🧩 **Remapping that sees the game** — the game jar goes into the remapper's classpath *and* inputs, so methods overridden in subclasses keep their mapped names (one class alone lost 35 methods otherwise)
-- 📦 **One source tree, one jar per release** — 1.21 through 1.21.11, each bound to its own mapping table, built with `-Pmc=<version>`
-- 🎨 **Anti-aliasing that works** — since 1.1.2 optifabric leaves OptiFine's own `post_effect/` chain alone and rewrites the FXAA vertex shader on the releases whose post pipeline has no vertex attributes (1.21.9 / 1.21.10)
-- 🛠️ **Bytecode repairs** — dozens of fixers for what OptiFine's recompiler erases: vanilla method bodies, injection points, synthetic fields, object-creation points, renamed lambdas, region construction
-- 🧪 **Offline verification as a first-class tool** — every patched class and every OptiFine class is loaded in a single loader and checked with the JVM verifier plus an ASM data-flow verifier, on top of five scanners
-- ⚙️ **Caching** — the whole pipeline result is cached under `.optifine/<OptiFine version>/`; later launches take 1–2 seconds
-- 🧯 **Honest failure** — a missing, corrupt, duplicated or mismatched OptiFine jar produces an error dialog at the title screen and an `OptiFabric` section in the crash report
-
-## 🏗️ How It Works
-
-```
-mods/OptiFine_1.21.11_HD_U_J9.jar
-        │  ① OptiFine's own optifine.Patcher patches the obfuscated client jar
-        │     (since 1.21.6 the patches travel as xdelta diffs; the usage is unchanged)
-        ▼
-   patched vanilla jar   (OptiFine's patches + OptiFine's classes)
-        │  ② LambdaRebuilder: lambdas in patched classes point at methods that moved
-        │  ③ tiny-remapper: official (obfuscated) → intermediary
-        │     **the game jar must be in the remapper's classpath**, or overrides in
-        │     subclasses keep OptiFine's names
-        ▼
-   Optifine-mapped.jar
-        │  ④ split in two
-        ├── non-Minecraft classes (OptiFine's own classes + resources) ──► game class path
-        └── patched net/minecraft/** classes ──────────────────────────► ClassCache
-```
-
-Replacement happens through **Fabric Loader's own GameTransformer**: when a Minecraft class is about to be loaded, Loader asks the game provider's `GameTransformer.transform(...)` for ready-made bytecode — *before* Mixin runs. The classes registered at `preLaunch` (after the `patcher/fixes` corrections) therefore win, while classes Loader patched itself keep Loader's version.
-
-That is why no stub mixin has to be generated per patched class and no Mixin extension API is needed: what is handed over is Mixin's **input**, not its output, so other mods' mixins against those classes keep working.
-
-There is one hard constraint: **before the patched classes are handed to Loader, nothing may reflect on game classes** — a single `Class.getMethods()` loads every type in those method signatures and pins the class to vanilla forever. This code only ever touches bytes (`getClassByteArray` / ASM), never a `Class` object.
-
-| Component | Purpose |
-|---|---|
-| `OptifabricRuntime` | whole pipeline: find the jar → patch → remap → repair → register |
-| `GameTransformerHook` | injects the patched classes into Loader's game transformer |
-| `OptifineMappings` | rule-based contextual mapping (replaces upstream's hand-written table) |
-| `OptifineJarFixer` | repairs OptiFine's own jar: post-effect JSON shape, the shaderpack load a 1.21.6/1.21.7 build cancels, the FXAA vertex shader of 1.21.9/1.21.10 |
-| `patcher/fixes/**` | the per-release bytecode fixers (vanilla bodies, injection points, synthetic fields, …) |
-| `RendererApiFallback` | registers an inert placeholder where Fabric's renderer API would otherwise be empty |
-
-Intermediate files live in `<game dir>/.optifine/<OptiFine version>/`:
-
-| File | Content |
-|---|---|
-| `cache-format.txt` | cache format version (currently `26`); a mismatch rebuilds everything |
-| `Optifine-mapped.jar` | the remapped OptiFine jar (without MC classes) that goes on the class path |
-| `Optifine.classes.gz` | the patched MC classes for the next launch |
+**Author:** kynarain · upstream: Modmuss50, Chocohead · **License:** MPL-2.0 · **Current version:** `2.2.12`
 
 ## 📦 Installation
 
-1. Get the OptiFine build for **exactly** your Minecraft version (see the table below) — OptiFabric reads `MC_VERSION` from `optifine/Config` and refuses to start otherwise. Do **not** run OptiFine's installer.
-2. Put the jar for **your** version **and** OptiFine's jar into that Fabric instance's `mods/` folder. Do not install two OptiFine jars (the game reports `DUPLICATED`), do not use the wrong version of either, and do not mix in the 26.x line's jar. **When upgrading from 1.x, delete the old `OptiFabric-<version>+mc1.21.x.jar` first** — 2.0.0 renamed the mod id to `optifabric_reforged` (display name *OptiFabric Reforged*), and with both ids in `mods/` Fabric loads both copies, so OptiFine gets patched twice.
+1. Install **Fabric Loader ≥ 0.19.5** on **Java 21+**, then put this line's jar and the OptiFine jar for **exactly** your Minecraft version into that instance's `mods/` folder. Do **not** run OptiFine's installer.
+2. Launch the **Fabric** profile — not a launcher-made `1.21.x-OptiFine_xxx` profile, which injects OptiFine itself and collides with this mod.
+3. The first start spends a few extra seconds patching and remapping (5–7 s in practice); later starts reuse the cache (1–2 s).
 
-<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
-     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
-> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
-> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
-> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> start the game once by hand.
+**Upgrading from 1.x?** Delete the old `OptiFabric-<version>+mc1.21.x.jar` first: 2.0.0 renamed the mod id to `optifabric_reforged` (display name *OptiFabric Reforged*), and with both ids in `mods/` Fabric loads both copies, so OptiFine gets patched twice.
+
+> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first, download OptiFine from <https://optifine.net/downloads>, put that jar in the `mods` folder, then start the game once.
 >
-> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
-> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹;然后手动启动一次游戏。
+> **OptiFabric 不能假设启动器会替你装 OptiFine**:很多启动器只能选 **OptiFine _or_ Fabric**。先装好 **Fabric + OptiFabric**,从 <https://optifine.net/downloads> 下载 OptiFine,放进 `mods` 文件夹,然后手动启动一次游戏。
 
-3. Launch the **Fabric** profile — not a launcher-made `1.21.x-OptiFine_xxx` profile, which injects OptiFine itself and collides with this mod.
-4. The first start spends a few extra seconds patching and remapping (5–7 s in practice); later starts use the cache (1–2 s). A title screen showing OptiFine's version and OptiFine entries in video settings mean it worked.
-
-With version isolation enabled (PCL2 / HMCL), the game directory and `mods/` both live under `versions/<name>/`, and the `.optifine/` cache is created there too.
-
-```powershell
-# OptiFine 1.21.11, the newest final build for it: use the "Download OptiFine" button in the prompt,
-# or open https://optifine.net/downloads and download OptiFine_1.21.11_HD_U_J9.jar from there.
-```
-
-## 🔨 Building from Source
-
-**JDK 21+** is required, and the repository root *is* the Gradle project — the target release comes from `-Pmc` (or from `gradle.properties` when omitted):
-
-```bash
-./gradlew build "-Pmc=1.21.11"                            # quotes matter in PowerShell: 1.21.11 is split otherwise
-./gradlew build "-Pmc=1.21.8" "-Pmod_version_base=2.1.0"  # only needed when that jar's version differs from the base
-```
-
-The jars land in `build/libs/OptiFabric-<version>+mc<mc>.jar`. Version numbers only ever change through one script:
-
-```powershell
-.\release\version.ps1                                     # show the current version of the line
-.\release\version.ps1 -Mc 1.21.8 -Kind patch               # bump one jar, and only that jar
-```
-
-The development environment is not supported: `gradlew runClient` is refused outright, because dev runs in the `named` namespace and would need an extra contextual-mapping layer.
-
-## 📋 Requirements
-
-| | |
-|---|---|
-| Minecraft | 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, 1.21.11 |
-| Fabric Loader | ≥ 0.19.5 |
-| Java | 21+ (tested on 25) |
-| Side | client |
-| OptiFine | your own build, **exact version match** (table below) |
-| Fabric API | optional — tested with the release matching your Minecraft version |
+With version isolation (PCL2 / HMCL) the game directory, `mods/` and the `.optifine/` cache all live under `versions/<name>/`.
 
 ## 🤝 Compatibility
 
@@ -179,23 +41,18 @@ The development environment is not supported: `gradlew runClient` is refused out
 | 1.21.1 | `OptiFabric-2.2.12+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ verified |
 | 1.21.3 | `OptiFabric-2.2.12+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ verified |
 | 1.21.4 | `OptiFabric-2.2.12+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ verified |
-| 1.21.6 | `OptiFabric-2.2.12+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ starts and plays, **crashes as soon as shaders are enabled** (below) |
+| 1.21.6 | `OptiFabric-2.2.12+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ plays, **no shaders** (below) |
 | 1.21.7 | `OptiFabric-2.2.12+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ same |
 | 1.21.8 | `OptiFabric-2.2.12+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ verified |
 | 1.21.9 | `OptiFabric-2.2.12+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ verified |
 | 1.21.10 | `OptiFabric-2.2.12+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ verified |
 | 1.21.11 | `OptiFabric-2.2.12+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ verified |
 
-OptiFine never shipped a build for **1.21.2 / 1.21.5**, so there is no jar for those.
-
-The build in this table is the newest **final** OptiFine release for that Minecraft version; when a version has no
-final release yet, the newest **preview** is used instead (that is why 1.21.4 lists J3 rather than the newer
-J4_pre2 preview). Any other build of the same Minecraft version still works - the in-game prompt only appears
-when the jar in mods/ is a **preview** older than the one listed here - a final build you already have is left alone, even when a newer final exists.
+OptiFine never shipped a build for **1.21.2 / 1.21.5**, so there is no jar for those. The build listed is the newest **final** OptiFine release for that Minecraft version, or the newest **preview** when no final exists yet (that is why 1.21.4 lists J3 rather than the newer J4_pre2). Any other build of the same Minecraft version still works: the in-game prompt only appears when the jar in `mods/` is a **preview older** than the one listed — a final build you already have is left alone even when a newer final exists.
 
 ### OptiFabric version → Minecraft version → required OptiFine build
 
-This is the same list the mod itself carries (and `release\notes\mc<MC>.md` states per release); `release\version.ps1 -CheckSupport` fails when the three disagree.
+This is the same list the mod itself carries and `release\notes\mc<MC>.md` states per release; `release\version.ps1 -CheckSupport` fails when the three disagree.
 
 | OptiFabric version | Minecraft version | Required OptiFine build |
 |---|---|---|
@@ -210,88 +67,167 @@ This is the same list the mod itself carries (and `release\notes\mc<MC>.md` stat
 | `2.2.12+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
 | `2.2.12+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
 
-When OptiFabric loads and that jar is missing, or is not the build its Minecraft version expects, the game says so on a screen instead of starting silently: it names the file, offers a `Download OptiFine` button that fetches it from OptiFine's **official** site (`optifine.net`, the only source this mod ever uses), and opens the mods folder for you — the URL field above the buttons can be replaced with a source of your own, which is then the only place the jar is fetched from.
+When that jar is missing, or is not the build its Minecraft version expects, the game says so in a dialog at the title screen instead of starting silently: the dialog names the file, offers a `Download OptiFine` button that fetches it from OptiFine's **official** site (`optifine.net`, the only source this mod ever uses), and opens the mods folder for you.
 
 ### The 1.21.6 / 1.21.7 shader limitation
 
-Both releases **start and play normally** without shaders (the title screen renders, worlds load, the integrated server, chunk building and saving all work), but **enabling a shader pack crashes the game** during startup:
+Both releases **start and play normally** without shaders, but **enabling a shader pack crashes during startup**, inside OptiFine's own code:
 
 ```
 java.lang.NullPointerException: Cannot read field "norm" because "multiTex" is null
   at net.optifine.shaders.ShadersTex.initDynamicTextureNS(ShadersTex.java:322)
-  at net.minecraft.class_1043.method_71142 -> class_1043.<init> -> class_310.<init>
 ```
 
-- It is **not** the shader pack: three unrelated packs (Complementary Reimagined, Sildur's Vibrant Shaders, BSL) crash at the same frame, and stripping a pack's custom textures and animation metadata does not help.
-- It is not our patching either: the crash happens while the first textures are created, earlier than any pack-specific logic — the trigger is simply "shaders enabled".
-- The cause is **OptiFine's own preview builds for those two releases**: the call they inject into `class_1043.<init>` lacks the `setParentTexture` association that the 1.21.8 build performs first, while the `initDynamicTextureNS` it calls dereferences `getMultiTexID()` right away. All seven OptiFine builds available for the two releases crash identically, so downgrading to an earlier preview does not avoid it.
+It is not the shader pack (three unrelated packs crash at the same frame) and not our patching (the crash happens while the first textures are created). All seven OptiFine builds available for those two releases crash identically, so downgrading does not avoid it. Since **2.2.12** the mod tells you this in the same title-screen dialog as soon as it sees that build installed — play without shaders, or move to a Minecraft version whose newest OptiFine build is a final release.
 
 | | |
 |---|---|
-| ✅ Works | OptiFine's video settings, zoom, connected textures, dynamic lights, **shaders** (on every release except 1.21.6 / 1.21.7), and since 1.1.2 **anti-aliasing** |
-| ⚠️ Neutralised | the `BEFORE_BLOCK_OUTLINE` event no longer fires (the block outline is still drawn); the moving-block FRAPI render hook is inert (moving blocks are drawn by the vanilla path) |
-| ❌ Incompatible | **Sodium** (declared `conflicts`, a warning — not `breaks`, which would refuse the instance), plus `no_fog`, `thallium`, `xradiation`, `ryoamiclights` (declared `breaks`). RyoamicLights fails because OptiFine replaces the whole video-settings screen — parent class included — and its mixin targets the vanilla parent; OptiFine has its own dynamic lights, so nothing is lost. The full list, where it comes from and what the loader does with it: [Declared incompatibilities](#declared-incompatibilities-and-what-the-loader-actually-does) |
+| ✅ Works | OptiFine's video settings, zoom, connected textures, dynamic lights, **shaders** (every release except 1.21.6 / 1.21.7), and since 1.1.2 **anti-aliasing** |
+| ⚠️ Neutralised | the `BEFORE_BLOCK_OUTLINE` event no longer fires (the outline is still drawn); the moving-block FRAPI render hook is inert (moving blocks are drawn by the vanilla path) |
+| ❌ Incompatible | **Sodium**, plus `no_fog`, `thallium`, `xradiation`, `ryoamiclights` — all five under `breaks`, and the loader enforces it (see the section below) |
 | 📄 OptiFine-side limits | OptiFine cannot see resources inside Fabric mods (`[OptiFine] Unknown resource pack type: …ModNioResourcePack`); shader packs print their own `[Shaders]` errors when they do not match your OptiFine build |
 
 ### Declared incompatibilities, and what the loader actually does
 
-Everything this mod declares against lives in `fabric.mod.json` and nowhere else — no screen shows it — so this is that list in prose. The `2.2.3` artifact declares:
+Everything this mod declares against lives in `fabric.mod.json` and nowhere else — no screen shows it — so this is that list in prose. The current artifact declares **five** `breaks` entries and no `conflicts`:
 
 | Declaration | Entries |
 |---|---|
-| `conflicts` | `sodium` (`*`) |
-| `breaks` | `no_fog`, `thallium`, `xradiation`, `ryoamiclights` |
+| `breaks` | `no_fog`, `thallium`, `xradiation`, `ryoamiclights`, `sodium` |
+| `conflicts` | *(none)* |
 
-The `sodium` conflict and three of those five `breaks` are **inherited from upstream**: [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric) (`fabric.mod.json` on its default branch `llama`, v1.14.3) declares the same `sodium` conflict and `breaks` on `no_fog`, `thallium` and `xradiation`, and adds three range-limited entries this fork deliberately dropped:
+**`breaks` is a gate, `conflicts` is only a warning.** Measured on Fabric Loader 0.19.5: a `conflicts` entry adds no constraint to the loader's solver at all — `ModSolver`'s `CONFLICTS` case is still a `// TODO: soft negative dep?` — so the game starts with `Warnings were found!`, while a `breaks` entry against a present mod makes the solver emit `NEG_HARD_DEP` and the loader **refuses the whole instance** (`Incompatible mods found!`). So a `breaks` entry does not warn, it blocks — and that is deliberate here (see Sodium below).
 
-| Upstream entry | Why it is not carried here |
-|---|---|
-| `cardinal-components-item <2.4.2` | a 1.16/1.17-era version range; those mod builds are the only ones inside it |
-| `architectury >1.2.72 <1.3.77` | a 1.16/1.17-era range, and the underlying conflict is *fixed* on 1.21.1 (below) |
-| `meteor-client >=0.4.1` | a 1.16/1.17-era entry |
+**Where the list comes from.** `no_fog`, `thallium` and `xradiation` are **inherited from upstream** ([Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric), `fabric.mod.json` on `llama`); `ryoamiclights` is this fork's own addition, because OptiFine replaces the whole video-settings screen — parent class included — and that mod's mixin targets the vanilla parent (nothing is lost: OptiFine has its own dynamic lights). Upstream also carries three range-limited entries this fork dropped as 1.16/1.17-era: `cardinal-components-item <2.4.2`, `architectury >1.2.72 <1.3.77` and `meteor-client >=0.4.1`.
 
-`ryoamiclights` is this fork's own addition, for the reason in the table above. **`sodium` is in `breaks` again since 2.2.11** — same field 2.2.8/2.2.9 used, for a different reason this time: it is no longer "a cascade we have not finished repairing" but "**every gap that could be found has been repaired and the pairing still renders nothing**". 2.2.10 had it under `conflicts` only; see the paragraph below and [`CHANGELOG.md`](CHANGELOG.md).
+**Sodium is a hard break since 2.2.11, and it is measured rather than inherited.** The history is worth knowing because it moved twice: 2.2.8/2.2.9 declared it in both fields (refusing the instance), 2.2.10 moved it to `conflicts` only (a warning), and 2.2.11 put it back under `breaks`. The reason changed with the evidence — on 1.21.1 with Sodium 0.8.13 the cascade behind Sodium's missing call sites was worked through (five repairs, listed in [`CHANGELOG.md`](CHANGELOG.md)), and with every one of them in place Sodium's own mixins all apply (`Mixin transformation of` and `InjectionError` both zero), the client reaches the title screen and loads a world — and the frame is **black**. Two single-variable runs ruled out what was left (handing the single renderer slot to Sodium instead of this mod's placeholder; OptiFine's Fast Render off): both still black. Two terrain renderers cannot share one pipeline, so the pairing is refused rather than warned about — a warning would leave the user with a game that starts and never draws.
 
-**The two fields are not the same thing: `conflicts` only warns, `breaks` is enforced.** Sodium is declared under `conflicts` **only**. Measured on **Fabric Loader 0.19.5**: a `conflicts` entry adds no constraint to the loader's dependency solver at all — in `ModSolver` the `CONFLICTS` case is still a `// TODO: soft negative dep?` — so the game starts with `Warnings were found!` and then a normal `Loading 56 mods:`. A `breaks` entry against a mod that **is** present is a different animal: the solver emits `NEG_HARD_DEP` and the loader **refuses the combination** rather than starting. Runs recorded here logged `NEG_HARD_DEP optifabric_reforged 2.2.2 {breaks sodium}` and, on the other side, `NEG_HARD_DEP optifabric_reforged 2.2.9+mc1.21.1 {breaks sodium @ [*]}` followed by `Incompatible mods found!`. So a `breaks` entry is a gate, not a declaration — the loader will not start at all. **2.2.8 through 2.2.9 declared sodium in both fields; 2.2.10 declared it under `conflicts` only, so the instance started and the log carried a warning; 2.2.11 puts it back under `breaks`.** The reason changed with the evidence. On 1.21.1 with Sodium 0.8.13 the cascade behind those missing call sites was worked through — five repairs, listed in [`CHANGELOG.md`](CHANGELOG.md) — and with every one of them in place Sodium's own mixins all apply (`Mixin transformation of` and `InjectionError` both zero), the client reaches the title screen and loads a world, and the frame is **black**. Two single-variable runs then ruled out what was left: handing the single renderer slot to Sodium instead of this mod's placeholder, and turning OptiFine's Fast Render off — both still black. So the pairing is refused rather than warned about, because a warning would leave the user with a game that starts and never draws.
+**Sodium declares it on its side too, but under the old id.** Every Sodium build measured carries `"breaks": {"optifabric": "*"}` and names the **old** mod id; since 2.0.0 this line ships as `optifabric_reforged`, so that entry cannot fire. What you see for Sodium is this mod's own declaration.
 
-**The sodium pairing is declared on one side only.** Sodium declares it under `breaks` only — `conflicts` is absent from every sodium build measured (`sodium-fabric` `0.5.11+mc1.21`, `0.6.13+mc1.21.1` and `0.8.13+mc1.21.1` all carry `"breaks": {"optifabric": "*"}`) — and it names the **old** mod id `optifabric`. Since 2.0.0 this line ships as `optifabric_reforged` (display name *OptiFabric Reforged*), so that entry cannot fire at all, and the warning you see for sodium is the one from this mod's side. Up to 2.2.10 `conflicts` was what carried it; since 2.2.11 this mod declares it under `breaks`, which the loader enforces.
+**Architectury is the reverse story.** Upstream declared architectury broken and architectury's metadata declares `breaks: optifabric <1.13.0`. On 1.21.1 this fork fixed the real conflict behind it: OptiFine inserts its own locals into the middle of `GameRenderer.render`, shifting the vanilla slots Mixin's `LocalCapture` hands to a handler, so `LocalSlotLayoutFix` moves the extra slots to the end of the range. `architectury-api` `13.0.11` now passes, and the rename to `optifabric_reforged` is what stops architectury's own declaration from firing. Measurements: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md), [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md).
 
-**Architectury is the reverse story, and worth keeping.** Upstream declared architectury broken, and architectury's own metadata declares `breaks: optifabric <1.13.0`. On 1.21.1 this fork fixed the real conflict behind that declaration: OptiFine inserts its own locals into the middle of `GameRenderer.render`, which shifts the vanilla slots that Mixin's `LocalCapture` hands to a handler, so `LocalSlotLayoutFix` moves the extra slots to the end of the local variable range. `architectury-api` `13.0.11` now passes the sweep (row #14 of the matrix), and the rename to `optifabric_reforged` is what stops architectury's own declaration from firing. The measurements are in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) and [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md).
-
-The empirical picture — which mods actually fail next to OptiFabric, and which of those failures are ours — is in [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md); the full per-mod list is in [`COMPATIBILITY.md`](COMPATIBILITY.md) at the repository root.
+The empirical picture — which mods actually fail next to OptiFabric, and which of those failures are ours — is in [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md); the full per-mod list is [COMPATIBILITY.md](COMPATIBILITY.md) at the repository root.
 
 ### How indigo is handled
 
-Fabric API's `fabric-renderer-indigo` and OptiFine cannot both render terrain, so this mod makes indigo step aside with Fabric's own mechanism: `"custom": {"fabric-renderer-api-v1:contains_renderer": true}` in `fabric.mod.json` (the same key Sodium uses — OptiFine *is* a terrain renderer). Indigo then logs `[Indigo] Different rendering plugin detected; not applying Indigo.`
+Fabric API's `fabric-renderer-indigo` and OptiFine cannot both render terrain, so this mod makes indigo step aside with Fabric's own mechanism: `"custom": {"fabric-renderer-api-v1:contains_renderer": true}` in `fabric.mod.json` (the key Sodium uses — OptiFine *is* a terrain renderer). Indigo then logs `[Indigo] Different rendering plugin detected; not applying Indigo.` The key alone is not enough: Fabric's renderer modules read a registry, and an empty one throws, so the mod also registers an inert placeholder (`F3` shows `Renderer: OptifineRendererPlaceholder`).
 
-Declaring the key is not enough on its own: Fabric's renderer modules look at a *registry*, and an empty one throws `Attempted to retrieve active rendering plug-in before one was registered`, so the mod also registers an inert placeholder renderer (F3 shows `Renderer: OptifineRendererPlaceholder`). Wanting indigo back means deleting that `custom` key and rebuilding — which then crashes `ChunkBuilder$BuiltChunk$RebuildTask` on load, because the injection point it needs is gone.
+## 🏗️ How It Works
+
+```
+mods/OptiFine_1.21.11_HD_U_J9.jar
+        │  ① OptiFine's own optifine.Patcher patches the obfuscated client jar
+        ▼
+   patched vanilla jar   (OptiFine's patches + OptiFine's classes)
+        │  ② LambdaRebuilder: lambdas in patched classes point at methods that moved
+        │  ③ tiny-remapper: official (obfuscated) → intermediary
+        │     the game jar must be in the remapper's classpath, or overrides in
+        │     subclasses keep OptiFine's names
+        ▼
+   Optifine-mapped.jar
+        │  ④ split in two
+        ├── OptiFine's own classes + resources ─► game class path
+        └── patched net/minecraft/** classes ───► ClassCache
+```
+
+Replacement goes through **Loader's own GameTransformer**: when a Minecraft class is about to load, Loader asks the game provider's `GameTransformer.transform(...)` for ready-made bytecode — *before* Mixin runs. What is handed over is Mixin's **input**, not its output, so other mods' mixins against those classes keep working, and no stub mixin has to be generated per patched class. One hard constraint: **before the patched classes are handed to Loader, nothing may reflect on game classes** — a single `Class.getMethods()` would pin a class to vanilla forever — so this code only ever touches bytes.
+
+| Component | Purpose |
+|---|---|
+| `OptifabricRuntime` | whole pipeline: find the jar → patch → remap → repair → register |
+| `GameTransformerHook` | injects the patched classes into Loader's game transformer |
+| `OptifineMappings` | rule-based contextual mapping (replaces upstream's hand-written table) |
+| `OptifineJarFixer` | repairs OptiFine's own jar (post-effect JSON shape, the FXAA vertex shader, …) |
+| `patcher/fixes/**` | the per-release bytecode fixers (vanilla bodies, injection points, synthetic fields, …) |
+| `RendererApiFallback` | registers an inert placeholder where Fabric's renderer API would otherwise be empty |
+
+Intermediate files live in `<game dir>/.optifine/<OptiFine version>/`: `cache-format.txt` (format version — a mismatch rebuilds everything), `Optifine-mapped.jar` and `Optifine.classes.gz` (the patched MC classes for the next launch).
+
+## ✨ Key Features
+
+- 🔄 **No installer run by hand** — drop the installer jar or an already-extracted OptiFine into `mods/`; patching happens at startup
+- 🧩 **Remapping that sees the game** — the game jar goes into the remapper's classpath *and* inputs, so methods overridden in subclasses keep their mapped names (one class alone lost 35 methods otherwise)
+- 📦 **One source tree, one jar per release** — each bound to its own mapping table, built with `-Pmc=<version>`
+- 🎨 **Anti-aliasing that works** — since 1.1.2 this mod leaves OptiFine's own `post_effect/` chain alone and rewrites the FXAA vertex shader only on the releases whose post pipeline has no vertex attributes (1.21.9 / 1.21.10)
+- 🛠️ **Bytecode repairs** — dozens of fixers for what OptiFine's recompiler erases: vanilla method bodies, injection points, synthetic fields, object-creation points, renamed lambdas, region construction
+- 🧪 **Offline verification as a first-class tool** — every patched class and every OptiFine class is loaded in a single loader and checked with the JVM verifier plus an ASM data-flow verifier
+- ⚙️ **Caching** — the pipeline result is cached under `.optifine/<OptiFine version>/`; later launches take 1–2 seconds
+- 🧯 **Honest failure** — a missing, corrupt, duplicated or mismatched OptiFine jar produces a dialog at the title screen and an `OptiFabric` section in the crash report
+
+## 📊 Benchmarks
+
+Measured with the third-party **FPS Benchmark** mod (`fpstest-1.0.jar`, sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56`): one 3-minute scripted *Base* run per group (19 cinematic segments; deterministic seed `27182`). Raw per-frame reports: **[`benchmarks/2026-10-05-fps-benchmark/`](benchmarks/2026-10-05-fps-benchmark/)**.
+
+| group | role | mods (sha256 prefix) | environment — identical in all four runs | avg FPS | 1% low | 0.1% low | p99 frame | worst frame | lowest FPS | std dev | raw results |
+|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| **A** | vanilla baseline | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` | Minecraft 1.21.1 · Fabric Loader 0.19.5 · Java 22.0.2 · max heap 5836 MB · Intel i5-12600KF · AMD RX 7800 XT (driver 25.12.1.251128) · Windows 10 amd64 · render distance 8 · VSync off · `maxFps:260` (= unlimited) · shaders off · identical `options.txt` (sha256 `AC506701…`) · seed 27182 | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 | [report.md](benchmarks/2026-10-05-fps-benchmark/A-vanilla-baseline/report.md) |
+| **C** | OptiFabric + OptiFine only | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` | *(same)* | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 | [report.md](benchmarks/2026-10-05-fps-benchmark/C-OptiFabric-OptiFine/report.md) |
+| **D** | the recommended set | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` | *(same)* | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | **319** | **747** | [report.md](benchmarks/2026-10-05-fps-benchmark/D-OptiFabric-OptiFine-LiFeC2ME/report.md) |
+| **B** | Sodium route (not compatible with OptiFine) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` | *(same)* | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 | [report.md](benchmarks/2026-10-05-fps-benchmark/B-Sodium-Lithium/report.md) |
+
+- **C averages 38.8% above the vanilla baseline** and its worst frame is 5× better (3.31 ms vs 17.21 ms) — the compatibility layer is a net gain, not a tax.
+- **B (Sodium) is fastest on average (~13% over C) but has the worst tail**: 0.1% low 349 vs 713, worst frame 12.47 ms vs 3.31 ms.
+
+### Full suite — 41 tests, all four configurations
+
+Same machine and settings; category averages as **average FPS / 1% low** (raw reports under [`benchmarks/`](benchmarks/2026-10-05-fps-benchmark/)):
+
+| category (tests) | A vanilla | B Sodium + Lithium | C OptiFabric + OptiFine | D = C + Lithium + FerriteCore + C2ME |
+|---|---|---|---|---|
+| idle / static (2) | 4579 / 1278 | **5961** / 1712 | 5388 / 1529 | 5670 / 1686 |
+| flyby, 12 biomes (12) | 2606 / 288 | **5254** / 649 | 4220 / 461 | 4382 / **777** |
+| entities (8) | 1496 / 537 | **1861** / 681 | 1595 / 587 | 1626 / 638 |
+| physics (6) | 3066 / 602 | **4040** / 924 | 3915 / 785 | 3979 / 901 |
+| redstone / block entities (5) | 3935 / 1078 | **5537** / 1523 | 4898 / 1369 | 5004 / 1404 |
+| particles (2) | 1972 / 523 | 2634 / 510 | 2331 / 669 | **2670** / **770** |
+
+- **The vanilla baseline is last in all six categories**, and **D is at or above C in almost every one** with clearly better tails (flyby 1% low 777 vs 461, particles 770 vs 669) — so Lithium / FerriteCore / C2ME *do* earn their keep in real scenarios, while the still *Base* scene above cannot show it.
+- **Particle diversity is the one scenario no mod set fixes**: all four land between 437 and 495 fps. That bottleneck is not ours.
+
+*One machine, one run per group, one benchmark, resolution not forced. Treat these numbers as an indication, not a specification — yours will differ.*
 
 ## 📊 Verified State
 
-Every release is checked by a single command, and the numbers below were produced for `1.1.2` (one run per Minecraft version):
+Every release is checked by one command per Minecraft version:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-version.ps1 -Version 1.21.10 -ModVersion 1.1.2
 ```
 
-| Minecraft | Patched game classes (JVM) | OptiFine classes (JVM) | ASM verifier | `@At` / refmap / contracts / handles | Live test |
-|---|---|---|---|---|---|
-| 1.21.3 | 440 / 440 | 816 / 816 | 0 problems | 2 / 0 / 0 / 0 | anti-aliasing + shaders, no errors |
-| 1.21.4 | 474 / 474 | 812 / 812 | 0 problems | 2 / 0 / 0 / 0 | no errors |
-| 1.21.6 | 487 / 487 | 820 / 820 | 0 problems | 4 / 0 / 0 / 0 | starts and plays; shaders crash (OptiFine's own build) |
-| 1.21.7 | 500 / 500 | 823 / 823 | 0 problems | 4 / 0 / 0 / 0 | same |
-| 1.21.8 | 516 / 516 | 831 / 831 | 0 problems | 4 / 0 / 0 / 0 | no errors, anti-aliasing checked by eye |
-| 1.21.9 | 519 / 519 | 832 / 832 | 0 problems | 4 / 0 / 0 / 0 | no errors |
-| 1.21.10 | 553 / 553 | 836 / 836 | 0 problems | 4 / 0 / 0 / 0 | no errors, no black screen |
-| 1.21.11 | 570 / 570 | 874 / 874 | 0 problems | 4 / 0 / 0 / 0 | no errors, anti-aliasing checked by eye |
-
-The remaining `@At` misses are all **deliberately disabled** Indigo injections, and the class counts are taken in a single loader, the same way the game loads them.
+It loads every patched game class and every OptiFine class in a single loader, runs the JVM verifier plus an ASM data-flow verifier, and fails on any `@At` / refmap / contract / handle problem. The per-version numbers are recorded in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) and [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md); the only remaining `@At` misses are **deliberately disabled** Indigo injections.
 
 **Known gaps:**
 
-1. **No development-environment support** — dev runs in the `named` namespace and would need a two-stage remapping plus upstream's contextual-mapping fixes
+1. **No development-environment support** — dev runs in the `named` namespace and would need a two-stage remapping plus upstream's contextual-mapping fixes (`gradlew runClient` is refused outright)
 2. **The two neutralised hooks are placeholders**, not working implementations (`Renderer.get()` returns an inert renderer)
 3. **1.21.6 / 1.21.7 shaders** — waiting either for a new OptiFine build or for wiring up the already-written `GpuTextureLinkFix`
+
+## 🔨 Building from Source
+
+**JDK 21+** is required, and the repository root *is* the Gradle project — the target release comes from `-Pmc` (or from `gradle.properties` when omitted):
+
+```bash
+./gradlew build "-Pmc=1.21.11"                            # quotes matter in PowerShell: 1.21.11 is split otherwise
+./gradlew build "-Pmc=1.21.8" "-Pmod_version_base=2.1.0"  # only when that jar's version differs from the base
+```
+
+The jars land in `build/libs/`. Version numbers only ever change through one script:
+
+```powershell
+.\release\version.ps1                                      # show the current version of the line
+.\release\version.ps1 -Mc 1.21.8 -Kind patch                # bump one jar, and only that jar
+```
+
+## 📋 Requirements
+
+| | |
+|---|---|
+| Minecraft | 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, 1.21.11 |
+| Fabric Loader | ≥ 0.19.5 |
+| Java | 21+ (tested on 25) |
+| Side | client |
+| OptiFine | your own build, **exact version match** (table above) |
+| Fabric API | optional — tested with the release matching your Minecraft version |
 
 ## 📝 Project Structure
 
@@ -305,27 +241,20 @@ OptiFabric/
 │   └── util/                        # ASM / mixin / remap / zip helpers
 ├── src/main/resources/              # fabric.mod.json, optifabric.mixins.json, assets/…/icon.png
 ├── COMPATIBILITY.md                 # the full per-mod compatibility list (MC 1.21.1)
-├── docs/                            # DEVELOPMENT.md, COMPATIBILITY.md (+ _CN), compatibility/ (the 1.21.1 sweep), …
+├── docs/                            # DEVELOPMENT.md, COMPATIBILITY.md (+ _CN), compatibility/, …
 ├── release/                         # version.ps1, publish.ps1, notes/, MANUAL_RELEASE.md
-├── build.gradle · gradle.properties · settings.gradle
-└── gradlew · gradlew.bat
+└── build.gradle · gradle.properties · settings.gradle · gradlew(.bat)
 ```
-
-## 🔐 License
-
-**MPL-2.0** — see [`LICENSE.txt`](LICENSE.txt). The core mechanism is a port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric); ported files keep their origin headers. OptiFine itself is **not** included or redistributed — it is sp614x's work, get it from [optifine.net](https://optifine.net/).
 
 ## 🙋 Support
 
-- **Nothing changed after upgrading?** Delete `<game dir>/.optifine/` — the cache holds patched bytecode, and the cache format (`26`) rebuilds it automatically otherwise.
-- `[OptiFabric]`'s output goes to the **launcher console**, not to `logs/latest.log`; filtering for `[OptiFabric]` shows how many classes were prepared and how many Loader took over.
-- The title screen shows an error dialog for a missing/corrupt/duplicated/mismatched OptiFine jar, and the crash report gains an `OptiFabric` section (OptiFine version, jar state, mapped-jar path).
+- **Nothing changed after upgrading?** Delete `<game dir>/.optifine/` — the cache holds patched bytecode and is rebuilt automatically (the format version also invalidates it).
+- `[OptiFabric]`'s output goes to the **launcher console**, not `logs/latest.log`; filtering for `[OptiFabric]` shows how many classes were prepared and how many Loader took over.
+- The title screen shows a dialog for a missing/corrupt/duplicated/mismatched OptiFine jar, and the crash report gains an `OptiFabric` section (OptiFine version, jar state, mapped-jar path).
 - Point the mod at a specific vanilla jar with `-Doptifabric.mc-jar=<path>`; unpack the remapped OptiFine classes with `-Doptifabric.extract=true`.
-- **Models/items/textures disappearing wholesale** (log full of `Unable to bake … model`): a Fabric mixin failed to transform that class (the outermost message usually hides the real cause). OptiFine loves turning vanilla methods into thin wrappers that forward to its own overloads, which moves injection points with them.
-- **Stuck on the loading screen:** take two thread dumps (`jstack <pid>`, ~15 s apart) and compare. Identical stacks with flat CPU means a real stall; a stack sitting in a native call (`glfwSwapBuffers`) is a presentation problem — and do not minimise the window while loading (with vsync on, the render thread blocks in `SwapBuffers`).
-- **`NoClassDefFoundError: Could not initialize class net.optifine.reflect.Reflector`** (or the game dying during startup with no crash report at all): OptiFine's crash reporter reads its own version through `Reflector`, that read loads a game class, and the class can no longer finish loading because another mod's mixin failed to apply to a class OptiFine patches. `logs/latest.log` names the class but never the mod.
-- **To find the mod:** add `-Dmixin.debug=true` to the JVM arguments (launcher settings → Java/JVM arguments, or the instance's advanced settings) and run again — Mixin only prints the failing mod in debug mode. The log then shows `Mixin apply for mod <mod> failed … -> net.minecraft.class_<n>`, usually followed by the exact injection error.
-- **The fix** is to remove the mod Mixin names, or to run without OptiFine. This is a conflict between OptiFine's own class patches and that mod's injection, and three families are known: mods that capture or modify a method's local variables or arguments inside a class OptiFine rewrites, mods that expect an exact number of call sites in such a method, and — not fixable from OptiFabric's side — mods that inject *at a call site* OptiFine replaced with one of its own (it swaps vanilla `ParticleManager.method_3049` calls for `ParticleManager.render`, for example), which leaves the injection with zero points and needs the mod author to relax or retarget it. Nothing in `latest.log` without the flag points at the culprit, so do not guess from the stack trace — it ends at OptiFine's `Reflector`. Known cases on 1.21.1: `CarryOn` 2.2.6.13 (injects at a `ParticleManager` call site OptiFine replaced) and `ShoulderSurfing` 5.2.0 (expects an exact call-site count in `Camera`) cannot be fixed from here, while `SophisticatedCore`'s `ParticleEngineMixin` is fixed in this build (its target method was folded into a lambda). `EntityCulling` was suspected but cleared — removing it changed nothing.
+- **Models/items/textures disappearing wholesale** (log full of `Unable to bake … model`): a Fabric mixin failed to transform that class — the outermost message usually hides the real cause.
+- **`NoClassDefFoundError: Could not initialize class net.optifine.reflect.Reflector`** (or the game dying during startup with no crash report): another mod's mixin failed to apply to a class OptiFine patches, and OptiFine's crash reporter trips over the result. Add `-Dmixin.debug=true` to the JVM arguments and run again — Mixin only names the failing mod in debug mode (`Mixin apply for mod <mod> failed … -> net.minecraft.class_<n>`). **The fix** is to remove that mod or run without OptiFine; it is a conflict between OptiFine's class patches and that mod's injection, and it cannot be fixed from OptiFabric's side. Known cases on 1.21.1: `CarryOn` 2.2.6.13 and `ShoulderSurfing` 5.2.0 cannot be fixed from here, while `SophisticatedCore`'s `ParticleEngineMixin` is fixed in this build. `EntityCulling` was suspected but cleared.
+- **Stuck on the loading screen:** take two thread dumps (`jstack <pid>`, ~15 s apart) and compare. Identical stacks with flat CPU means a real stall; a stack sitting in `glfwSwapBuffers` is a presentation problem — and do not minimise the window while loading (with vsync on, the render thread blocks there).
 
 Log lines that are normal and can be ignored:
 
@@ -340,22 +269,11 @@ Log lines that are normal and can be ignored:
 
 ### Known issue: Litematica schematics + a shader pack floods the log with OpenGL 1282
 
-With a shader pack enabled and a Litematica schematic being rendered, OptiFine logs thousands of:
+With a shader pack enabled and a Litematica schematic being rendered, OptiFine logs thousands of `[Shaders] OpenGL error: 1282 (Invalid operation), program: gbuffers_terrain, at: pre-useProgram`. The failing call is **Litematica's own** (`WorldRendererSchematic.renderBlockLayer` uploads the vanilla `ShaderProgram.chunkOffset` uniform, which is invalid while OptiFine's program is bound); OptiFine only **reports** it, because `Shaders.useProgram` starts with `checkGLError("pre-useProgram")`. Workarounds: disable the shader pack, or stop rendering the schematic. Nothing in OptiFabric can fix it.
 
-```
-[Shaders] OpenGL error: 1282 (Invalid operation), program: gbuffers_terrain, at: pre-useProgram
-```
+## 🔐 License
 
-What was actually shown:
-
-- The failing call is **Litematica's own** — `WorldRendererSchematic.renderBlockLayer` uploads the vanilla
-  `ShaderProgram.chunkOffset` uniform, which is invalid while OptiFine's own program is bound.
-- OptiFine only **reports** it: `Shaders.useProgram` starts with `checkGLError("pre-useProgram")`, so it attributes the
-  pending GL error to the program it is about to bind.
-- `litematica-printer`, Xaero's mods and OptiLithium were each checked and shown **not** to be involved.
-
-Workarounds: disable the shader pack, or stop rendering the schematic. Nothing in OptiFabric can fix it — the invalid
-call is not made by this mod, and OptiFine's error check is its own.
+**MPL-2.0** — see [`LICENSE.txt`](LICENSE.txt). The core mechanism is a port of [Chocohead/OptiFabric](https://github.com/Chocohead/OptiFabric); ported files keep their origin headers. OptiFine itself is **not** included or redistributed — it is sp614x's work, get it from [optifine.net](https://optifine.net/).
 
 ## 🌟 Credits
 
