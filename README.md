@@ -2,30 +2,25 @@
 
 #!!!此模组由deepseek编写并验证请小心用于生产环境!!!#
 
-在 Fabric Loader 下加载 **OptiFine** 的客户端模组。把 OptiFine 的 jar 和本模组一起放进 `mods/`,启动时 OptiFabric 会用 OptiFine 自带的补丁器给原版客户端打补丁、重建被搬走的 lambda、把 OptiFine 从官方混淆名重映射到 intermediary,并把打过补丁的 Minecraft 类交给 Fabric Loader 的类转换器接管,从而让两者共存。
+在 Fabric Loader 下加载 **OptiFine** 的客户端模组。把 OptiFine 的 jar 和本模组一起放进 `mods/`,启动时 OptiFabric 会用 OptiFine 自带的补丁器给原版客户端打补丁、重建被搬走的 lambda、把 OptiFine 从官方混淆名重映射到 intermediary,并把打过补丁的 Minecraft 类交给 Fabric Loader 的类转换器接管,从而让两者共存。**不包含、也不分发 OptiFine 本体。**
 
-本分支是 **1.20.6 线**。更新的版本(1.21.x、26.x)在各自的分支上独立开发,各线的 jar 不能互相替代。
-完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。The full MC 1.21.1 compatibility list is in [`COMPATIBILITY.md`](COMPATIBILITY.md).
+本分支是 **1.20.6 线**的 `wip/1.20.6-reforged`,发布的是**替代产物** `OptiFabric-Reforged-<版本>-reforged+mc1.20.6.jar`(mod id `optifabric_reforged`)。同一仓库里 1.20.6 的**已发布主线产物**(mod id `optifabric`,`main` 分支)、以及更新的 1.21.x / 26.x 线都在各自的分支上;各线的 jar **不能互相替代**。
+
+**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `1.1.5-reforged`
 
 ## 支持的版本
 
 | Minecraft | 产物 | OptiFine 构建 | Java |
 |---|---|---|---|
-| 1.20.6 | `OptiFabric-1.1.3+mc1.20.6.jar` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
-| 1.20.6 | `OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar`(`wip/1.20.6-reforged` 分支) | 同上 | 21 |
+| 1.20.6 | `OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar`(**本分支**) | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
+| 1.20.6 | `OptiFabric-1.1.3+mc1.20.6.jar`(`main` 分支的已发布主线产物) | 同上 | 21 |
 
-- mod id `optifabric`,仅客户端,要求 **Fabric Loader ≥ 0.19.3**。
-- 表里第二行是**替代产物**:mod id 是 `optifabric_reforged`,给「别的模组的元数据里拒绝 `optifabric`、因而拒绝本模组」的组合用 ——
-  1.20.6 上就是 **c2me**。它和已发布的那一个**只能装一个**(两者对加载器来说是两个模组,加载器不会替你拦住);
-  适用人群、代价与实测见 [`docs/REFORGED_BUILD.md`](docs/REFORGED_BUILD.md)。
+- 本分支产物 mod id 是 `optifabric_reforged`,仅客户端,要求 **Fabric Loader ≥ 0.19.3**。
+- **两个 1.20.6 产物只能装一个**:对加载器来说它们是两个模组,加载器不会替你拦住。替代产物的用途是绕开「别的模组在元数据里拒绝 `optifabric`」——
+  1.20.6 上就是 **c2me**。适用场景、代价与实测见 [`docs/REFORGED_BUILD.md`](docs/REFORGED_BUILD.md)。
 - 一个 jar 只对应一个版本:jar 里打包着该版本的 `official → intermediary` 映射表(混淆名每版不同,用错版本会把 OptiFine 重映射坏),`fabric.mod.json` 里的 `minecraft` 依赖也精确到该版本。
-- 1.20.6 的 OptiFine **只有 preview 构建**,下载后直接丢进 `mods/` 即可(它是安装器形态,OptiFabric 会自己运行 `optifine.Patcher`)。请到 OptiFine 官网 <https://optifine.net/downloads> 的 **Minecraft 1.20.6** 一节里自己取:`preview_OptiFine_1.20.6_HD_U_J1_pre18.jar`(2024-09-27,J1_pre18)它是该版本最新的构建。本模组**不携带、也不指向任何第三方镜像**:它只会从 OptiFine 官网下载,失败时也只告诉你原因并让你去官网手动下载。
-- 离线字节码校验 **425 / 425 通过**、ASM 数据流验证器 0 问题;真机验证:进入主界面、单人存档、多人服务器、模型与区块渲染、光影生效。
-
-表里这一列是该 MC 版本**最新的正式版** OptiFine;若该版本官方还没有正式版,则用**最新的预览版**代替。
-1.20.6 就是后者:OptiFine 为它发布过 `HD_U_I9_pre1`(2024-06-06)、`HD_U_J1_pre17`(2024-09-25)、`HD_U_J1_pre18`(2024-09-27)
-三个构建,全是预览版,没有正式版,所以最新那个 `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` 就是建议项(也是下载按钮会取的那个)。
-同一 MC 版本的其它构建同样可用 —— 游戏内提示只在你 mods/ 里的 jar 是**预览版**、且比表里这个更旧时才会出现(你已经装了正式版就不会被打扰,哪怕有更新的正式版)。
+- 1.20.6 的 OptiFine **只有 preview 构建**(`HD_U_I9_pre1`、`HD_U_J1_pre17`、`HD_U_J1_pre18`,没有正式版),所以建议项就是最新的 `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar`。请到 OptiFine 官网 <https://optifine.net/downloads> 的 **Minecraft 1.20.6** 一节自取;它是安装器形态(含 `patch/` 差分包),直接丢进 `mods/` 即可,OptiFabric 会自己运行 `optifine.Patcher`。本模组**不携带、也不指向任何第三方镜像**。
+- 同一 MC 版本的其它构建同样可用 —— 游戏内提示只在你 `mods/` 里的 jar 是**预览版**、且比表里这个更旧时才会出现(已经装了正式版就不会被打扰,哪怕之后有更新的正式版)。
 
 ### OptiFabric 版本 → Minecraft 版本 → 需要的 OptiFine 构建
 
@@ -33,58 +28,33 @@
 
 | OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 |
 |---|---|---|
-| `1.1.3+mc1.20.6` | 1.20.6 | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` |
+| `1.1.5-reforged+mc1.20.6` | 1.20.6 | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` |
 
-当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是弹出一个界面告诉你缺哪个文件:
-上面有「下载 OptiFine」按钮,从 OptiFine **官网**(`optifine.net`,也是本模组唯一会去下载的地方)取回它,旁边就是打开 mods 文件夹;
-按钮上方的地址栏可以换成你自己的地址,那样就只从你填的地方取。
+当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是在标题界面弹出**这个模组唯一的那一个对话框**,告诉你缺哪个文件、mods 文件夹在哪。
 
 两种提示的行为:
 
-- **mods/ 里完全没有 OptiFine**:每次启动都会提示;点「继续返回主菜单」只是这次会话不再出现,它不会被记住,下次启动还会提示。
+- **mods/ 里完全没有 OptiFine**:每次启动都会提示;点「继续返回主菜单」只是这次会话不再出现,它不会被记住。
 - **装的是更旧的预览版**(比如 `HD_U_I9_pre1`、`HD_U_J1_pre17`):提示会建议换成最新的那个,点「仍要继续」后把该构建记到 `config/optifabric-mismatch-ack.txt`,同一个构建不再重复提示。
 - **装的是正式版**(或比表里更新的构建):不提示 —— 只有预览版才值得为它打断你。
 
-下载下来的 jar 会先校验(`PK` 归档 + OptiFine 自己的 `Config.class`),再按官方文件名原子写入 `mods/`,然后弹出确认框问是否立即重启;
-Windows 上「立即重启」走 JNA 的 `GetCommandLineW` + `CreateProcessW`(路径里有空格时 `ProcessHandle` 读不回自己的命令行),其它系统走 `ProcessHandle`,两条路都会在启动新进程后结束当前进程。
-下载失败时界面只显示具体原因 + 「打开官网下载页」+「重新检查」,**不会**换一个源重试。
+> **两个产物的差别只在两处能力**:本条线的**商店产物**(本分支与 `main` 分支的都是)在 1.1.4 起**不含任何运行时下载**,也不会启动进程;只有 GitHub 上另发的 **`-full` 便利版**保留「从 optifine.net 自动下载 OptiFine」与随之而来的重启按钮。装上商店产物时,OptiFine 由你自己下好放进 `mods/`。
 
 ## 安装
 
 1. 准备与本版本**严格一致**的 OptiFine(1.20.6)。OptiFabric 会读取 jar 内 `optifine/Config` 的 `MC_VERSION` 做校验,不一致会直接在标题界面报错。安装器形态(含 `patch/` 差分包)与解包形态(含 `notch/<混淆名>.class`)都支持,直接丢进 `mods/` 即可,**不需要**先运行 OptiFine 安装器。
-2. 把本模组的 jar 与 OptiFine 的 jar 一起放进该 Fabric 版本自己的 `mods/` 目录。不要放两份 OptiFine(会报 `DUPLICATED`)。
+2. 把本模组的 jar 与 OptiFine 的 jar 一起放进该 Fabric 版本自己的 `mods/` 目录。不要放两份 OptiFine(会报 `DUPLICATED`),也不要把另一个 1.20.6 产物一起放进去。
 
 <!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
      assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
 > **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
 > **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
-> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> start the game once by hand.
+> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder; then start the game once by hand.
 >
-> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _or_ Fabric**,不能两个都要:
+> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _或_ Fabric**,不能两个都要:
 > 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
 > 文件夹;然后手动启动一次游戏。
 
-<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
-     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
-> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
-> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
-> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> start the game once by hand.
->
-> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _或_ Fabric**,不能两个都要:
-> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹;然后手动启动一次游戏。
-<!-- launcher-independent install: the launcher may only offer OptiFine OR Fabric, so OptiFabric cannot
-     assume the launcher installs OptiFine for the user. Kept identical on both build variants. -->
-> **OptiFabric cannot assume your launcher installs OptiFine for you**, because many launchers only offer
-> **OptiFine _or_ Fabric** as the profile, never both: install **Fabric + OptiFabric** first; download
-> OptiFine from <https://optifine.net/downloads>; put that jar in the `mods` folder (or paste its path into
-> start the game once by hand.
->
-> **OptiFabric 不能假设启动器会替你装 OptiFine**,因为很多启动器只能选 **OptiFine _或_ Fabric**,不能两个都要:
-> 先装好 **Fabric + OptiFabric**;到 <https://optifine.net/downloads> 下载 OptiFine;把那个 jar 放进 `mods`
-> 文件夹;然后手动启动一次游戏。
 3. 用 **Fabric 版本**启动,不要用启动器注入 OptiFine 的 `1.20.6-OptiFine_xxx` 版本(那个是启动器在启动时注入 OptiFine,会与本模组重复)。
 4. 首次启动会明显变慢(要跑完整的补丁与重映射流程),之后走缓存。标题界面出现 OptiFine 版本号、视频设置里出现 OptiFine 选项即表示成功。
 
@@ -96,7 +66,7 @@ Windows 上「立即重启」走 JNA 的 `GetCommandLineW` + `CreateProcessW`(�
 .\gradlew build
 ```
 
-产物为 `build/libs/OptiFabric-1.1.3+mc1.20.6.jar`。
+产物为 `build/libs/OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar`。
 
 开发环境不受支持:`gradlew runClient` 会被明确拒绝,因为开发环境的命名空间是 `named`,需要额外的 contextual mapping 层。
 
@@ -134,7 +104,7 @@ mods/<OptiFine>.jar
 ## 已知限制
 
 - **与 Sodium 不兼容**:两者都是渲染器,`fabric.mod.json` 已声明 `conflicts` 与 `breaks`。`no_fog`、`thallium`、`xradiation`、`ryoamiclights` 同样声明为不兼容。完整清单、这些条目的来源,以及加载器到底会不会拦,见下面「[声明的不兼容](#声明的不兼容以及加载器会不会拦)」。
-- **c2me 在 1.20.6 上装不进这个产物**:c2me 自己的元数据写着 `breaks: { "optifabric": "*" }`,而加载器**会执行 `breaks`**,于是游戏在**模组解析阶段**就被硬拒载(`NEG_HARD_DEP c2me … {breaks optifabric @ [*]}`),连一个类都不会加载 —— **本模组这边没有任何代码或配置能绕开它**。要用 c2me 只能装替代产物(`wip/1.20.6-reforged` 分支的 `optifabric_reforged`);即便那样,c2me 的线程化世界生成(`c2me-threading-worldgen`)也与 OptiFine 改过的 `class_3898` 不兼容,替代产物自带一个兼容处理在启动时把那一项关掉。实测、代价与两个必须知道的坑见 [`docs/FAQ.md`](docs/FAQ.md) 第四节。
+- **c2me 在 1.20.6 上装不进 `main` 那个产物**:c2me 自己的元数据写着 `breaks: { "optifabric": "*" }`,而加载器**会执行 `breaks`**,于是游戏在**模组解析阶段**就被硬拒载(`NEG_HARD_DEP c2me … {breaks optifabric @ [*]}`),连一个类都不会加载 —— **本模组这边没有任何代码或配置能绕开它**。要用 c2me 只能装**本分支的替代产物**(`optifabric_reforged`):那条声明按 id 匹配,因此不会命中;即便那样,c2me 的线程化世界生成(`c2me-threading-worldgen`)也与 OptiFine 改过的 `class_3898` 不兼容,替代产物自带一个兼容处理,在启动时把那一项关掉。**自 1.1.4 起该处理不再自动重启游戏**,而是打印双语指引并以退出码 0 结束本次启动,让你手动再启动一次(第二次启动读到 `enabled = false`,正常进世界)。实测、代价与两个必须知道的坑见 [`docs/FAQ.md`](docs/FAQ.md) 第四节。
 - **RyoamicLights 的具体冲突**:OptiFine 把原版视频设置界面(`class_446`)**整类替换成自己的实现,连父类都换掉**,而 RyoamicLights 的 mixin 注入在原版父类上,于是变换失败(`Delegate constructor lookup failed`)。这是 OptiFine 自身的行为,不是补丁造成的。删掉它不会损失功能 —— OptiFine 自带动态光源(视频设置 → 品质 → 动态光源)。更一般地,凡是往 OptiFine 整类替换的界面类里注入的模组都可能同样失败。
 - **OptiFine 看不到 Fabric 模组内部的资源**:日志里会出现成片的 `[OptiFine] Unknown resource pack type: ...ModNioResourcePack`,属于 OptiFine 侧的限制,不影响启动与运行。
 - **光影包与 OptiFine 版本不匹配时会报 `[Shaders] Invalid program name: ...`**(例如 Photon 的 `dh_water`、`gbuffers_particles*`),属于光影包自身问题。
@@ -142,7 +112,7 @@ mods/<OptiFine>.jar
 
 ### 声明的不兼容,以及加载器会不会拦
 
-本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。`1.1.3` 产物声明的是:
+本模组声明的不兼容只写在 `fabric.mod.json` 里,**别的地方(包括任何界面)都看不到**,所以这里把它写成文字。本分支的产物声明的是:
 
 | 声明 | 条目 |
 |---|---|
@@ -168,14 +138,14 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
   ```
 
   整个实例连 `Loading <N> mods:` 都没到,没有类被加载过。**所以"装了会被拦住"对 `breaks` 是准确的** —— 拦住你的是加载器,不是本模组。
-- **`conflicts` 只是警告。** `2.2.1` 那份产物只声明了 `conflicts: sodium`,在 1.21.x 线上实测时 sodium 照常加载:它应用自己的 mixin、然后**在 mixin 里**失败(见 `compat-matrix\README.md` §10.10);同一份产物在 `sodium` 在场的那次运行里**没有** `Incompatible mods found`。
+- **`conflicts` 只是警告。** `2.2.1` 那份产物只声明了 `conflicts: sodium`,在 1.21.x 线上实测时 sodium 照常加载:它应用自己的 mixin、然后**在 mixin 里**失败;同一份产物在 `sodium` 在场的那次运行里**没有** `Incompatible mods found`。
 
-所以这张表要分两半读:`breaks` 里的条目是**闸门**(装了会被加载器拒载),`conflicts` 里的条目是**声明**(加载器只警告)。本线的 mod id 仍是 `optifabric`,而 Sodium 自己那份元数据里针对的也正是 `optifabric`(Sodium 只在 `breaks` 里声明它,没有 `conflicts`)—— 所以在 id 这一层上,两个 `breaks` 声明会**同时**生效(都记在日志的 `Immediate reason` 里;没有做"只留一条"的对照)。Sodium 1.20.6 构建里那条声明覆盖的确切版本范围,本仓库没有实测记录。
+所以这张表要分两半读:`breaks` 里的条目是**闸门**(装了会被加载器拒载),`conflicts` 里的条目是**声明**(加载器只警告)。`main` 那条线的 mod id 是 `optifabric`,而 Sodium 自己那份元数据里针对的也正是 `optifabric`(Sodium 只在 `breaks` 里声明它),所以在 `main` 产物上两个 `breaks` 声明会**同时**生效;**本分支的 `optifabric_reforged` 两边都不命中**。
 
-> **替代产物**:`wip/1.20.6-reforged` 分支出的 `optifabric_reforged` 版本,上面这些针对 `optifabric` 的声明**一条都不会命中**
+> **替代产物的意义**:本分支的 `optifabric_reforged` 让上面这些针对 `optifabric` 的声明**一条都不命中**
 > (包括 c2me 那条,这正是它的目的)。**1.1.3-reforged 起它自带 C2ME 兼容垫片**:装了 c2me 时,启动第一步会把 `config/c2me.toml`
 > 的 `[threadedWorldGen] enabled` 写成 `false`(只动这一个键,先备份成 `c2me.toml.optifabric-backup`),于是进世界 0 错误 ——
-> 代价是 c2me 的线程化世界生成被关掉;因为 c2me 读配置早于任何模组的 `preLaunch`,**装好后的第一次启动会自己重启一次游戏**。
+> 代价是 c2me 的线程化世界生成被关掉。**1.1.4 起这一步不再自动重启游戏**,而是打印指引并以退出码 0 结束本次启动。
 > 两个 1.20.6 产物**只能装一个**;代价、实测与开关(`-Doptifabric.noC2meCompat=true`)见 [`docs/REFORGED_BUILD.md`](docs/REFORGED_BUILD.md)。
 
 **Architectury**:上游声明它坏,architectury 自己的元数据也写着 `breaks: optifabric <1.13.0`。1.21.x 线在字节码层面修掉了它背后那个冲突(OptiFine 往 `GameRenderer.render` 中间插自己的局部变量,把 Mixin `LocalCapture` 交给处理器的槽位整体顶高,那边用 `LocalSlotLayoutFix` 把多出来的槽位挪到局部变量区末尾),并改名绕开了那条声明。**本线既没有那个 fixer,也没有做过对应的实测**,所以在这条线上 architectury 属于**未测**。
@@ -193,6 +163,20 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 `fabric-renderer-indigo`(Fabric API 自带的地形渲染器)与 OptiFine 只能有一个在场,本模组用 Fabric 自己的机制让 indigo 让位:`fabric.mod.json` 里声明 `"custom": {"fabric-renderer-api-v1:contains_renderer": true}`。这个键本来就是给"另一个渲染器"用的(Sodium 用同一个键),而 OptiFine 本身就是地形渲染器。indigo 会打印 `[Indigo] Different rendering plugin detected; not applying Indigo.`,F3 调试界面显示 `[Fabric] Active renderer: none (vanilla)`。
 
 - **代价**:依赖 FRAPI/indigo 的模组不再有 indigo 提供的自定义渲染(地形由 OptiFine 渲染)。
+
+## 校验状态
+
+离线字节码校验(**本分支 1.1.5**:解出 426 个补丁类,与 intermediary 客户端基线逐类比对,再逐个交给 JVM 的加载与链接校验)**426 / 426 通过、0 失败、0 跳过**;ASM 数据流校验 425 / 426,唯一一条报告是 `class_156` 上「预期 `Thread`、实际 `class_156$7`」,而 `javap` 显示该类**正是** `extends java.lang.Thread`、且 JVM 权威校验对它通过,属校验器的层级解析限制。
+
+真机验证:`1.1.5` 在干净实例(仅 Fabric API + 本产物 + OptiFine)里**到标题界面、0 条 `[ERROR]`、无 mixin/注入/校验错误**,并实测到两处针对 `class_778`(`BlockModelRenderer`)的修复在真实打补丁时触发:
+
+```
+[OptiFabric] Re-created the injection point net/minecraft/class_2680.method_26213()I in net/minecraft/class_778.method_3374(…)V
+[OptiFabric] Restored vanilla net/minecraft/class_778.method_23073(…)V so injections into it have a target
+```
+
+**未验证的一步**:那次实测**没有进存档**(本机没有 1.20.6 存档可用),所以"进世界"这一条本版**没有**实测记录。
+
 ## 常见日志信息
 
 下列输出不影响运行:
@@ -220,6 +204,7 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 1. 支持开发环境(dev 命名空间是 `named`,需要两段式重映射并补回上游的 contextual mapping 修正)。
 2. 把上游 `compat/**` 的按模组兼容搬回来(需要重写 early riser 机制)。
 3. 对着真实的 OptiFine 1.20.6 反编译产物,逐个核对 `patcher/fixes` 里硬编码的 intermediary id 与描述符。
+4. 给 1.20.6 找一个存档,把 `1.1.5` 的"进世界"那一步实测补齐。
 
 ## 许可与致谢
 
