@@ -157,12 +157,21 @@ mods/OptiFine_1.21.11_HD_U_J9.jar
 
 用第三方基准 **FPS Benchmark**(`fpstest-1.0.jar`,sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56`)测得:每组跑一次 3 分钟脚本化 *Base*(19 段运镜;固定种子 `27182`)。**逐帧原始报告**见 **[`benchmarks/2026-10-05-fps-benchmark/`](benchmarks/2026-10-05-fps-benchmark/)**。
 
-| 组 | 角色 | 模组(sha256 前 8) | 运行环境 —— 四组完全相同 | 平均 FPS | 1% low | 0.1% low | p99 帧 | 最大帧 | 最低帧 | 标准差 | 原始结果 |
-|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| **A** | 纯净基线 | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` | Minecraft 1.21.1 · Fabric Loader 0.19.5 · Java 22.0.2 · max heap 5836 MB · Intel i5-12600KF · AMD RX 7800 XT(驱动 25.12.1.251128)· Windows 10 amd64 · 视距 8 · VSync 关 · `maxFps:260`(等于"无限")· 光影关 · `options.txt` 四份逐字节相同(sha256 `AC506701…`)· 种子 27182 | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 | [report.md](benchmarks/2026-10-05-fps-benchmark/A-vanilla-baseline/report.md) |
-| **C** | 仅 OptiFabric + OptiFine | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` | *(同上)* | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 | [report.md](benchmarks/2026-10-05-fps-benchmark/C-OptiFabric-OptiFine/report.md) |
-| **D** | 推荐组合 | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` | *(同上)* | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | **319** | **747** | [report.md](benchmarks/2026-10-05-fps-benchmark/D-OptiFabric-OptiFine-LiFeC2ME/report.md) |
-| **B** | Sodium 路线(与 OptiFine 不兼容) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` | *(同上)* | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 | [report.md](benchmarks/2026-10-05-fps-benchmark/B-Sodium-Lithium/report.md) |
+**运行环境 —— 四组完全相同:** Minecraft 1.21.1 · Fabric Loader 0.19.5 · Java 22.0.2 · max heap 5836 MB · Intel i5-12600KF · AMD RX 7800 XT(驱动 25.12.1.251128)· Windows 10 amd64 · 视距 8 · VSync 关 · `maxFps:260`(等于"无限")· 光影关 · `options.txt` 四份逐字节相同(sha256 `AC506701…`)· 种子 27182
+
+| 组 | 角色 | 模组(sha256 前 8) |
+|---|---|---|
+| **A** | 纯净基线 | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` |
+| **C** | 仅 OptiFabric + OptiFine | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` |
+| **D** | 推荐组合 | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` |
+| **B** | Sodium 路线(与 OptiFine 不兼容) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` |
+
+| 组 | 平均 FPS | 1% low | 0.1% low | p99 帧 | 最大帧 | 最低帧 | 标准差 | 原始结果 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| **A** | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 | [report.md](benchmarks/2026-10-05-fps-benchmark/A-vanilla-baseline/report.md) |
+| **C** | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 | [report.md](benchmarks/2026-10-05-fps-benchmark/C-OptiFabric-OptiFine/report.md) |
+| **D** | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | **319** | **747** | [report.md](benchmarks/2026-10-05-fps-benchmark/D-OptiFabric-OptiFine-LiFeC2ME/report.md) |
+| **B** | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 | [report.md](benchmarks/2026-10-05-fps-benchmark/B-Sodium-Lithium/report.md) |
 
 - **C 平均比纯净基线高 38.8%**,最大帧时间还好 5 倍(3.31 ms vs 17.21 ms)—— 兼容层在这里是净收益而不是代价。
 - **B(Sodium)平均最快(比 C 高约 13%),但尾部最差**:0.1% low 349 vs 713、最大帧 12.47 ms vs 3.31 ms。

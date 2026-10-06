@@ -158,12 +158,21 @@ Intermediate files live in `<game dir>/.optifine/<OptiFine version>/`: `cache-fo
 
 Measured with the third-party **FPS Benchmark** mod (`fpstest-1.0.jar`, sha256 `F11681914771E01A4677DA5EF217195FF523B01E9C3F463BF9A298D7BCCB2C56`): one 3-minute scripted *Base* run per group (19 cinematic segments; deterministic seed `27182`). Raw per-frame reports: **[`benchmarks/2026-10-05-fps-benchmark/`](benchmarks/2026-10-05-fps-benchmark/)**.
 
-| group | role | mods (sha256 prefix) | environment — identical in all four runs | avg FPS | 1% low | 0.1% low | p99 frame | worst frame | lowest FPS | std dev | raw results |
-|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| **A** | vanilla baseline | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` | Minecraft 1.21.1 · Fabric Loader 0.19.5 · Java 22.0.2 · max heap 5836 MB · Intel i5-12600KF · AMD RX 7800 XT (driver 25.12.1.251128) · Windows 10 amd64 · render distance 8 · VSync off · `maxFps:260` (= unlimited) · shaders off · identical `options.txt` (sha256 `AC506701…`) · seed 27182 | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 | [report.md](benchmarks/2026-10-05-fps-benchmark/A-vanilla-baseline/report.md) |
-| **C** | OptiFabric + OptiFine only | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` | *(same)* | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 | [report.md](benchmarks/2026-10-05-fps-benchmark/C-OptiFabric-OptiFine/report.md) |
-| **D** | the recommended set | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` | *(same)* | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | **319** | **747** | [report.md](benchmarks/2026-10-05-fps-benchmark/D-OptiFabric-OptiFine-LiFeC2ME/report.md) |
-| **B** | Sodium route (not compatible with OptiFine) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` | *(same)* | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 | [report.md](benchmarks/2026-10-05-fps-benchmark/B-Sodium-Lithium/report.md) |
+**Environment — identical in all four runs:** Minecraft 1.21.1 · Fabric Loader 0.19.5 · Java 22.0.2 · max heap 5836 MB · Intel i5-12600KF · AMD RX 7800 XT (driver 25.12.1.251128) · Windows 10 amd64 · render distance 8 · VSync off · `maxFps:260` (= uncapped) · shaders off · identical `options.txt` (sha256 `AC506701…`) · seed 27182
+
+| group | role | mods (sha256 prefix) |
+|---|---|---|
+| **A** | vanilla baseline | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` |
+| **C** | OptiFabric + OptiFine only | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` |
+| **D** | the recommended set | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` |
+| **B** | Sodium route (not compatible with OptiFine) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` |
+
+| group | avg FPS | 1% low | 0.1% low | p99 frame | worst frame | lowest FPS | std dev | raw results |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| **A** | 3631 | 774 | 442 | 0.76 ms | 17.21 ms | 58.1 | 706 | [report.md](benchmarks/2026-10-05-fps-benchmark/A-vanilla-baseline/report.md) |
+| **C** | **5040** | **1098** | **713** | 0.58 ms | **3.31 ms** | 302 | 964 | [report.md](benchmarks/2026-10-05-fps-benchmark/C-OptiFabric-OptiFine/report.md) |
+| **D** | 4475 | 1077 | 721 | 0.63 ms | 3.14 ms | **319** | **747** | [report.md](benchmarks/2026-10-05-fps-benchmark/D-OptiFabric-OptiFine-LiFeC2ME/report.md) |
+| **B** | **5680** | 1017 | 349 | **0.50 ms** | 12.47 ms | 80.2 | 1177 | [report.md](benchmarks/2026-10-05-fps-benchmark/B-Sodium-Lithium/report.md) |
 
 - **C averages 38.8% above the vanilla baseline** and its worst frame is 5× better (3.31 ms vs 17.21 ms) — the compatibility layer is a net gain, not a tax.
 - **B (Sodium) is fastest on average (~13% over C) but has the worst tail**: 0.1% low 349 vs 713, worst frame 12.47 ms vs 3.31 ms.
