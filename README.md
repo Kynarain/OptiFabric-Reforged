@@ -257,6 +257,8 @@ OptiFabric/
 
 ## 🙋 Support
 
+**[`docs/FAQ.md`](docs/FAQ.md) answers 18 questions first** - the OptiFine dialog, why Sodium is refused, the Sodium family, Photon and the flicker, the `Invalid program name` and `prepare` log noise, the 1.21.6/1.21.7 shader crash, Sinytra Connector and Kilt, whether OptiFine is bundled or downloaded, and what to include in a report.
+
 - **Nothing changed after upgrading?** Delete `<game dir>/.optifine/` — the cache holds patched bytecode and is rebuilt automatically (the format version also invalidates it).
 - `[OptiFabric]`'s output goes to the **launcher console**, not `logs/latest.log`; filtering for `[OptiFabric]` shows how many classes were prepared and how many Loader took over.
 - The title screen shows a dialog for a missing/corrupt/duplicated/mismatched OptiFine jar, and the crash report gains an `OptiFabric` section (OptiFine version, jar state, mapped-jar path).

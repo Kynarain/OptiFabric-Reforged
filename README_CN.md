@@ -256,6 +256,8 @@ OptiFabric/
 
 ## 🙋 支持与排查
 
+**[`docs/FAQ_CN.md`](docs/FAQ_CN.md) 先回答了 18 个问题** —— OptiFine 对话框、为什么拒载 Sodium、Sodium 生态、Photon 与闪烁、`Invalid program name` 与 `prepare` 的日志噪音、1.21.6/1.21.7 的光影崩溃、信雅互联与 Kilt、是否打包或下载 OptiFine,以及报告问题时该附什么。
+
 - **升级后没有任何变化?** 删掉 `<游戏目录>/.optifine/` —— 缓存里是打过补丁的字节码,会自动重建(缓存格式号也会让它失效)。
 - `[OptiFabric]` 的输出走**启动器控制台**,不在 `logs/latest.log` 里;过滤 `[OptiFabric]` 能看到准备了多少个类、Loader 接管了多少个。
 - OptiFine 缺失 / 损坏 / 重复 / 版本不匹配时,标题界面会弹对话框,崩溃报告里会多出一节 `OptiFabric`(OptiFine 版本、jar 状态、mapped jar 路径)。
