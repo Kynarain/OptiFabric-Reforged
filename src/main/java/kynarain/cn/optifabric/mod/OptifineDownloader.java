@@ -181,12 +181,13 @@ public final class OptifineDownloader {
 
 	private static Payload fetchOne(String url, Progress progress) throws IOException {
 		URI uri = toUri(url);
+		requireHttps(uri);
 
 		if (!"http".equalsIgnoreCase(uri.getScheme()) && !"https".equalsIgnoreCase(uri.getScheme())) {
 			throw new IOException("only http and https sources are supported, not " + url);
 		}
 
-		if (url.contains("optifine.net")) {
+		if (isOfficial(uri)) {
 			progress.stage("page", url);
 			byte[] page = get(uri, progress);
 			String link = findDownloadLink(new String(page, StandardCharsets.ISO_8859_1));
@@ -216,6 +217,30 @@ public final class OptifineDownloader {
 		return new Payload(get(uri, progress), url);
 	}
 
+	private static final Set<String> OFFICIAL_HOSTS = Set.of("optifine.net", "www.optifine.net");
+
+	/**
+	 * Whether this URI is the official site. The host is compared exactly rather than searched for in the
+	 * string: {@code https://evil.example/?optifine.net} contains the name and is not the site, and it would
+	 * otherwise be handed the two-step flow, which means fetching a page of somebody else's choosing and
+	 * following the download link found on it.
+	 */
+	private static boolean isOfficial(URI uri) {
+		String host = uri.getHost();
+
+		return host != null && OFFICIAL_HOSTS.contains(host.toLowerCase(Locale.ROOT));
+	}
+
+	/**
+	 * Every request this mod makes goes over TLS. The download is not pinned to a digest, so a plain-http
+	 * source would be a way to hand the user a different jar than the one that was asked for.
+	 */
+	private static void requireHttps(URI uri) throws IOException {
+		if (!"https".equalsIgnoreCase(uri.getScheme())) {
+			throw new IOException("refusing " + uri + ": only https sources are supported");
+		}
+	}
+
 	private static URI toUri(String url) throws IOException {
 		try {
 			return new URI(url);
@@ -239,7 +264,8 @@ public final class OptifineDownloader {
 		return null;
 	}
 
-	private static byte[] get(URI uri, Progress progress) throws IOException {
+		private static byte[] get(URI uri, Progress progress) throws IOException {
+		requireHttps(uri);
 		HttpRequest request = HttpRequest.newBuilder(uri)
 				.timeout(REQUEST_TIMEOUT)
 				.header("User-Agent", USER_AGENT)
