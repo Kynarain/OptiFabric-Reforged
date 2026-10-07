@@ -373,6 +373,17 @@ public class DelegatingConstructorFix implements ClassFixer {
 	}
 
 	/** The superclass constructor call, which is where injections are allowed to be instance methods. */
+	/**
+	 * The {@code super(...)} invocation of the given constructor: the first call to a constructor of the superclass.
+	 *
+	 * <p>Its limit, stated rather than hidden: a superclass instance built inside the super call's own argument list
+	 * ({@code super(new Something())}) produces a call whose owner is that same superclass, and telling it apart from
+	 * the real super call needs data flow, not a scan of the instruction list. The classes this fixer is registered
+	 * for are OptiFine's delegating constructors - {@code ShaderProgram} and its neighbours - whose super call takes
+	 * the game's own argument shapes, so the shape that would confuse this does not appear there. If the caller ever
+	 * meets it anyway, the wrong insertion point is a link error on the class, not a silently wrong value: the
+	 * inline() that calls this returns null when no super call is found at all.
+	 */
 	private static AbstractInsnNode findSuperCall(ClassNode owner, MethodNode method) {
 		for (AbstractInsnNode insn : method.instructions.toArray()) {
 			if (insn instanceof MethodInsnNode call && "<init>".equals(call.name) && call.owner.equals(owner.superName)) return insn;
