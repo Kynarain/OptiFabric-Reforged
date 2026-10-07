@@ -27,6 +27,8 @@
 | 1.1.4(仅 GitHub:`-full`) | `1.1.4+mc1.20.6` | `dist\OptiFabric-1.1.4+mc1.20.6-full.jar` | 734716 | `3424CB44B534448566BD2B8E015FAE6AD1724FFAAC7279F8346351DF20986104` | `CHANGELOG.md` 1.1.4 节 |
 | **1.1.6** | `1.1.6+mc1.20.6` / `v1.1.6+mc1.20.6` | `dist\OptiFabric-1.1.6+mc1.20.6.jar` | 718217 | `55A51F016718AEF1479348C0FA6D0AC375E739A6C69E95A10C05D293689815C9` | `CHANGELOG.md` 1.1.6 鑺?|
 | 1.1.6(仅 GitHub:`-full`) | `1.1.6+mc1.20.6` | `dist\OptiFabric-1.1.6+mc1.20.6-full.jar` | 736347 | `75F8FDD75BD86981CD02225863871853BDD968A643AA3FE67943C940AC41A0B6` | `CHANGELOG.md` 1.1.6 鑺?|
+| **1.1.7** | `1.1.7+mc1.20.6` / `v1.1.7+mc1.20.6` | `dist\OptiFabric-1.1.7+mc1.20.6.jar` | 718213 | `4C82EDF7FA633BE8FAE67B31C38004205F5FF407245D1EC726D0C8B2F639F84A` | CHANGELOG 1.1.7 |
+| 1.1.7(GitHub only: `-full`) | `1.1.7+mc1.20.6` | `dist\OptiFabric-1.1.7+mc1.20.6-full.jar` | 740383 | `478CD5BF0D2067CA7D615825C9C455A361B54F902583BEDB477908853BAC1399` | CHANGELOG 1.1.7 |
 
 `-sources.jar`(一般不发,留档用):
 
@@ -42,12 +44,27 @@
 **交叉核对(1.1.2)**:上表 1.1.2 的 SHA-256 与 `collision-1206\REPORT.md` 里记下的"已发布 1.1.2"
 (`0267DF7B…C85C0C`,729,105 B)逐字符相同,也与 `release-upload\1.20.6-1.1.2\` 里那一份相同 —— 三处一致。
 
-## 二、1.1.3 这一次要发的东西
+### 1.1.3 (historical)
 
 | | |
 |---|---|
 | 上传的 jar | `dist\OptiFabric-1.1.3+mc1.20.6.jar`(733,927 B,`7A657772…245010C`) |
 | 取件目录 | `C:\Users\kynar\IdeaProjects\OptiFabric\release-upload\1.20.6-1.1.3\`(jar + `-sources.jar` + `metadata\`) |
+
+## 二、1.1.7 这一次要发的东西
+
+| | |
+|---|---|
+| 上传的 jar | `dist\OptiFabric-1.1.7+mc1.20.6.jar`(718,213 B,`4C82EDF7…`) |
+| `-full` 变体 | 由 `convenience/1.20.6-1.1.7` 构建(740,383 B,`478CD5BF…`),与默认产物共用同一个 Release(仅 GitHub) |
+| 取件目录 | `I:\mods\release-upload\1.20.6-1.1.7\`(jar + `-full` + `-sources.jar` + `metadata\`) |
+| 标签 | `v1.1.7+mc1.20.6` |
+| Release 正文 | `CHANGELOG.md` 的 **1.1.7 节**(整节粘贴),另存于 `release\notes\1.1.7+mc1.20.6.md` |
+| Latest | **不勾** `make_latest`(Latest 归 26.x 线) |
+| 快照分支 | `store/1.20.6-1.1.7`(发布提交) |
+
+> 本页下方"### 1.1.3 那一次"是更早一次发行的记录,保留原样。
+
 | 元数据草稿 | [`release\tmp\modrinth-1.20.6.json`](tmp/modrinth-1.20.6.json)、[`release\tmp\curseforge-1.20.6.json`](tmp/curseforge-1.20.6.json) |
 | 标签 | `v1.1.3+mc1.20.6` |
 | Release 正文 | `CHANGELOG.md` 的 **1.1.3 节**(整节粘贴) |
