@@ -28,7 +28,7 @@
 | **1.1.5** | `1.1.5+mc1.20.6` / `v1.1.5+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar` | 729236 | `4BC7F967BA1E7F4F8947B050F1DD45303203DC1F1CFCACBD017FC23A406AD8DB` | `CHANGELOG.md` 1.1.5 节 |
 | 1.1.5(仅 GitHub:`-full`) | `1.1.5+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.5-reforged+mc1.20.6-full.jar` | 747246 | `D0DBCAB6B6FBFD403F491EE04D6A0D2189B6B95F68403378B581127669570610` | `CHANGELOG.md` 1.1.5 节 |
 | **1.1.6** | `1.1.6+mc1.20.6` / `v1.1.6-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar` | 732355 | `68802C8854BA4373CF3B3FBD30028FDBA1AFB59AF2EA4456A12A822C858795C9` | `CHANGELOG.md` 1.1.6 鑺?|
-| 1.1.6(仅 GitHub:`-full`) | `1.1.6+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.6-reforged+mc1.20.6-full.jar` | 749718 | `AA80CE1D5BEB65739A1BCA6C6161235CD8F39B6A01CF6EEE38D8F4820B482107` | `CHANGELOG.md` 1.1.6 节 |
+| 1.1.6(仅 GitHub:`-full`) | `1.1.6+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.6-reforged+mc1.20.6-full.jar` | 753968 | `0A6801D3819B538D57E32A4B5C4330F9E010B1210AF52C4A64CBE6B2374786A5` | `CHANGELOG.md` 1.1.6 节 |
 
 `-sources.jar`(一般不发,留档用):
 
@@ -56,7 +56,7 @@
 | Latest | **不勾** `make_latest`(Latest 归 26.x 线,当前是 `v2.2.8`) |
 | `-full` 变体 | 由 `convenience/1.20.6-reforged-1.1.6` 构建(749,718 B,`AA80CE1D…0B482107`),与默认产物共用同一个 Release(仅 GitHub) |
 | **1.1.7** | `1.1.7-reforged+mc1.20.6` / `v1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6.jar` | 732365 | `B21C47F758C4B381F68E120BD1F1A7878EAE696AB5B8C570DB3AAB3CBE9D9D26` | CHANGELOG 1.1.7 |
-| 1.1.7(GitHub only: `-full`) | `1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6-full.jar` | 752551 | `ABF0DF8AD6006225AA7AF74E6B88397AB47FE321CFB64295D64AB117776362B9` | CHANGELOG 1.1.7 |
+| 1.1.7(GitHub only: `-full`) | `1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6-full.jar` | 753969 | `704F0EFA6BBE1E327DA42ED6FB570A0DE0A2D9025FF412A479CAA7010FCB31C2` | CHANGELOG 1.1.7 |
 
 ## 三、核对命令(每次升版都跑一遍)
 
