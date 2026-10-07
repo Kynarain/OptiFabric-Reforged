@@ -63,3 +63,20 @@ the downloaded jar back, which is what the review meant by the -full 1.1.6 havin
 commits above (`e9d5e18` and its siblings) added only the table, because the step that was supposed to insert the
 call passed three arguments to a two argument method, and the message on them said otherwise; the follow-up
 commits wire the call and say so. Nothing here is in any published jar yet.
+
+## Correction (after the seven-round review)
+
+Two defects in the first implementation of this check, both found by the reviewer on the published jars:
+
+1. **The table was per repository, not per line.** The 1.21.x table was copied to every branch carrying the
+   downloader, so on the 26.x and 1.20.6 lines it named no build those lines can download - every download was
+   refused. Each line now generates its own table from the build names its own support table declares, and the
+   entries were computed from the real files. Verified in the rebuilt jars: each carries its line's own names.
+2. **The check ran after the jar had been written.** A refused download therefore stayed on disk, and the next
+   launch returned it as "already present" without any check passing - the hash never actually gated. The check
+   now runs before the write, and a jar already on disk has to match the recorded contents or it is removed and
+   fetched again.
+
+Both corrections are in every branch that carries the downloader, and the fourteen -full jars that had been
+published with the first implementation were rebuilt and re-uploaded; each was then pulled back from the release
+and compared byte for byte with the local build.
