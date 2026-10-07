@@ -67,6 +67,9 @@ configurations {
 // there is no second source tree to pull in.
 
 dependencies {
+    // ClassCache uses Validate from commons-lang3. Minecraft brings it in, but it is a compile-time
+    // dependency of this project in its own right, so it is named here instead of being inherited by accident.
+    compileOnly "org.apache.commons:commons-lang3:3.17.0"
     minecraft "com.mojang:minecraft:${targetMc}"
     mappings "net.fabricmc:yarn:${targetYarn}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
