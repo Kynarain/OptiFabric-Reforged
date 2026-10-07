@@ -32,6 +32,8 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
@@ -101,8 +103,16 @@ public class InjectionCallPointFix implements ClassFixer {
 				if (!method.name.equals(name)) continue;
 				if (hasCall(method)) continue; //OptiFine kept it: the mixin point is already there
 
-				int opcode = vanillaOpcode(minecraft, name);
-				List<AbstractInsnNode> arguments = opcode < 0 ? null : arguments(method, opcode);
+				MethodInsnNode call = vanillaCall(minecraft, name);
+				List<AbstractInsnNode> arguments = call == null ? null : argumentsFromVanilla(method, call, optifine.name);
+
+				if (arguments == null && call != null) {
+					System.out.println("[OptiFabric] The game's call to " + calleeOwner + '.' + calleeName + " in "
+							+ optifine.name + '.' + name + method.desc
+							+ " could not be reproduced from its own argument loads, matching this method's parameters by type instead");
+
+					arguments = arguments(method, call.getOpcode());
+				}
 
 				if (arguments == null) {
 					System.err.println("[OptiFabric] Cannot re-create the call to " + calleeOwner + '.' + calleeName
@@ -116,7 +126,7 @@ public class InjectionCallPointFix implements ClassFixer {
 
 				for (AbstractInsnNode insn : arguments) method.instructions.insertBefore(anchor, insn);
 
-				method.instructions.insertBefore(anchor, new MethodInsnNode(opcode, calleeOwner, calleeName, calleeDesc, false));
+				method.instructions.insertBefore(anchor, new MethodInsnNode(call.getOpcode(), calleeOwner, calleeName, calleeDesc, false));
 				// discard the result: the call exists for the injection point ...
 				method.instructions.insertBefore(anchor, new InsnNode(Type.getReturnType(calleeDesc).getSize() == 2
 						? Opcodes.POP2 : Type.getReturnType(calleeDesc).getSort() == Type.VOID ? Opcodes.NOP : Opcodes.POP));
@@ -130,9 +140,9 @@ public class InjectionCallPointFix implements ClassFixer {
 		}
 	}
 
-	/** Opcode of that call in the game's own version of the method, or -1 when it is not there either. */
-	private int vanillaOpcode(ClassNode minecraft, String methodName) {
-		if (minecraft == null) return -1;
+	/** The call in the game's own version of the method, or null when it is not there either. */
+	private MethodInsnNode vanillaCall(ClassNode minecraft, String methodName) {
+		if (minecraft == null) return null;
 
 		for (MethodNode method : minecraft.methods) {
 			if (!method.name.equals(methodName) || method.instructions == null) continue;
@@ -140,12 +150,12 @@ public class InjectionCallPointFix implements ClassFixer {
 			for (AbstractInsnNode insn : method.instructions.toArray()) {
 				if (insn instanceof MethodInsnNode call && call.owner.equals(calleeOwner)
 						&& call.name.equals(calleeName) && call.desc.equals(calleeDesc)) {
-					return call.getOpcode();
+					return call;
 				}
 			}
 		}
 
-		return -1;
+		return null;
 	}
 
 	private boolean hasCall(MethodNode method) {
@@ -162,9 +172,70 @@ public class InjectionCallPointFix implements ClassFixer {
 	}
 
 	/**
-	 * Loads for the call: the receiver for a virtual call, then the arguments, in order. Each one is either a
-	 * parameter of this method or the one configured static field. Null when one of them is neither - then the
-	 * call cannot be reconstructed safely and the class is left alone.
+	 * The argument loads the game's own call uses, read straight off the vanilla method.
+	 *
+	 * <p>This is the only way to tell a call that passed one parameter twice from one that passed two parameters
+	 * of the same type: matching by type cannot, and guessing wrong means calling the method with values it was
+	 * never given. It also recovers the receiver, which the type-based path can only find among the parameters.
+	 *
+	 * <p>Null when any of them is not something that can be reproduced faithfully - a parameter of the patched
+	 * method at that same slot and of that same type, {@code this} where the patched method is an instance
+	 * method, the configured static field, or a constant literal. Anything else (a field read off an object, a
+	 * nested call, an array load) means the patched method no longer holds that value in a slot, so this path
+	 * declines instead of inventing one.
+	 */
+	private List<AbstractInsnNode> argumentsFromVanilla(MethodNode method, MethodInsnNode call, String owner) {
+		List<Type> wanted = new ArrayList<>();
+
+		if (call.getOpcode() != Opcodes.INVOKESTATIC) wanted.add(Type.getObjectType(calleeOwner));
+
+		wanted.addAll(List.of(Type.getArgumentTypes(calleeDesc)));
+
+		//Walk backwards over exactly the instructions that pushed the receiver and the arguments.
+		List<AbstractInsnNode> loads = new ArrayList<>();
+		AbstractInsnNode insn = call.getPrevious();
+
+		for (int i = wanted.size() - 1; i >= 0; i--) {
+			//Labels, line numbers and frames are not values, and the game's own call is full of them.
+			while (insn != null && insn.getOpcode() < 0) insn = insn.getPrevious();
+
+			if (insn == null || producedSize(insn) != wanted.get(i).getSize()) return null;
+
+			//A copy, not the game's own node: the caller inserts what it is handed into the patched method,
+			//and an instruction cannot live in two lists at once - inserting the original would leave the
+			//vanilla method's list inconsistent (its size no longer matching its nodes).
+			loads.add(0, insn.clone(new java.util.HashMap<>()));
+			insn = insn.getPrevious();
+		}
+
+		for (int i = 0; i < loads.size(); i++) {
+			AbstractInsnNode load = loads.get(i);
+			Type want = wanted.get(i);
+
+			if (load instanceof VarInsnNode variable) {
+				Type actual = slotType(method, owner, variable.var);
+
+				if (actual == null || !actual.equals(want) || variable.getOpcode() != want.getOpcode(Opcodes.ILOAD)) return null;
+			} else if (load instanceof FieldInsnNode field) {
+				if (!hasArgumentField || load.getOpcode() != Opcodes.GETSTATIC) return null;
+				if (!field.owner.equals(argumentFieldOwner) || !field.name.equals(argumentFieldName)
+						|| !field.desc.equals(argumentFieldDesc)) return null;
+			} else if (!(load instanceof InsnNode || load instanceof IntInsnNode || load instanceof LdcInsnNode)) {
+				return null;
+			}
+		}
+
+		return loads;
+	}
+
+	/**
+	 * Loads for the call, reconstructed from the patched method's parameters by type: the fallback for when the
+	 * game's own argument loads could not be reproduced. Each value is taken from a <em>different</em> parameter
+	 * and in order, because rescanning from the first parameter every time made two parameters of the same type
+	 * resolve to the same slot - the call then carried the wrong value, silently.
+	 *
+	 * <p>Null when one of them is neither a parameter of this method nor the one configured static field; the
+	 * caller says so and leaves the class alone.
 	 */
 	private List<AbstractInsnNode> arguments(MethodNode method, int opcode) {
 		List<Type> wanted = new ArrayList<>();
@@ -177,19 +248,23 @@ public class InjectionCallPointFix implements ClassFixer {
 		boolean instance = (method.access & Opcodes.ACC_STATIC) == 0;
 		boolean fieldUsed = false;
 		List<AbstractInsnNode> out = new ArrayList<>();
+		int next = 0;
+		int nextSlot = instance ? 1 : 0;
 
 		for (Type want : wanted) {
-			int slot = instance ? 1 : 0;
 			boolean found = false;
+			int slot = nextSlot;
 
-			for (Type parameter : parameters) {
-				if (parameter.equals(want)) {
+			for (int i = next; i < parameters.length; i++) {
+				if (parameters[i].equals(want)) {
 					out.add(new VarInsnNode(want.getOpcode(Opcodes.ILOAD), slot));
+					next = i + 1;
+					nextSlot = slot + parameters[i].getSize();
 					found = true;
 					break;
 				}
 
-				slot += parameter.getSize();
+				slot += parameters[i].getSize();
 			}
 
 			if (!found) {
@@ -201,5 +276,47 @@ public class InjectionCallPointFix implements ClassFixer {
 		}
 
 		return out;
+	}
+
+	/** The type a load of the given slot would carry in this method, or null when no parameter lives there. */
+	private static Type slotType(MethodNode method, String owner, int slot) {
+		boolean instance = (method.access & Opcodes.ACC_STATIC) == 0;
+
+		if (instance && slot == 0) return Type.getObjectType(owner);
+
+		int at = instance ? 1 : 0;
+
+		for (Type parameter : Type.getArgumentTypes(method.desc)) {
+			if (at == slot) return parameter;
+
+			at += parameter.getSize();
+		}
+
+		return null;
+	}
+
+	/** How many stack values the instruction pushes, or -1 when it pushes something other than one value. */
+	private static int producedSize(AbstractInsnNode insn) {
+		if (insn instanceof VarInsnNode) {
+			return switch (insn.getOpcode()) {
+				case Opcodes.ILOAD, Opcodes.FLOAD, Opcodes.ALOAD -> 1;
+				case Opcodes.LLOAD, Opcodes.DLOAD -> 2;
+				default -> -1;
+			};
+		}
+
+		if (insn instanceof FieldInsnNode field) {
+			return field.getOpcode() == Opcodes.GETSTATIC ? Type.getType(field.desc).getSize() : -1;
+		}
+
+		int opcode = insn.getOpcode();
+
+		if (opcode == Opcodes.LCONST_0 || opcode == Opcodes.LCONST_1 || opcode == Opcodes.DCONST_0 || opcode == Opcodes.DCONST_1) return 2;
+		if (opcode >= Opcodes.ACONST_NULL && opcode <= Opcodes.ICONST_5) return 1;
+		if (opcode >= Opcodes.FCONST_0 && opcode <= Opcodes.FCONST_2) return 1;
+		if (opcode == Opcodes.BIPUSH || opcode == Opcodes.SIPUSH) return 1;
+		if (opcode == Opcodes.LDC) return insn instanceof LdcInsnNode ldc && (ldc.cst instanceof Long || ldc.cst instanceof Double) ? 2 : 1;
+
+		return -1;
 	}
 }
