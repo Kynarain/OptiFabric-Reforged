@@ -108,10 +108,9 @@ public class OptifineVersion {
 		}
 		System.out.println("[OptiFabric] Download OptiFine for Minecraft " + runningMc + " from "
 				+ OptifineSupport.OFFICIAL_DOWNLOAD_PAGE + " and put the jar in " + modsPath + ", next to this mod");
-		System.out.println("[OptiFabric] This is the -full convenience build: it downloads OptiFine itself and"
-				+ " restarts the game once the jar is in place. The build submitted to CurseForge and Modrinth"
-				+ " does neither - it ships no downloader and starts no process, and reads the local file: jar the"
-				+ " user placed in mods/");
+		System.out.println("[OptiFabric] OptiFabric does not download OptiFine at runtime: this build ships no"
+				+ " downloader and starts no process, and OptiFine is read from the local file: jar the user placed"
+				+ " in mods/");
 		OptifabricError.setError("OptiFabric could not find the OptiFine jar in the mods folder:\n%s\n\n"
 				+ "Download OptiFine for Minecraft %s and place it in that folder next to this mod.", modsPath, runningMc);
 		throw new FileNotFoundException("Could not find optifine jar");
@@ -189,7 +188,10 @@ public class OptifineVersion {
 			if (jarEntry == null) return new Parsed(JarType.SOMETHING_ELSE, null, null);
 
 			classNode = ASMUtils.readClass(jarFile, jarEntry);
-		} catch (ZipException | ZipError e) {
+		} catch (ZipException | ZipError | RuntimeException e) {
+			//A RuntimeException here is a class file this reader cannot make sense of - ClassReader throws
+			//IllegalArgumentException or an array index error on garbage - which is the same kind of unusable
+			//jar as a broken zip. Before this it escaped and took the whole search down, leaving jarType null.
 			return new Parsed(JarType.CORRUPT_ZIP, null, null);
 		}
 
