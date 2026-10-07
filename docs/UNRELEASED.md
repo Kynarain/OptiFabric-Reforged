@@ -68,3 +68,28 @@ synthetic field count guard.
 
 1. **同一处修复要在 store 线与便利分支上分别确认**（`git log` 在该分支上能查到那次提交才算确认），发行前用"下载回来的 jar 里有没有对应标记"做最终验收；
 2. **提交前必须先构建通过** —— `convenience/1.20.6-1.1.6` 上曾经推过一个编译不过的提交，因为当时的脚本没有把"编译成功"当成提交前提。
+
+### convenience/26.x-2.2.7
+
+This branch, which builds the -full jars for 2.2.7, still had the older AddInterfaceFix reader: it only
+looked at the targets member of the Mixin annotation. It reads the value form as well now (commit 770dcfa),
+verified by compiling and by the namesTarget helper appearing in the class.
+
+## Fix coverage sweep (checked 2026-10-07, and to be re-run before each release)
+
+Every tree that carries one of the fixes below has it; where a column reads n/a the file itself is not on
+that line, which is by design and not a gap. The sweep is three greps over src/main/java:
+
+| tree | targets() in AddInterfaceFix | assignedBefore in OptifineJarFixer | requireHttps in OptifineDownloader |
+|---|---|---|---|
+| 1.21.x | ok | ok | n/a |
+| 26.x | ok | ok | n/a |
+| wip/1.20.6, main/1.20.6 | n/a | n/a | n/a |
+| conv 1.21.x-2.2.13, -2.2.12, -2.2.11 | ok | ok | ok |
+| conv 26.x-2.2.8, -2.2.7 | ok | ok | ok |
+| conv rf-1.1.5, rf-1.1.6, 1.20.6-1.1.6 | n/a | n/a | ok |
+
+Two of those entries were added late, both after a check that compared the branch sources with the published
+jars: convenience/26.x-2.2.8 and convenience/26.x-2.2.7 were missing the annotation value form, and
+convenience/1.20.6-1.1.6 had lost the downloader checks to a step that reverted files copied from the store
+branch. All three are in now, each verified in the jar that branch builds.
