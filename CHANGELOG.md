@@ -55,6 +55,24 @@
 
 审查在第二轮把 zip-slip 从 P0 降为纵深防御(理由见上),把 `OPEN_DELETE` 从 P1 降为 P2/P3(两个调用方处理的都是 `.optifine` 里可再生的缓存/临时产物)。两条都**已经修了**,不回退。
 
+### 帧计算:公共父类型改为对称求解(这就是 1.20.6 起不来的原因)
+
+1.20.6 + OptiFine `J1_pre18` **启动即崩**:`VerifyError: Bad return type`,位置是 `class_5944.method_35785(String)` —— 它在 bci 19 处把 `class_284`(实现了 `class_278`)与 `class_278` 合并后返回。**字节码本身完全正确**,与原版逐指令一致(`invokevirtual method_34582:(Ljava/lang/String;)Lnet/minecraft/class_284;` + `getstatic field_29484:Lnet/minecraft/class_278;`);错的是我们写出的 **StackMapTable** —— 帧里写成了 `Object`,而校验器**以帧为准** ⇒ `Object` 不能赋给 `class_278` ⇒ 该类在加载时被拒 ✓。
+
+根因是 `FrameComputingWriter.getCommonSuperClass` **不对称**:它只展开第一个参数的祖先,再沿着第二个参数的 `superName` 走。ASM 传参顺序是任意的,所以"接口在前、实现类在后"时永远匹配不上,于是回落成 `java/lang/Object` ✗。现在两侧各自求闭包(自身 + 全部超类 + 全部接口,最近优先),取最近的公共类型;只有确实没有公共父类型时才用 `Object`。`allSupertypes` 也把**自身**算进去了,顺带修掉 `getCommonSuperClass(A, A)` 同样返回 `Object` 的问题 ✓。1.21.x 线上那条写着 class_983 / class_898 的 `System.err` 告警保留:真正无公共父类型时仍会打印 ✓。
+
+**实测**(报告问题的那个实例副本:OptiFabric + OptiFine `J1_pre18` + Lithium 0.12.5,每次先删掉已打补丁的缓存重新打):
+
+| 运行 | 结果 |
+|---|---|
+| 带 Lithium | 崩(`crash-…_13.07.25`),日志 69 行 |
+| 把 Lithium 移出 | **同样崩** ⇒ 与 Lithium 无关 |
+| 换上一版 1.1.4 | **同样崩** ⇒ 不是新回归 |
+| 删缓存重新打补丁 | **同样崩** ⇒ 不是坏缓存 |
+| **修复后** | **0 份崩溃报告、0 次 VerifyError**,日志 290 行,进程一直存活到测试脚手架主动停掉(当时正在重载材质),且没有出现"没有公共父类型"的告警 ✓ |
+
+**这条 bug 不限于 1.20.6**:1.21.x 与 26.x 两条线里是同一份实现(它们只是恰好没被测到"接口侧合并"这种形态),所以四条线上的十个分支都已修 ✓。
+
 
 ## 2.2.12+mc1.21 … 2.2.12+mc1.21.11 - 游戏内告知"这一版 OptiFine 用不了光影"
 
