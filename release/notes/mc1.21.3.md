@@ -33,6 +33,12 @@
 
 `-full` 版本另外补了三处并做了**真实下载验证**:主机名精确比较(以前 `url.contains("optifine.net")`,`https://evil.example/?optifine.net` 会被当成官方页去抓对方页面并从里面找下载链接;`https://optifine.net@evil.example/` 这类写法同样堵住)、**一律要求 https**、以及**下载后校验下来的确实是所要的那个构建**(读它自己 `Config.class` 的 `VERSION` / `MC_VERSION`,不匹配就删掉文件并报错)。官网那个下载链接是**相对路径**,解析后仍是 https,所以强制 https 不影响正常下载。**本产物(默认产物)不联网、不启动进程。**
 
+### 帧计算修正:公共父类型改为对称求解
+
+1.20.6 + OptiFine `J1_pre18` 曾**启动即崩**(`VerifyError: Bad return type` 于 `class_5944.method_35785`):字节码是正确的,但我们写出的 StackMapTable 帧把 `class_284` 与 `class_278` 的公共类型写成了 `java/lang/Object`,校验器于是拒绝加载该类。原实现只展开第一个参数的祖先、再沿第二个参数的 `superName` 走,而 ASM 的传参顺序是任意的 ⇒ "接口在前"时必然回落成 `Object`。现在两侧各自求闭包(自身 + 全部超类 + 全部接口)后取最近的公共类型,`allSupertypes` 也计入自身。
+
+**实测**:同一实例(含 Lithium 0.12.5)在修复前每次启动都产生崩溃报告;修复后 **0 份崩溃报告、0 次 VerifyError**,客户端一直存活到被测试脚手架停掉。附带确认:这个崩**与 Lithium 无关**(移出 Lithium 后同样崩)、**不是 1.1.5 的回归**(1.1.4 同样崩)、也**不是坏缓存**(删缓存重打同样崩)。
+
 
 
 ## 2.2.10 的改动
@@ -1028,9 +1034,9 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.13+mc1.21.3.jar` — 860350 字节
+`OptiFabric-2.2.13+mc1.21.3.jar` — 860539 字节
 
-`SHA-256: 36A279A039099051F9AE6A34A77F6FCC8074051A82C085A26115584429450959`
+`SHA-256: FEFFBCF2F449CD5E7130C79EE68DD3DEF65F79382E1C9BF2A9A468EDF6EEFBB3`
 ---
 
 ## 这一版有两条产物(装之前请看这一段)
