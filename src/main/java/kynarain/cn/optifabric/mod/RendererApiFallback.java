@@ -109,6 +109,11 @@ public final class RendererApiFallback {
 			return; //No Fabric API renderer API on the classpath: nothing ever asks for a rendering plug-in
 		}
 
+		//This line asks indigoWillRegister() first and Indigo is the terrain renderer here, so the guard above
+		//returns before this point in the configuration this line ships: the RendererAccess.INSTANCE fallback the
+		//1.21.x line needs for the FAPI builds that have no static Renderer.register is deliberately not repeated.
+		//If a pack ever gets past that guard, the lookup below fails soft and says so on stderr rather than
+		//leaving a half-registered placeholder behind.
 		try {
 			Object placeholder = RendererApiStubGenerator.newInstance(renderer);
 			MethodHandle register = MethodHandles.publicLookup().findStatic(renderer, "register",
