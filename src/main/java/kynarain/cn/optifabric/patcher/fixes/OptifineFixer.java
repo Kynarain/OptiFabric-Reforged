@@ -144,6 +144,7 @@ public class OptifineFixer {
 		registerFix("net/minecraft/client/gui/render/GuiRenderer$Draw",
 				new AddInterfaceFix("net/minecraft/client/gui/render/GuiRenderer$Draw"));
 
+
 		//net/minecraft/client/renderer/chunk/SectionCompiler (fabric-renderer-api-v1 SectionCompilerMixin)
 		//Two of its handlers inject into the compile loop: one wraps ModelBlockRenderer.tesselateBlock, the other
 		//sits before BlockPos.betweenClosed. Neither call survives in OptiFine's recompiled body. The vanilla body
@@ -223,6 +224,35 @@ public class OptifineFixer {
 				new CallSiteRedirectFix("net/minecraft/client/renderer/feature/BlockFeatureRenderer",
 						"renderBlockModelSubmits", null, "optifabric$blockModels",
 						"the hook has to inject into a copy nobody calls, and the real method still has to draw block models"));
+		//EXPERIMENTAL, off unless -Doptifabric.experimentalPerDraw=true is passed to the game. 26.1.2 ran OptiFine's
+		//per-draw shader state calls (pushProgram/popProgram + ShadersRender.preRender/postRender) around every draw
+		//inside renderer/rendertype/RenderType.draw(MeshData). 26.2 moved that entry point to
+		//renderer/rendertype/PreparedRenderType.drawFromBuffer, a class OptiFine's 26.2 patch set does not patch at
+		//all, so the calls have no caller left (see docs/PORT_26.x.md for the measurement: 150 distinct shader call
+		//targets reach game classes on 26.1.2, 137 on 26.2, and the 13 that disappeared were exactly these plus the
+		//entity/particle/hand ones). This takes the class over and wraps its draw entry, so the hypothesis "terrain
+		//is drawn but never lands in the shader pipeline because OptiFine's program is not rebound per draw" can be
+		//tested in game. It changes nothing unless the property is set, and whether it helps is only knowable there.
+		//
+		//The registration itself is behind the property too, not just the fixer: taking a class over is a change to
+		//the patched set on its own (the pipeline would report 563 classes instead of the 562 the released build
+		//records), and an experiment that is off has to leave the default path exactly as it was.
+		//
+		//The format probe (-Doptifabric.experimentalFormatProbe=true) is read-only and rides on the same method, so
+		//the takeover happens when either switch is on.
+		if (Boolean.getBoolean(kynarain.cn.optifabric.mod.OptifinePerDrawState.PROPERTY)
+				|| Boolean.getBoolean(kynarain.cn.optifabric.mod.OptifineFormatProbe.PROPERTY)) {
+			registerExtraClass("net/minecraft/client/renderer/rendertype/PreparedRenderType",
+					new PerDrawShaderStateFix());
+		}
+
+		//The chunk-section pass is OptiFine-patched already, so the section probe is a normal fix on it rather than
+		//a class takeover. Measured: terrain does not go through PreparedRenderType.drawFromBuffer at all, which is
+		//why the per-draw experiment there could not have said anything about terrain.
+		if (Boolean.getBoolean(kynarain.cn.optifabric.mod.OptifineFormatProbe.PROPERTY)) {
+			registerFix("net/minecraft/client/renderer/chunk/ChunkSectionsToRender", new SectionDrawProbeFix());
+			registerFix("com/mojang/blaze3d/opengl/GlCommandEncoder", new RenderPassProbeFix());
+		}
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {

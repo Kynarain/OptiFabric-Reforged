@@ -100,6 +100,14 @@ public class OptifineJarFixer {
 	private static final String GAME_SCREENQUAD = "assets/minecraft/shaders/core/screenquad.vsh";
 	private static final String SCREENQUAD = "minecraft:core/screenquad";
 
+	/**
+	 * The switch that turns the experimental forced shaderpack load on; see {@link #forceShaderpackLoad}. Off unless
+	 * -Doptifabric.experimentalForceShaderpack=true is passed to the game. It exists so that the 26.2 shader
+	 * pipeline can be measured at all - 2.1.1 deliberately leaves OptiFine's own cancellation in place, which means
+	 * no shaderpack loads on that version.
+	 */
+	public static final String FORCE_SHADERPACK = "optifabric.experimentalForceShaderpack";
+
 	private static final Pattern PROGRAM_PASS = Pattern.compile("\"program\"\\s*:\\s*\"([^\"]+)\"");
 	private static final Pattern VERTEX_SHADER = Pattern.compile("\"vertex_shader\"\\s*:\\s*\"([^\"]+)\"");
 
@@ -292,6 +300,9 @@ public class OptifineJarFixer {
 	/**
 	 * Drops the unconditional {@code cancelled = true} OptiFine's 1.21.6 / 1.21.7 builds put in front of the
 	 * shaderpack load, so the flag the two checks above set is the one that decides again.
+	 *
+	 * <p>It also carries the (off by default) switch that forces a load for the 26.2 shape, see
+	 * {@link #forceShaderpackLoad}.
 	 */
 	private static byte[] enableShaderPackLoad(ZipFile zip, ZipEntry entry) throws IOException {
 		ClassNode node = new ClassNode();
@@ -351,6 +362,22 @@ public class OptifineJarFixer {
 			// 1.21.6/1.21.7 shape above still gets its load back - those builds were blocked by a different
 			// defect), and shaders being unavailable on 26.2 is documented as a limitation of that OptiFine build
 			// instead of being worked around. See README / docs/PORT_26.x.md.
+			//
+			// It stays off by default now, but it is not gone: with -Doptifabric.experimentalForceShaderpack=true
+			// the load is forced again, which is what makes the per-draw experiment measurable - the shader pipeline
+			// has to be running for anything about it to be observable in game. See forceShaderpackLoad below and
+			// OptifinePerDrawState.
+			if (Boolean.getBoolean(FORCE_SHADERPACK)) {
+				int forced = forceShaderpackLoad(method, instructions);
+
+				if (forced > 0) {
+					changed = true;
+
+					System.out.println("[OptiFabric] Forcing the shaderpack load on for this build as an experiment ("
+							+ FORCE_SHADERPACK + "): " + forced + " check(s) were made to read cancelled = false instead of"
+							+ " true. This is not a fix - the world is measured with it on, see docs/PORT_26.x.md");
+				}
+			}
 		}
 
 		if (!changed) return null;
@@ -358,6 +385,71 @@ public class OptifineJarFixer {
 		ClassWriter writer = new ClassWriter(0); //only whole instructions were dropped, so the frames still fit
 		node.accept(writer);
 		return writer.toByteArray();
+	}
+
+	/**
+	 * EXPERIMENTAL, off unless {@link #FORCE_SHADERPACK} is set: makes OptiFine 26.2's own unconditional cancellation
+	 * of the shaderpack load read {@code false} instead of {@code true}, so the load proceeds and the shader pipeline
+	 * can be measured.
+	 *
+	 * <p>The shape (26.2 K2_pre1), with the configuration read between the assignment and the check:
+	 *
+	 * <pre>
+	 *   iconst_1; istore_2;                                  cancelled = true
+	 *   getstatic shadersConfig; getProperty("shaderPack"); astore_3;
+	 *   iload_2; ifne -&gt; skip getShaderPack()                 the check
+	 * </pre>
+	 *
+	 * <p>It flips the pushed constant rather than removing the pair the 2.1.0 matcher used to delete: with the
+	 * assignment gone the local would be uninitialised on the path that reads it, which the verifier rejects. One
+	 * changed constant keeps the frame, the local table and the stack exactly as they were, so the class still
+	 * verifies - which is checked by running the offline pipeline, not assumed.
+	 *
+	 * @return the number of cancellation checks that were flipped, 0 when the shape is not there
+	 */
+	private static int forceShaderpackLoad(MethodNode method, java.util.List<AbstractInsnNode> instructions) {
+		int flipped = 0;
+
+		for (int i = 0; i < instructions.size(); i++) {
+			if (!(instructions.get(i) instanceof MethodInsnNode call)) continue;
+			if (!"getShaderPack".equals(call.name)) continue;
+
+			//The check guarding this call: the nearest preceding conditional jump, and the local it tests.
+			int guard = -1;
+
+			for (int j = i - 1; j >= 0; j--) {
+				if (!(instructions.get(j) instanceof JumpInsnNode jump)) continue;
+				if (jump.getOpcode() == Opcodes.IFNE) guard = j;
+
+				break; //only the first jump found walking back may be the guard
+			}
+
+			if (guard < 1) continue;
+			if (!(instructions.get(guard - 1) instanceof VarInsnNode load) || load.getOpcode() != Opcodes.ILOAD) continue;
+
+			//...and the assignment that decides it. Walking back stops at the first write to that local.
+			for (int j = guard - 2; j >= 0; j--) {
+				AbstractInsnNode insn = instructions.get(j);
+
+				if (insn instanceof VarInsnNode write) {
+					if (write.getOpcode() != Opcodes.ISTORE || write.var != load.var) {
+						if (write.var == load.var) break; //written in a way this matcher does not understand
+						continue;
+					}
+
+					if (j > 0 && instructions.get(j - 1) instanceof InsnNode pushed && pushed.getOpcode() == Opcodes.ICONST_1) {
+						method.instructions.set(pushed, new InsnNode(Opcodes.ICONST_0));
+						flipped++;
+					}
+
+					break;
+				}
+
+				if (insn instanceof JumpInsnNode) break; //a different path decides it, leave it alone
+			}
+		}
+
+		return flipped;
 	}
 
 	/**
