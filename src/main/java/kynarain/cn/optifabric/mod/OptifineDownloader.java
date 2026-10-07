@@ -169,6 +169,7 @@ public final class OptifineDownloader {
 
 		File target = write(payload.bytes, targetDir, fileName);
 
+		OptifineHashes.require(build, payload.bytes, payload.source);
 		verifyIdentity(target, build, payload.source);
 
 		return new Outcome(target, payload.source, false, sha256(payload.bytes));
