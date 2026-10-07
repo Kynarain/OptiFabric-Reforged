@@ -35,8 +35,8 @@
 
 | Minecraft | jar | OptiFine 构建 | Java | 状态 |
 |---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.2.7+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**不能用光影**,见下) |
-| 26.1.2 | `OptiFabric-Reforged-2.2.7+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
+| 26.2 | `OptiFabric-Reforged-2.2.8+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**不能用光影**,见下) |
+| 26.1.2 | `OptiFabric-Reforged-2.2.8+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
 
 两个 OptiFine 构建**都是预览版** —— OptiFine 对这两个 Minecraft 版本都还没有正式构建。
 
@@ -46,8 +46,8 @@
 
 | OptiFabric version | Minecraft version | Recommended OptiFine build | Build kind |
 |---|---|---|---|
-| `2.2.7+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview (no final exists) |
-| `2.2.7+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) |
+| `2.2.8+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview (no final exists) |
+| `2.2.8+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) |
 
 ### 26.2 的光影限制
 

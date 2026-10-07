@@ -32,7 +32,7 @@ $root = Split-Path -Parent $PSScriptRoot
 # 本仓库只有 26.x 一条发布线(见 release\MANUAL_RELEASE.md)。
 # 版本基数:$defaultModVersion 是这一线**当前在发**的那个产物的版本号 —— 26.2 那一份。
 $versions = @("26.1.2", "26.2")
-$defaultModVersion = "2.2.7"
+$defaultModVersion = "2.2.8"
 # 逐 MC 版本的例外值:某个版本单独升过版就写在这里。26.1.2 曾在 2.0.0 上发布,2.2.6 起它与 26.2 一起升版
 # (两个 jar 的内容同源),所以这张表是空的 —— 与 1.21.x 线一样:值等于基数的条目是多余的,还会在整线升版时
 # 被落在后面。万一以后只给某一个 MC 版本升版,-Mc 会把值写回这里,另一条仍用上面的基数;整条线一起升版用

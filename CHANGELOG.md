@@ -5,6 +5,44 @@
 > 版本)。1.21.x 那条线在自己的分支上,它的条目按当时的样子保留,属于历史记录。26.x 现在覆盖 **26.2**(当前,`2.2.7`)
 > 与 **26.1.2**(`2.2.7`),所以这一线也有了"逐 MC 版本的版本号"。
 
+## 2.2.8+mc26.2 / 2.2.8+mc26.1.2 — 帧计算的公共父类型改为对称求解,外加一轮来自审查的加固
+
+**一句话:** 之前重算 StackMapTable 帧时,两个类型的公共父类型只从**第一个参数**那一侧展开、第二个参数只沿 `superName` 往上走;ASM 传参顺序是任意的,于是"接口在前、实现类在后"时它会回落成 `java/lang/Object` —— 而校验器**以帧为准**,该帧与真实类型不符时整个类在**加载时**被拒。1.20.6 上的 `ShaderProgram.method_35785(String)`(把实现了 `class_278` 的 `class_284` 与 `class_278` 合并)正是这个形态,表现就是**启动即崩**(`VerifyError: Bad return type`)。本版把它改成对称求解,并一并处理审查报告里其余可修的缺陷。
+
+### 帧计算:两侧各自求闭包,取最近的公共类型
+
+`getCommonSuperClass` 原实现只展开第一个参数的祖先,再沿第二个参数的 `superName` 走 ⇒ 公共类型是接口且恰好在第一个位置时永远匹配不上,只能回落 `java/lang/Object` ✗。现在两侧各自求闭包(**自身 + 全部超类 + 全部接口**,最近优先),取最近的公共类型;确实没有公共父类型时才用 `Object`。`allSupertypes` 也把**自身**算进去了,顺带修掉 `getCommonSuperClass(A, A)` 同样返回 `Object` 的问题。
+
+**实测**(报告问题的那个实例副本:OptiFabric + OptiFine `J1_pre18` + Lithium 0.12.5,每次先删掉已打补丁缓存重新打):
+
+| 运行 | 结果 |
+|---|---|
+| 带 Lithium | 崩(`crash-…_13.07.25`),日志 69 行 |
+| 把 Lithium 移出 | **同样崩** ⇒ 与 Lithium 无关 |
+| 换上一版 1.1.4 | **同样崩** ⇒ 不是新回归 |
+| 删缓存重新打补丁 | **同样崩** ⇒ 不是坏缓存 |
+| **修复后** | **0 份崩溃报告、0 次 VerifyError**,日志 290 行,进程一直存活到被测试脚手架停掉,且没有出现"没有公共父类型"的告警 |
+
+同一个缺陷在 1.21.x 与 1.20.6 线上是同一份实现(它们只是没被测到"接口侧合并"这种形态),所以四条线的十个分支都已修。
+
+### 一轮加固(九条分支同步)
+
+* `ChunkRendererFix`:先判参数个数再取最后一个参数 —— 短参数表的 `renderModel` / `renderBatched` 调用以前会 `AIOOBE`;
+* `MethodComparison`:不认识的 `invokedynamic` bootstrap 记为"不同"而不是抛异常;LDC 的 sort switch 原先**无 default**、基本类型会穿透到 IINC 比较并强转(`ClassCastException`),改为统一按描述符比较;
+* `ClassCache`:文件里声明的四个长度全部加上限,负数/超大值走"空缓存"(与其它损坏情形一致),不再抛 `NegativeArraySizeException`;
+* `OptifineSetup`:`LambdaRebuilder` 放进 `finally` 关闭;
+* `GAME_CLASSES`:改为**有界 LRU**(上限 512),而不是"只 put 不清空";
+* `LambdaRebuilder`:模糊配对只按**本类**回查;`return 0` 改成 `continue`;
+* `InjectionCallPointFix`:重建调用时按位置消费参数,并优先照抄游戏自己那次调用的压栈指令(以前同类型多形参会把同一个槽位用两次、静默传错值);
+* `ZipUtils.extract`:路径检查改成**无条件 + 带分隔符**(审查已把它降级为纵深防御,仍然修了);
+* 标题界面:`jarType == null` 时不再 `switch (null)` 抛 NPE,而是落到"内部错误"分支;`parseJarType` 把 `RuntimeException` 一并接住(合法 zip 里装着坏字节的 `Config.class` 不再打崩错误提示本身);
+* `release/publish.ps1`:`-DryRun` 打印前**脱敏令牌**,两条 curl 命令改成参数数组、不再用 `Invoke-Expression`;
+* 静默 catch 的 lint 覆盖到本线,每一处静默 catch 都带上了"为什么沉默"的标记。
+
+### 下载器(只影响 `-full` 构建;默认产物没有下载器)
+
+`-full` 构建另外补了三处并做了**真实下载验证**:主机名精确比较(以前 `url.contains("optifine.net")`,`https://evil.example/?optifine.net` 会被当成官方页去抓对方页面并从里面找下载链接)、**一律要求 https**、以及**下载后校验下来的确实是所要的那个构建**(读它自己 `Config.class` 里声明的 `VERSION` / `MC_VERSION`,不匹配就删掉文件并报错)。**默认产物不联网、不启动进程。**
+
 ## 2.2.7+mc26.2 / 2.2.7+mc26.1.2 — 游戏内告知"26.2 这一版 OptiFine 不加载光影包"
 
 > 26.x 线的两个产物(`26.2` 与 `26.1.2`)一起升到 2.2.7。**修复逻辑一处未改**,只加了一条提示。
