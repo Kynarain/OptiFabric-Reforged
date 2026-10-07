@@ -89,7 +89,10 @@ public class OptifineVersion {
 				return JarType.SOMETHING_ELSE;
 			}
 			classNode = ASMUtils.readClass(jarFile, jarEntry);
-		} catch (ZipException | ZipError e) {
+		} catch (ZipException | ZipError | RuntimeException e) {
+			//A RuntimeException here is a class file this reader cannot make sense of - ClassReader throws
+			//IllegalArgumentException or an array index error on garbage - which is the same kind of unusable
+			//jar as a broken zip. Before this it escaped and took the whole search down, leaving jarType null.
 			OptifabricError.setError("The jar at " + file + " is corrupt");
 			return JarType.CORRUPT_ZIP;
 		}
