@@ -27,8 +27,8 @@
 | 1.1.4(仅 GitHub:`-full`) | `1.1.4+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.4-reforged+mc1.20.6-full.jar` | 743283 | `0E4B602414C2052D1B625D8F00C246F40D8A65329E994558759469DB39D7055E` | `CHANGELOG.md` 1.1.4 节 |
 | **1.1.5** | `1.1.5+mc1.20.6` / `v1.1.5+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar` | 729236 | `4BC7F967BA1E7F4F8947B050F1DD45303203DC1F1CFCACBD017FC23A406AD8DB` | `CHANGELOG.md` 1.1.5 节 |
 | 1.1.5(仅 GitHub:`-full`) | `1.1.5+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.5-reforged+mc1.20.6-full.jar` | 747246 | `D0DBCAB6B6FBFD403F491EE04D6A0D2189B6B95F68403378B581127669570610` | `CHANGELOG.md` 1.1.5 节 |
-| **1.1.6** | `1.1.6+mc1.20.6` / `v1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6.jar` | 732355 | `68802C8854BA4373CF3B3FBD30028FDBA1AFB59AF2EA4456A12A822C858795C9` | `CHANGELOG.md` 1.1.6 鑺?|
-| 1.1.6(仅 GitHub:`-full`) | `1.1.6+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6-full.jar` | 749718 | `AA80CE1D5BEB65739A1BCA6C6161235CD8F39B6A01CF6EEE38D8F4820B482107` | `CHANGELOG.md` 1.1.6 节 |
+| **1.1.6** | `1.1.6+mc1.20.6` / `v1.1.6-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar` | 732355 | `68802C8854BA4373CF3B3FBD30028FDBA1AFB59AF2EA4456A12A822C858795C9` | `CHANGELOG.md` 1.1.6 鑺?|
+| 1.1.6(仅 GitHub:`-full`) | `1.1.6+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.6-reforged+mc1.20.6-full.jar` | 749718 | `AA80CE1D5BEB65739A1BCA6C6161235CD8F39B6A01CF6EEE38D8F4820B482107` | `CHANGELOG.md` 1.1.6 节 |
 
 `-sources.jar`(一般不发,留档用):
 
@@ -48,10 +48,10 @@
 
 | | |
 |---|---|
-| 上传的 jar | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6.jar`(732,355 B,`68802C88…8795C9`) |
+| 上传的 jar | `dist\OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar`(732,355 B,`68802C88…8795C9`) |
 | 取件目录 | `I:\mods\release-upload\1.20.6-reforged-1.1.6\`(jar + `-sources.jar` + `metadata\`) |
 | 元数据草稿 | [`release\tmp\modrinth-1.20.6-reforged.json`](tmp/modrinth-1.20.6-reforged.json)、[`release\tmp\curseforge-1.20.6-reforged.json`](tmp/curseforge-1.20.6-reforged.json) |
-| 标签 | `v1.1.7-reforged+mc1.20.6`(本线 1.1.3 / 1.1.4 也是带 `-reforged` 的写法;**1.1.5 那次破了例、用了不带后缀的裸标签**,而 `main` 线这次要发 `v1.1.6+mc1.20.6`,所以本次必须带后缀,否则两条线撞标签) |
+| 标签 | `v1.1.6-reforged+mc1.20.6`(本线 1.1.3 / 1.1.4 也是带 `-reforged` 的写法;**1.1.5 那次破了例、用了不带后缀的裸标签**,而 `main` 线这次要发 `v1.1.6+mc1.20.6`,所以本次必须带后缀,否则两条线撞标签) |
 | Release 正文 | `CHANGELOG.md` 的 **1.1.6 节**(整节粘贴) |
 | Latest | **不勾** `make_latest`(Latest 归 26.x 线,当前是 `v2.2.8`) |
 | `-full` 变体 | 由 `convenience/1.20.6-reforged-1.1.6` 构建(749,718 B,`AA80CE1D…0B482107`),与默认产物共用同一个 Release(仅 GitHub) |
