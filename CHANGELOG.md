@@ -1,5 +1,40 @@
 # 更新日志
 
+## 1.1.7+mc1.20.6
+
+这是 `main` 线的 1.20.6 产物(mod id 仍是 `optifabric`)。它与 `wip/1.20.6-reforged` 上 id 为 `optifabric_reforged`
+的**替代产物只能装一个**;两者的差别与适用人群见 `docs/REFORGED_BUILD.md` 与 README 的兼容性表。
+
+## 相对 1.1.6 的变化
+
+1. **下载器**:`-full` 构建下载 OptiFine 时,把**主机名精确比对**、**一律要求 https**,并且——
+   这是本线此前最缺的一环——把下载到的 jar **回读**确认它声明的正是所要的那个构建,同时把它的 **SHA-256 与"该构建已记录的内容"比对**。
+2. **哈希校验**:新增 `OptifineHashes`(与替代产物线同一份),按构建记录**一组可接受哈希**(由真实文件算出)。
+   命中任一即通过并打印实际值;**全不命中则拒绝**,同时打印期望集合与实际值。
+   之所以是一组而非单值:OptiFine 会重传同名构建(本机 173 个 OptiFine jar 名里 24 个存在多份不同内容,含支持的 `1.21.11`)。
+   真实哈希与理由见 `docs/DOWNLOAD_INTEGRITY.md`。
+3. **Zip**:`extract()` 对每个条目**无条件**比对规范化路径与"根目录 + 分隔符";`transformInPlace()` 不再用 `OPEN_DELETE`
+   (改为转换成功后再删),中途失败不会先把原文件摘掉。
+4. **合成字段**:位置配对要求"两边字段数相同"才信任位置,并把"同类型字段互换"列为剩余盲区。
+5. **11 个单元测试**(`ZipUtils`、`ClassCache`),不需要 Minecraft 即可运行;`build.gradle` 接入 JUnit 5;
+   本线补上静默捕获 lint 的 CI 工作流。
+6. **元数据与文档**:`fabric.mod.json` 的 `contact` 指向本仓库、`commons-lang3` 显式声明、`LambdaRebuilder` 日志参数修正、
+   标题屏 help / issues 链接指向本仓库与对应分支(此前是 404);新增 `docs/UNRELEASED.md`、`docs/RELEASE_CHECKLIST.md`、
+   `docs/DOWNLOAD_INTEGRITY.md`。
+
+## 未做的事(如实写明)
+
+* 异常路径(下载回读失败、槽位未赋值、构造器形状不符、接口用 `value` 形式等)只在**异常输入**下触发,本版**未做端到端实测**;
+  被触发时会在 stderr 留下明确的一行,可据此在真实日志里确认。
+* 本线依旧**不承诺** c2me 之外的自动兼容;本线的元数据里带 `breaks`/`optifabric` 声明的模组会拒绝它 —— 需要那种组合时请用替代产物。
+
+## 安装
+
+把**一个** 1.20.6 的 OptiFine(建议 `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar`)与本 jar 一起放进 `mods/`,
+不要同时装 `OptiFabric-Reforged-1.1.7-reforged+mc1.20.6.jar`。
+
+
+
 ## 1.1.6+mc1.20.6 — 修掉"启动即崩":帧计算里公共父类型改为对称求解
 
 > 本版修的是一处在 1.20.6 上**必然发生**的启动崩溃,并同步一轮来自代码审查的加固。**本产物依旧不联网、不启动任何进程**(那是平台审核意见,见 1.1.4 一节),也**依旧装不进 c2me**(见文末那一节,与上一版一致)。
