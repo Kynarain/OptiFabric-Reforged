@@ -102,6 +102,16 @@ public class DelegatingConstructorFix implements ClassFixer {
 			MethodNode replacement = inline(optifine, minecraft, delegating.desc, target, slot, delegation);
 			if (replacement == null) continue;
 
+			//The replacement carries the target constructor's shape with the created type swapped for a String, and
+			//it takes the delegating constructor's place. When those two shapes differ, whoever calls the
+			//delegating one is left with nothing to call, so the swap only happens when they agree. This also
+			//covers the slot lookup above: a wrong first-match slot changes the shape and is refused here.
+			if (!replacement.desc.equals(delegating.desc)) {
+				System.err.println("[OptiFabric] " + optifine.name + delegating.desc + " delegates to " + target.desc
+						+ ", and inlining it would leave " + replacement.desc + " in its place; left alone");
+				continue;
+			}
+
 			optifine.methods.set(optifine.methods.indexOf(delegating), replacement);
 			System.out.println("[OptiFabric] Inlined delegating constructor " + optifine.name + delegating.desc
 					+ " so injections into " + delegation.createdType + " still land after super()");
