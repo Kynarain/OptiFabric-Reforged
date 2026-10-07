@@ -1582,6 +1582,35 @@ ShoulderSurfing 5.2.0 下 **6 秒就死在 `Mixin transformation of net.minecraf
 元数据,还没有单独测过。要测的话有现成判据:`-Dmixin.debug=true` 下在 1.21.1 上装 ShoulderSurfing 5.2.0 复现
 `class_757`,同时准备一个只替换父类、子类不被替换的组合对照。
 
+## 26.x 损伤扫描基线(2026-10-07,此前从未做过)
+
+用 `crossline-check\` 里那套只读工具,把两个版本的补丁类与**官方客户端 jar** 逐类比对(26.1 起未混淆,
+所以基线直接用 `client-<MC>.jar`,不需要 intermediary),再与模组的 mixin 交叉匹配:
+
+| 检查 | 26.2 | 26.1.2 |
+|---|---|---|
+| 解出的补丁类(CRC 校验) | 562(`cf4e9dad` ✓) | 566(`a6218bfb` ✓) |
+| 有损伤的类 | **107** | **109** |
+| 丢失方法合计 | **15** | **19** |
+| 丢失字段合计 | **11** | **11** |
+| 丢失指令合计 | **1036** | **1037** |
+| 有 mixin 点名被删成员的类 | **0** | **0** |
+
+损伤以**指令级丢失(`LOST_INSN`)**为主,集中在 `com/mojang/blaze3d/**`(渲染层),与 1.21.x 那一批同型。
+换句话说:26.x 的两个目标**不需要新增 fixer**(就这份语料而言),但损伤面与 1.21.x 是同一个量级。
+
+三个"接近、但判定为否"的位置(将来换 OptiFine 构建时优先复查这三处):
+
+- `net/minecraft/client/Options$3` —— 丢了 `<init>`,而 `GameOptionsWriteVisitorMixin` **@Mixin 了这个类**(只是没点名那个构造器);
+- `net/minecraft/client/renderer/block/BlockModelLighter` —— 丢了字段 `cache`;`AoCalculator`(字节码引用)与 `BlockModelLighterAccessor`(@Mixin)都碰这个类;
+- `net/minecraft/resources/Identifier` —— 丢了 `$assertionsDisabled`,被 **143/144** 个模组类提到 —— 这是 javac 的断言标记,OptiFine 重编译后自然没有,**属良性**。
+
+**这份扫描的覆盖限度(必须一起读)**:
+
+- 交叉比对的语料**只有 `fabric-api`**(两个实例各 3 个 jar:API + 本模组 + OptiFine),而 1.20.6 那次有 **36 个模组**,且当时的关键命中来自 Sodium —— 而 Sodium 在 26.x 上跑不起来。所以"**0 个点名**"的准确含义是"**在这份语料里没有命中**",不是"不存在"。
+- 工具输出里的抬头仍写着 `OptiFabric 1.20.6 damaged-class scan`(硬编码,内容才是 26.x 的)。
+- 复现命令见工作区 `HANDOFF.md` 第 8 节(需要 ASM 9.10.1 全家族 + `sweep-1206` 目录在 classpath)。
+
 ## 与上游 OptiFabric 的差异
 
 > 这一节与下一节原本在仓库 README 里;README 改成简短的展示型之后挪到这里保存。
