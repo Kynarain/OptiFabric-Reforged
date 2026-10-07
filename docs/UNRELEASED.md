@@ -93,3 +93,13 @@ Two of those entries were added late, both after a check that compared the branc
 jars: convenience/26.x-2.2.8 and convenience/26.x-2.2.7 were missing the annotation value form, and
 convenience/1.20.6-1.1.6 had lost the downloader checks to a step that reverted files copied from the store
 branch. All three are in now, each verified in the jar that branch builds.
+
+## Downloader integrity (all eight convenience branches)
+
+Every branch that carries the downloader now has all four checks - exact host, https only, the downloaded jar read
+back and compared against the build that was asked for, and its SHA-256 compared against the recorded contents of
+that build (OptifineHashes, new). A jar that matches none of the recorded contents is refused with both sides
+printed rather than accepted silently. The real hashes, and why the check accepts a set of contents instead of one
+pinned value, are in docs/DOWNLOAD_INTEGRITY.md. Per branch: 2.2.13 `e9d5e18`/`ebf8027`; 2.2.12 `3ea1c5b`/`2cfa0ab`;
+2.2.11 `4d507a2`/`2131291`; 26.x-2.2.8 `e19001c`/`1bbc839`; 26.x-2.2.7 `e1f123f`/`190364f`; rf-1.1.5 `8a561d9`;
+rf-1.1.6 `80c7e9e`; 1.20.6-1.1.6 `47e8554` (that one also gained verifyIdentity, which it never had).

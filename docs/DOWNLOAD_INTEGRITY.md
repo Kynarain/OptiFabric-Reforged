@@ -40,3 +40,26 @@
 3. **全不命中** ⇒ **拒绝**，并在日志里同时打印"期望集合"与"实际收到"，让用户能自己判断是重传还是被换包；
 4. 不做"静默接受"，也不做"仅警告后放行" —— 报告担心的正是**静默**换包；
 5. `convenience/1.20.6-1.1.6`（main 线 `-full`）除哈希外还要补回 `verifyIdentity`（同 reforged 分支那份）。
+
+## Status (updated after the implementation)
+
+Implemented on all eight convenience branches, which are the only builds that carry the downloader: the host is
+compared exactly, every request must be https, the downloaded jar is read back to confirm it declares the build
+that was asked for, and its SHA-256 is compared with the recorded contents of that build.
+
+| branch | identity check | hash check | commits |
+|---|---|---|---|
+| convenience/1.21.x-2.2.13 | was there | added | `e9d5e18`, `ebf8027` |
+| convenience/1.21.x-2.2.12 | was there | added | `3ea1c5b`, `2cfa0ab` |
+| convenience/1.21.x-2.2.11 | was there | added | `4d507a2`, `2131291` |
+| convenience/26.x-2.2.8 | was there | added | `e19001c`, `1bbc839` |
+| convenience/26.x-2.2.7 | was there | added | `e1f123f`, `190364f` |
+| convenience/1.20.6-reforged-1.1.5 | was there | added | `8a561d9` |
+| convenience/1.20.6-reforged-1.1.6 | was there | added | `80c7e9e` |
+| convenience/1.20.6-1.1.6 | **added in the same pass** | added | `47e8554` |
+
+The 1.20.6 branch needed the identity check as well: its downloader comes from the older lineage and never read
+the downloaded jar back, which is what the review meant by the -full 1.1.6 having no identity at all. Two of the
+commits above (`e9d5e18` and its siblings) added only the table, because the step that was supposed to insert the
+call passed three arguments to a two argument method, and the message on them said otherwise; the follow-up
+commits wire the call and say so. Nothing here is in any published jar yet.
