@@ -224,27 +224,36 @@ public class OptifineInjector {
 
 		@Override
 		protected String getCommonSuperClass(String type1, String type2) {
+			//ASM calls this with the two types in either order, and the shared type is often an interface. The
+			//earlier walk expanded only type1's ancestors and then followed superName on type2, so an interface
+			//in the first position was never recognised and the answer became java/lang/Object - which is the
+			//loss this log line used to report for class_983 on 1.21.8 and class_898 on 1.21.3. It was the walk,
+			//not the hierarchy: class_284 implementing class_278 is enough to reproduce it.
 			try {
-				Set<String> supertypes = allSupertypes(type1);
+				Set<String> first = allSupertypes(type1);
 
-				if (supertypes != null) {
-					String type = type2;
+				if (first != null) {
+					Set<String> second = allSupertypes(type2);
 
-					while (type != null) {
-						if (supertypes.contains(type)) return type;
+					if (second != null) {
+						//Nearest first, so the frame names the most specific type both sides really share. Any
+						//genuine common supertype verifies; the nearest keeps the frame small.
+						for (String type : nearestFirst(type2)) {
+							if (first.contains(type)) return type;
+						}
 
-						ClassNode node = gameClass(type);
-						type = node != null ? node.superName : null;
+						for (String type : nearestFirst(type1)) {
+							if (second.contains(type)) return type;
+						}
+
+						//Two interface types have no common class, and Object is what the verifier accepts for them.
+						//For two classes Object is almost always wrong, and a wrong frame is fatal at runtime
+						//("VerifyError: Bad type on operand stack"), so name the pair instead of degrading quietly.
+						System.err.println("[OptiFabric] No common supertype for " + type1 + " and " + type2
+								+ " in the class hierarchy we can see, the recomputed frame will say java/lang/Object");
+
+						return "java/lang/Object";
 					}
-
-					//Two interface types have no common class, and Object is what the verifier accepts for them. For two
-					//classes Object is almost always wrong, and a wrong frame is fatal at runtime ("VerifyError: Bad
-					//type on operand stack"), so name the pair instead of degrading quietly - this is how class_983 on
-					//1.21.8 and class_898 on 1.21.3 lost the type of a local the game needed.
-					System.err.println("[OptiFabric] No common supertype for " + type1 + " and " + type2
-							+ " in the class hierarchy we can see, the recomputed frame will say java/lang/Object");
-
-					return "java/lang/Object";
 				}
 			} catch (Throwable t) {
 				System.err.println("[OptiFabric] Could not compare " + type1 + " with " + type2 + ": " + t);
@@ -262,31 +271,38 @@ public class OptifineInjector {
 		}
 	}
 
-	/** Every class and interface {@code internalName} extends or implements, or null when it is unknown. */
-	private static Set<String> allSupertypes(String internalName) {
-		ClassNode start = gameClass(internalName);
-		if (start == null) return null;
-
-		Set<String> supertypes = new HashSet<>();
+	/** {@code internalName}, then every class and interface it is a subtype of, nearest first. */
+	private static List<String> nearestFirst(String internalName) {
+		List<String> order = new ArrayList<>();
+		Set<String> seen = new HashSet<>();
 		Deque<String> queue = new ArrayDeque<>();
-		queue.add(internalName);
+
+		if (seen.add(internalName)) queue.add(internalName);
 
 		while (!queue.isEmpty()) {
 			String name = queue.poll();
+			order.add(name);
+
 			ClassNode node = gameClass(name);
+			if (node == null) continue; //Unknown type, the walk ends here
 
-			if (node == null) continue; //Unknown type, the caller falls back to something conservative
-
-			if (node.superName != null && supertypes.add(node.superName)) {
+			if (node.superName != null && seen.add(node.superName)) {
 				queue.add(node.superName);
 			}
 
 			for (String iface : node.interfaces) {
-				if (supertypes.add(iface)) queue.add(iface);
+				if (seen.add(iface)) queue.add(iface);
 			}
 		}
 
-		return supertypes;
+		return order;
+	}
+
+	/** Every class and interface {@code internalName} is or is a subtype of, or null when it is unknown. */
+	private static Set<String> allSupertypes(String internalName) {
+		if (gameClass(internalName) == null) return null;
+
+		return new HashSet<>(nearestFirst(internalName));
 	}
 
 	private static ClassNode readClass(byte[] bytes) {
