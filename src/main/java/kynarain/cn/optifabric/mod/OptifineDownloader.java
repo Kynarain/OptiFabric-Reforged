@@ -189,7 +189,10 @@ public final class OptifineDownloader {
 
 		try {
 			parsed = OptifineVersion.parseJarType(target);
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
+			//parseJarType throws a RuntimeException on its own error path, and a jar whose type cannot be worked
+			//out reaches a switch on a null. This method's contract is that a jar which is not the requested build
+			//never stays in mods/, so both kinds have to remove it before they throw.
 			removeRejected(target);
 			throw new IOException(source + " produced a jar that cannot be read back to see which build it is: " + e, e);
 		}
