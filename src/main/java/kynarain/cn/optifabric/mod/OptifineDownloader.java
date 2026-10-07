@@ -169,10 +169,52 @@ public final class OptifineDownloader {
 
 		File target = write(payload.bytes, targetDir, fileName);
 
+		OptifineHashes.require(build, payload.bytes, payload.source);
+		verifyIdentity(target, build, payload.source);
 		return new Outcome(target, payload.source, false, sha256(payload.bytes));
 	}
 
 	/** One source, resolved and validated. Throws with the reason, so the caller can show it. */
+	private static void verifyIdentity(File target, OptifineSupport.Build build, String source) throws IOException {
+		OptifineVersion.Parsed parsed;
+
+		try {
+			parsed = OptifineVersion.parseJarType(target);
+		} catch (IOException | RuntimeException e) {
+			//parseJarType throws a RuntimeException on its own error path, and a jar whose type cannot be worked
+			//out reaches a switch on a null. This method's contract is that a jar which is not the requested build
+			//never stays in mods/, so both kinds have to remove it before they throw.
+			removeRejected(target);
+			throw new IOException(source + " produced a jar that cannot be read back to see which build it is: " + e, e);
+		}
+
+		boolean isOptifine = parsed.type == OptifineVersion.JarType.OPTIFINE_MOD
+				|| parsed.type == OptifineVersion.JarType.OPTIFINE_INSTALLER;
+
+		if (!isOptifine) {
+			removeRejected(target);
+			throw new IOException(source + " did not produce an OptiFine jar (" + parsed.type + ")");
+		}
+
+		if (!build.buildName().equals(parsed.version) || !build.mc.equals(parsed.minecraftVersion)) {
+			removeRejected(target);
+			throw new IOException(source + " produced " + parsed.version + " for Minecraft " + parsed.minecraftVersion
+					+ ", not the " + build.buildName() + " for Minecraft " + build.mc + " that was asked for");
+		}
+
+		System.out.println("[OptiFabric] " + target.getName() + " declares " + parsed.version + " for Minecraft "
+				+ parsed.minecraftVersion + ", which is the build that was asked for");
+	}
+
+
+	private static void removeRejected(File target) {
+		try {
+			Files.deleteIfExists(target.toPath());
+		} catch (IOException e) {
+			System.err.println("[OptiFabric] Could not remove " + target + " after it failed the build check: " + e);
+		}
+	}
+
 	private static Payload fetchValidated(String url, Progress progress) throws IOException {
 		Payload payload = fetchOne(url, progress);
 
