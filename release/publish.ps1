@@ -93,6 +93,22 @@ $jar = Join-Path $root "dist\$artifact-$modVersion+mc$mc.jar"
 	Write-Host "=== $title ==="
 
 	#GitHub
+
+# -DryRun prints the command it would run, and that command carries an API token. Console logs get pasted into
+# issues, so what is printed has the secret taken out. Only a non-empty value is replaced: String.Replace with
+# an empty pattern would put the replacement between every character.
+function Protect-Secrets([string]$command) {
+	
+foreach ($secret in @($env:MODRINTH_TOKEN, $env:CURSEFORGE_TOKEN)) {
+	
+	
+if ($secret) { $command = $command.Replace($secret, '<token>') }
+	
+}
+
+	
+return $command
+}
 	$gh = "gh release create `"$tag`" `"$jar`" --title `"$title`" --notes-file `"$notes`" --target `"$tagTarget`""
 	if ($DryRun) { Write-Host "  [github]     $gh" }
 	else {
@@ -118,11 +134,11 @@ $jar = Join-Path $root "dist\$artifact-$modVersion+mc$mc.jar"
 		primary_file   = "file"
 	}
 	[System.IO.File]::WriteAllText($mrMeta, ($payload | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
-	$mr = "curl.exe -sS -X POST https://api.modrinth.com/v2/version -H `"Authorization: $env:MODRINTH_TOKEN`" -F `"data=@$mrMeta;type=application/json`" -F `"file=@$jar`""
-	if ($DryRun) { Write-Host "  [modrinth]   metadata -> $mrMeta"; Write-Host "               $mr" }
+	$mrArgs = @('-sS', '-X', 'POST', 'https://api.modrinth.com/v2/version', 		'-H', "Authorization: $env:MODRINTH_TOKEN", 		'-F', "data=@$mrMeta;type=application/json", 		'-F', "file=@$jar")
+	if ($DryRun) { Write-Host "  [modrinth]   metadata -> $mrMeta"; Write-Host "               " + (Protect-Secrets ($mrArgs -join ' ')) }
 	else {
 		if (-not $env:MODRINTH_TOKEN -or -not $env:MODRINTH_PROJECT_ID) { Write-Warning "  缺 MODRINTH_TOKEN / MODRINTH_PROJECT_ID,跳过 Modrinth" }
-		else { Invoke-Expression $mr }
+		else { & curl.exe @mrArgs }
 	}
 
 	#CurseForge
@@ -135,11 +151,11 @@ $jar = Join-Path $root "dist\$artifact-$modVersion+mc$mc.jar"
 		gameVersions  = @($mc, "Fabric")
 	}
 	[System.IO.File]::WriteAllText($cfMeta, ($meta | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
-	$cf = "curl.exe -sS -X POST `"https://minecraft.curseforge.com/api/projects/$env:CURSEFORGE_PROJECT_ID/upload`" -H `"X-Api-Token: $env:CURSEFORGE_TOKEN`" -F `"metadata=@$cfMeta;type=application/json`" -F `"file=@$jar`""
-	if ($DryRun) { Write-Host "  [curseforge] metadata -> $cfMeta"; Write-Host "               $cf" }
+	$cfArgs = @('-sS', '-X', 'POST', 		"https://minecraft.curseforge.com/api/projects/$env:CURSEFORGE_PROJECT_ID/upload", 		'-H', "X-Api-Token: $env:CURSEFORGE_TOKEN", 		'-F', "metadata=@$cfMeta;type=application/json", 		'-F', "file=@$jar")
+	if ($DryRun) { Write-Host "  [curseforge] metadata -> $cfMeta"; Write-Host "               " + (Protect-Secrets ($cfArgs -join ' ')) }
 	else {
 		if (-not $env:CURSEFORGE_TOKEN -or -not $env:CURSEFORGE_PROJECT_ID) { Write-Warning "  缺 CURSEFORGE_TOKEN / CURSEFORGE_PROJECT_ID,跳过 CurseForge" }
-		else { Invoke-Expression $cf }
+		else { & curl.exe @cfArgs }
 	}
 }
 

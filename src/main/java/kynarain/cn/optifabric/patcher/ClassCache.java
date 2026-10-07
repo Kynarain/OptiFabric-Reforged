@@ -65,6 +65,18 @@ public class ClassCache {
 		return crc.getValue();
 	}
 
+
+	/**
+	 * Ceilings for the four lengths a cache file declares. A corrupt header used to reach the array allocation
+	 * directly: a negative length threw NegativeArraySizeException out of read(), and an absurd one allocated
+	 * before the CRC below could reject the file. Both mean the same thing as any other corruption, so they
+	 * take the same route - the empty cache that makes the patcher rebuild.
+	 */
+	private static final int MAX_HASH_BYTES = 1024;
+	private static final int MAX_NAME_BYTES = 64 * 1024;
+	private static final int MAX_CLASS_BYTES = 16 * 1024 * 1024;
+	private static final int MAX_CLASSES = 100_000;
+
 	public static ClassCache read(File input) throws IOException {
 		try (DataInputStream dis = new DataInputStream(new GZIPInputStream(new FileInputStream(input)))) {
 			char formatRevision = dis.readChar(); //Check the format of the file
@@ -73,16 +85,16 @@ public class ClassCache {
 			long expectedCRC = dis.readLong();
 
 			//Read the hash
-			byte[] hash = new byte[dis.readInt()];
+			int hashLength = dis.readInt();  			if (hashLength < 0 || hashLength > MAX_HASH_BYTES) return new ClassCache(null);  			byte[] hash = new byte[hashLength];
 			dis.readFully(hash);
 			ClassCache classCache = new ClassCache(hash);
 
-			for (int i = 0, count = dis.readInt(); i < count; i++) {
-				byte[] nameBytes = new byte[dis.readInt()];
+			int count = dis.readInt();  			if (count < 0 || count > MAX_CLASSES) return new ClassCache(null);  			for (int i = 0; i < count; i++) {
+				int nameLength = dis.readInt();  				if (nameLength < 0 || nameLength > MAX_NAME_BYTES) return new ClassCache(null);  				byte[] nameBytes = new byte[nameLength];
 				dis.readFully(nameBytes);
 				String name = new String(nameBytes, StandardCharsets.UTF_8);
 
-				byte[] bytes = new byte[dis.readInt()];
+				int bodyLength = dis.readInt();  				if (bodyLength < 0 || bodyLength > MAX_CLASS_BYTES) return new ClassCache(null);  				byte[] bytes = new byte[bodyLength];
 				dis.readFully(bytes);
 				classCache.classes.put(name, bytes);
 			}
