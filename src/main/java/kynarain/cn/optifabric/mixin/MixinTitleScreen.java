@@ -79,7 +79,7 @@ public abstract class MixinTitleScreen extends Screen {
 		// as before) and never starts a process.
 		String modsPath = new File(FabricLoader.getInstance().getGameDirectory(), "mods").getAbsolutePath();
 		String logsPath = new File(FabricLoader.getInstance().getGameDirectory(), "logs").getAbsolutePath();
-		String readme = "https://github.com/Kynarain/OptiFabric/blob/mc1.21.11/README.md";
+		String readme = "https://github.com/Kynarain/OptiFabric/blob/wip/1.20.6-reforged/README.md";
 		String issues = "https://github.com/Kynarain/OptiFabric/issues";
 
 		//A jar whose class bytes cannot be parsed at all leaves jarType null, and OptifabricRuntime has already
