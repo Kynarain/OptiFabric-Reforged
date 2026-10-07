@@ -1,5 +1,50 @@
 # 更新日志
 
+## 1.1.6-reforged+mc1.20.6 — 修掉"启动即崩":帧计算里公共父类型改为对称求解
+
+> 本版修的是一处**在 1.20.6 上必然发生**的启动崩溃,并同步一轮来自代码审查的加固。这个崩**不是 OptiFine 造成的、也不是 Lithium 造成的**,是我们重算 StackMapTable 帧时把类型写错了。
+
+### 现象与根因
+
+在**文档规定的配置**(`preview_OptiFine_1.20.6_HD_U_J1_pre18`)上,客户端**到不了标题界面**:
+
+```
+java.lang.VerifyError: Bad return type
+  Location: net/minecraft/class_5944.method_35785(Ljava/lang/String;)Lnet/minecraft/class_278; @20: areturn
+  Reason:   Type 'java/lang/Object' (current frame, stack[0]) is not assignable to 'net/minecraft/class_278'
+```
+
+`class_5944` 是 `ShaderProgram`。那段代码本身**完全正确** —— 它把 `class_284`(实现了 `class_278`)与 `class_278` 合并后返回,与游戏原版逐指令一致(`invokevirtual method_34582:(Ljava/lang/String;)Lnet/minecraft/class_284;` + `getstatic field_29484:Lnet/minecraft/class_278;`);错的是我们写出的 **StackMapTable 帧**:帧里写成了 `java/lang/Object`,而校验器**以帧为准** ⇒ `Object` 不能赋给 `class_278` ⇒ 该类在**加载时**被拒。
+
+根因是 `FrameComputingWriter.getCommonSuperClass` **不对称**:它只展开第一个参数的祖先,再沿第二个参数的 `superName` 往上走。ASM 传参顺序是任意的,所以"接口在前、实现类在后"时永远匹配不上,只能回落成 `java/lang/Object` ✗。现在两侧各自求闭包(**自身 + 全部超类 + 全部接口**,最近优先)后取最近的公共类型;确实没有公共父类型时才用 `Object`。`allSupertypes` 也把**自身**算进去了,顺带修掉 `getCommonSuperClass(A, A)` 同样返回 `Object` 的问题。
+
+### 实测:五次运行,同一实例副本,每次先删掉已打补丁的缓存重新打
+
+| 运行 | 条件 | 结果 |
+|---|---|---|
+| A | 1.1.5-reforged + **Lithium 0.12.5** | 崩(`crash-2026-10-07_13.07.25-client.txt`) |
+| B | 1.1.5-reforged、**Lithium 移出** | **同样崩** ⇒ 与 Lithium 无关 |
+| C | **1.1.4-reforged**(上一版) | **同样崩** ⇒ 不是 1.1.5 的回归 |
+| D | 删掉 `.optifine` 缓存重新打补丁 | **同样崩** ⇒ 不是坏缓存 |
+| E | **本版**(1.1.6-reforged),Lithium 在场 | **0 份崩溃报告、0 次 VerifyError**,日志 290 行,进程一直存活到测试脚手架主动停掉(当时正在重载材质)✓ |
+
+### 同批加固(九条分支同步)
+
+* `ChunkRendererFix`:先判参数个数再取最后一个参数(短参数表的调用以前会 `AIOOBE`);
+* `MethodComparison`:不认识的 `invokedynamic` bootstrap 记为"不同"而不是抛异常;LDC 的 sort switch 原先**无 default**、基本类型会穿透到 IINC 比较并强转,改为统一按描述符比较;
+* `ClassCache`:文件里声明的四个长度全部加上限,负数/超大值走"空缓存",不再抛 `NegativeArraySizeException`;
+* `OptifineSetup`:`LambdaRebuilder` 放进 `finally` 关闭;
+* `GAME_CLASSES`:改为**有界 LRU**(上限 512),而不是"只 put 不清空";
+* `LambdaRebuilder`:模糊配对只按**本类**回查;`return 0` 改成 `continue`;
+* `InjectionCallPointFix`:重建调用时按位置消费参数,并优先照抄游戏自己那次调用的压栈指令(以前同类型多形参会把同一个槽位用两次、静默传错值);
+* `ZipUtils.extract`:路径检查改成**无条件 + 带分隔符**;
+* 标题界面:`jarType == null` 时不再 `switch (null)` 抛 NPE,而是落到"内部错误"分支;`parseJarType` 把 `RuntimeException` 一并接住(合法 zip 里装着坏字节的 `Config.class` 不再打崩错误提示本身);
+* 静默 catch 的 lint 覆盖到本线,每一处静默 catch 都带上了"为什么沉默"的标记。
+
+### 下载器(只影响 `-full` 构建;本产物没有下载器)
+
+`-full` 构建另外补了三处并做过**真实下载验证**:主机名精确比较(以前 `url.contains("optifine.net")`,`https://evil.example/?optifine.net` 会被当成官方页去抓对方页面并从里面找下载链接)、**一律要求 https**、以及**下载后校验下来的确实是所要的那个构建**(读它自己 `Config.class` 里声明的 `VERSION` / `MC_VERSION`,不匹配就删掉文件并报错)。**本产物不联网、不启动进程。**
+
 ## 1.1.5-reforged+mc1.20.6 — 修好 `BlockModelRenderer` 上被 OptiFine 拆掉的两处:Sodium 按名字注入的那个方法,以及它丢掉的调用点
 
 > 本版只改补丁管线里的修复器,没有改动其它行为。两处修复**都有实测依据**,依据与边界写在下面。
