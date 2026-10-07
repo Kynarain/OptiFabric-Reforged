@@ -55,6 +55,8 @@
 | Release 正文 | `CHANGELOG.md` 的 **1.1.6 节**(整节粘贴) |
 | Latest | **不勾** `make_latest`(Latest 归 26.x 线,当前是 `v2.2.8`) |
 | `-full` 变体 | 由 `convenience/1.20.6-reforged-1.1.6` 构建(749,718 B,`AA80CE1D…0B482107`),与默认产物共用同一个 Release(仅 GitHub) |
+| **1.1.7** | `1.1.7-reforged+mc1.20.6` / `v1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6.jar` | 732365 | `B21C47F758C4B381F68E120BD1F1A7878EAE696AB5B8C570DB3AAB3CBE9D9D26` | CHANGELOG 1.1.7 |
+| 1.1.7(GitHub only: `-full`) | `1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6-full.jar` | 752551 | `ABF0DF8AD6006225AA7AF74E6B88397AB47FE321CFB64295D64AB117776362B9` | CHANGELOG 1.1.7 |
 
 ## 三、核对命令(每次升版都跑一遍)
 
