@@ -544,6 +544,15 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | sample--mr-cobblesmartphone-pokedex | sample--mr-cobblesmartphone-pokedex |  |
 | sample--mr-moonrise-compats | sample--mr-moonrise-compats |  |
 
+> **更正:The Twilight Forest 那两行已被后来的专项调查取代。** 那两行(`cf--the-twilight-forest`、
+> `sample--cf-the-twilight-forest`)量的是 **OptiFabric 2.2.1** 时代的结果,当时的失败点名 `class_156` / `class_638` 的
+> mixin 变换;这两处后来都在 **2.2.3** 修好,2.2.8 又把 `class_5944`(`ShaderProgram`)的 null 补完。最新一次专项调查
+> (`tf-must`,1.21.1)量到 **Twilight Forest 能进世界,但是间歇性的(11 个带 TF 的臂里 4 个;不带 TF 的同一套 3/3)**,失败的那次
+> 是客户端里一处闲置的「世界打开交接」被丢掉、没有异常;**重试有效,但别急着判它卡死** —— 最慢的一次是标题界面后 122.7 s
+> 才进场,给世界加载**两到三分钟**再下结论;真没打开就重启客户端,失败那次的存档不会坏。本表 651 行**逐行未动、未重排**,上面两行也保留原样,
+> 只在这一条下面加了这段说明;**完整结论见 1.21.x 线上仓库的 `docs/COMPATIBILITY.md` 与 `docs/COMPATIBILITY_CN.md`
+> (以及 `release/notes/mc1.21.1.md`)。**
+
 ## 声明性拒载（1）
 
 模组自己在元数据里声明拒绝本模组，或本模组声明拒绝它。
