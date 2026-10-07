@@ -280,6 +280,7 @@ public class AddInterfaceFix implements ClassFixer {
 		try {
 			return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 		} catch (IOException e) {
+			// silent by design: returns null; the caller treats it as "no text here" and keeps going
 			return null;
 		}
 	}
@@ -313,6 +314,7 @@ public class AddInterfaceFix implements ClassFixer {
 		try (InputStream in = zip.getInputStream(entry)) {
 			return new String(in.readAllBytes(), StandardCharsets.UTF_8);
 		} catch (IOException e) {
+			// silent by design: returns null; the caller treats it as "no text here" and keeps going
 			return null;
 		}
 	}
@@ -321,6 +323,7 @@ public class AddInterfaceFix implements ClassFixer {
 		try (InputStream in = zip.getInputStream(entry)) {
 			return read(in);
 		} catch (IOException | RuntimeException e) {
+			// silent by design: returns null; this candidate is skipped and the search continues
 			return null;
 		}
 	}
@@ -335,6 +338,7 @@ public class AddInterfaceFix implements ClassFixer {
 		try (InputStream in = Files.newInputStream(root.resolve(className + ".class"))) {
 			return read(in);
 		} catch (IOException | RuntimeException e) {
+			// silent by design: returns null; this candidate is skipped and the search continues
 			return null;
 		}
 	}

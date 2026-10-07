@@ -113,6 +113,7 @@ public final class OptifinePrompt {
 
 			return !lines.isEmpty() && lines.get(0).trim().equals(installedBuild == null ? "" : installedBuild.trim());
 		} catch (IOException e) {
+			// silent by design: unreadable means "not acknowledged", which shows the notice again - the safe direction
 			return false;
 		}
 	}
