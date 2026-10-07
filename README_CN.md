@@ -17,7 +17,7 @@
 
 本分支是 **1.21.x 线**,覆盖 Minecraft **1.21 – 1.21.11**(OptiFine 出过构建的全部十个版本)。26.x 线(Minecraft 26.2 / 26.1.2)与 1.20.6 线各自在自己的分支上;不同线的 jar **不能互相替代**。
 
-**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `2.2.12`
+**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `2.2.13`
 
 ## 📦 安装
 
@@ -294,3 +294,18 @@ OptiFabric/
 ---
 
 **说明:** 这是一个社区移植,与 OptiFine、Fabric、Mojang 团队均无关联,也未获其背书或支持。
+
+## 出处、许可与 AI 参与
+
+这个项目是 Modmuss50 与 Chocohead 的 [OptiFabric](https://github.com/Chocohead/OptiFabric) 的移植,并沿用其许可:
+**MPL-2.0**(见 `LICENSE.txt`)。MPL-2.0 要求修改过的文件保持源码可得,这正是本仓库公开、且带着完整历史的原因 ——
+这次移植改动过的每一处都在里面。
+
+移植工作 —— 读 OptiFine 打补丁后的字节码、写各个 fixer、以及发布流程 —— 是**在 AI 协助下编写与验证**的,
+每一份 README 与发布说明的开头都写着这一点(另见 FAQ 第 17 问)。这在实践中的含义与"谁写的"无关,而是一条
+关于**证据**的规矩:这些文档里的每一个数字都来自本仓库里抓取到的日志或原始报告,凡是没测的,就写成
+**未测**,而不是估一个数。`CONTRIBUTING.md` 里的复查清单也是同一条规矩。
+
+任何构建都**不打包、也不重新分发** OptiFine:模组只读你放进 `mods/` 的那个 OptiFine jar;`-full` 版本才会按你的
+请求去 optifine.net 下载它。本仓库涉及到的第三方项目(Fabric API、Sodium、Lithium、C2ME……)同样从不随 jar 分发 ——
+与它们的兼容情况写在 `COMPATIBILITY.md` 里,而不是塞进产物里。

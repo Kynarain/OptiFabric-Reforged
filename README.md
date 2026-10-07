@@ -17,7 +17,7 @@ Load **OptiFine** under **Fabric Loader**: put OptiFine's jar next to this mod a
 
 This is the **1.21.x line** and covers Minecraft **1.21 – 1.21.11** (all ten releases OptiFine ever shipped a build for). The 26.x line (Minecraft 26.2 / 26.1.2) and the 1.20.6 line live on their own branches; jars from different lines are **not interchangeable**.
 
-**Author:** kynarain · upstream: Modmuss50, Chocohead · **License:** MPL-2.0 · **Current version:** `2.2.12`
+**Author:** kynarain · upstream: Modmuss50, Chocohead · **License:** MPL-2.0 · **Current version:** `2.2.13`
 
 ## 📦 Installation
 
@@ -295,3 +295,21 @@ With a shader pack enabled and a Litematica schematic being rendered, OptiFine l
 ---
 
 **Note:** this is a community port. It is not affiliated with, endorsed by or supported by the OptiFine, Fabric or Mojang teams.
+
+## Attribution, licence and AI involvement
+
+This is a port of [OptiFabric](https://github.com/Chocohead/OptiFabric) by Modmuss50 and Chocohead, and it keeps
+their licence: **MPL-2.0** (`LICENSE.txt`). MPL-2.0 asks that the source of modified files stay available, which
+is why this repository is public and carries the full history: everything this port changed is in it.
+
+The porting work - reading OptiFine's patched bytecode, writing the fixers, and the release plumbing - is
+**written and verified with AI assistance**, and every README and release note says so at the top (see also
+FAQ 17). What that means in practice is a rule about evidence rather than about authorship: every number in
+these documents comes from a log or a report captured in this repository, and anything not measured is written
+as **not measured** instead of being estimated. The reviewer's checklist in `CONTRIBUTING.md` is built the same
+way.
+
+OptiFine itself is **not bundled, patched into a download, or redistributed** by any build here: the mod reads
+the OptiFine jar you put in `mods/`, or `-full` variants download it from optifine.net at your request. The
+third-party projects this repository talks to (Fabric API, Sodium, Lithium, C2ME, ...) are never included
+either - compatibility with them is described in `COMPATIBILITY.md`, not shipped inside the jar.

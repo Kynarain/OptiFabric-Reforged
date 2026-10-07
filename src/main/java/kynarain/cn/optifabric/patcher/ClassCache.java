@@ -78,23 +78,37 @@ public class ClassCache {
 	private static final int MAX_CLASSES = 100_000;
 
 	public static ClassCache read(File input) throws IOException {
-		try (DataInputStream dis = new DataInputStream(new GZIPInputStream(new FileInputStream(input)))) {
+		FileInputStream fileIn = new FileInputStream(input);
+
+		//The file stream is a resource of its own. When the gzip header is missing the GZIPInputStream
+		//constructor throws before its declaration completes, and a file stream created inside that same
+		//declaration would then never be registered, so it would never be closed on exactly the corrupt-file
+		//path this method exists to survive.
+		try (DataInputStream dis = new DataInputStream(new GZIPInputStream(fileIn))) {
 			char formatRevision = dis.readChar(); //Check the format of the file
 			if (formatRevision != 'E') return new ClassCache(null);
 
 			long expectedCRC = dis.readLong();
 
 			//Read the hash
-			int hashLength = dis.readInt();  			if (hashLength < 0 || hashLength > MAX_HASH_BYTES) return new ClassCache(null);  			byte[] hash = new byte[hashLength];
+			int hashLength = dis.readInt();
+			if (hashLength < 0 || hashLength > MAX_HASH_BYTES) return new ClassCache(null);
+			byte[] hash = new byte[hashLength];
 			dis.readFully(hash);
 			ClassCache classCache = new ClassCache(hash);
 
-			int count = dis.readInt();  			if (count < 0 || count > MAX_CLASSES) return new ClassCache(null);  			for (int i = 0; i < count; i++) {
-				int nameLength = dis.readInt();  				if (nameLength < 0 || nameLength > MAX_NAME_BYTES) return new ClassCache(null);  				byte[] nameBytes = new byte[nameLength];
+			int count = dis.readInt();
+			if (count < 0 || count > MAX_CLASSES) return new ClassCache(null);
+			for (int i = 0; i < count; i++) {
+				int nameLength = dis.readInt();
+				if (nameLength < 0 || nameLength > MAX_NAME_BYTES) return new ClassCache(null);
+				byte[] nameBytes = new byte[nameLength];
 				dis.readFully(nameBytes);
 				String name = new String(nameBytes, StandardCharsets.UTF_8);
 
-				int bodyLength = dis.readInt();  				if (bodyLength < 0 || bodyLength > MAX_CLASS_BYTES) return new ClassCache(null);  				byte[] bytes = new byte[bodyLength];
+				int bodyLength = dis.readInt();
+				if (bodyLength < 0 || bodyLength > MAX_CLASS_BYTES) return new ClassCache(null);
+				byte[] bytes = new byte[bodyLength];
 				dis.readFully(bytes);
 				classCache.classes.put(name, bytes);
 			}

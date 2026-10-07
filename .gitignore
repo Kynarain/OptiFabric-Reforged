@@ -36,3 +36,7 @@ build-log.txt
 
 # release/publish.ps1 生成的提交载荷,只是留档用
 release/tmp/
+# Stray gradle output that should never be committed
+build-*.log
+build-err.log
+build-out.log

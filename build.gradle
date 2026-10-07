@@ -52,6 +52,8 @@ base {
 }
 
 repositories {
+    // JUnit is not in Loom's repositories: everything else this project needs is.
+    mavenCentral()
     // Loom already adds the repositories needed for Minecraft, Fabric Loader and the mapping artifacts.
 }
 
@@ -80,6 +82,11 @@ dependencies {
     compileOnly "org.ow2.asm:asm-analysis:${project.asm_version}"
     // No JNA: it was only there for the Windows self-restart (Kernel32.GetCommandLineW/CreateProcessW), which
     // this release no longer has. Nothing in this mod starts a process or loads a native library.
+
+    // JUnit 5 for the unit tests in src/test. They cover the pure logic only - zip handling and the
+    // cache file format - so they need no Minecraft classes and run as an ordinary JVM test run.
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.10.2"
 }
 
 def targetJavaVersion = 21
@@ -145,6 +152,10 @@ java {
         toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     }
     withSourcesJar()
+}
+
+test {
+    useJUnitPlatform()
 }
 
 jar {
