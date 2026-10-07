@@ -343,6 +343,19 @@ public class AddInterfaceFix implements ClassFixer {
 		return node;
 	}
 
+	/** Whether an annotation value - one Type or a list of them - names the given internal class name. */
+	private static boolean namesTarget(Object value, String targetClass) {
+		if (value instanceof org.objectweb.asm.Type type) return targetClass.equals(type.getInternalName());
+
+		if (value instanceof List) {
+			for (Object element : (List<?>) value) {
+				if (namesTarget(element, targetClass)) return true;
+			}
+		}
+
+		return false;
+	}
+
 	private static boolean targets(ClassNode node, String targetClass) {
 		List<AnnotationNode> annotations = new ArrayList<>();
 
@@ -353,11 +366,18 @@ public class AddInterfaceFix implements ClassFixer {
 			if (!"Lorg/spongepowered/asm/mixin/Mixin;".equals(annotation.desc) || annotation.values == null) continue;
 
 			for (int i = 0; i + 1 < annotation.values.size(); i += 2) {
-				if (!"targets".equals(annotation.values.get(i))) continue;
-				if (!(annotation.values.get(i + 1) instanceof List)) continue;
+				Object key = annotation.values.get(i);
+				Object value = annotation.values.get(i + 1);
 
-				for (Object target : (List<?>) annotation.values.get(i + 1)) {
-					if (target instanceof String && targetClass.equals(((String) target).replace('.', '/'))) return true;
+				//@Mixin(targets = "a.b.C") names the class with a String, and @Mixin(C.class) - the form the
+				//annotation's own value member takes - arrives as a Type or a list of them. Both name the same
+				//target, so both have to be read: an interface that used the value form used to be missed here.
+				if ("targets".equals(key) && value instanceof List) {
+					for (Object target : (List<?>) value) {
+						if (target instanceof String && targetClass.equals(((String) target).replace('.', '/'))) return true;
+					}
+				} else if ("value".equals(key) && namesTarget(value, targetClass)) {
+					return true;
 				}
 			}
 		}
