@@ -45,7 +45,13 @@ public class SyntheticFieldFix implements ClassFixer {
 			// A recompiled class keeps the declaration order of its fields, so the field at the same position is
 			// the same field - and that is the only way to tell two captured locals of the same type apart
 			// (ModelManager$1 has two SpriteLoader.Preparations fields, so the type alone is ambiguous).
-			if (index < minecraft.fields.size()) {
+			//
+			// That order is only evidence while the two classes declare the same number of fields: one field
+			// gained or lost shifts everything after it, and a shifted match would look exactly like a real one.
+			// So the counts have to agree before a position is trusted, and two fields of the same type that
+			// swapped places stay the one case this rule cannot see - their names are the only thing that would
+			// tell them apart, which is the thing being reconstructed.
+			if (optifine.fields.size() == minecraft.fields.size() && index < minecraft.fields.size()) {
 				FieldNode positional = minecraft.fields.get(index);
 
 				if (positional.desc.equals(field.desc) && !has(optifine, positional.name, positional.desc)
