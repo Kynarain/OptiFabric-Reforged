@@ -83,7 +83,12 @@ public abstract class MixinTitleScreen extends Screen {
 		String readme = "https://github.com/Kynarain/OptiFabric/blob/26.x/README.md";
 		String issues = "https://github.com/Kynarain/OptiFabric/issues";
 
-		switch (OptifineVersion.jarType) {
+		//A jar whose class bytes cannot be parsed at all leaves jarType null, and OptifabricRuntime has already
+		//turned that into an error with a stack behind it. Switching on null threw a NullPointerException out of
+		//the title screen - in the one path that exists to explain a failure to the user.
+		OptifineVersion.JarType jarType = OptifineVersion.jarType;
+
+		switch (jarType != null ? jarType : OptifineVersion.JarType.INTERNAL_ERROR) {
 		case MISSING: //Errors relating to the OptiFine jar, link the mods folder
 		case CORRUPT_ZIP:
 		case INCOMPATIBLE:
