@@ -38,6 +38,8 @@ import com.sun.jna.platform.win32.WinBase.STARTUPINFO;
 import java.util.zip.ZipError;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Fetches the OptiFine jar the support table asks for and puts it into a {@code mods} folder.
