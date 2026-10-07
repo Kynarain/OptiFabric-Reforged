@@ -16,6 +16,7 @@
 Load **OptiFine** under **Fabric Loader**. Put OptiFine's jar next to this mod and it patches the vanilla client with OptiFine's own patcher, rebuilds the lambdas whose targets moved, and hands the patched Minecraft classes to Fabric Loader's class transformer — so both can live in one client. **OptiFine itself is not bundled or redistributed.**
 
 This branch is the **26.x line** and covers **Minecraft 26.2** (current) and **Minecraft 26.1.2**. The 1.21.x line (Minecraft 1.21 – 1.21.11) lives on the [`1.21.x` branch](../../tree/1.21.x) and is developed separately; jars from the two lines are **not interchangeable**.
+完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。The full MC 1.21.1 compatibility list is in [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
 ## 📖 Overview
 
@@ -185,7 +186,7 @@ The sodium conflict and three of those five `breaks` are **inherited from upstre
 
 **Architectury is the reverse story.** Upstream declared architectury broken (and architectury's own metadata still declares `breaks: optifabric <1.13.0`, which this line's id no longer matches). On the 1.21.x line that conflict was fixed at the bytecode level — OptiFine inserts its own locals into the middle of `GameRenderer.render`, shifting the slots Mixin's `LocalCapture` hands to a handler — and `architectury-api` passes the measured sweep there. **That fixer belongs to the 1.21.x line; nothing equivalent is present here, and no compatibility run has been made for these two releases**, so architectury on 26.2 / 26.1.2 is untested rather than declared working.
 
-The mod's own in-game records are in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) and [`docs/PORT_26.x.md`](docs/PORT_26.x.md); the measured incompatibility sweep (1.21.1 only, and it does **not** cover 26.x) is written up in the 1.21.x line's `docs/COMPATIBILITY.md`.
+The mod's own in-game records are in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) and [`docs/PORT_26.x.md`](docs/PORT_26.x.md); the measured incompatibility sweep (1.21.1 only, and it does **not** cover 26.x) is written up in the 1.21.x line's `docs/COMPATIBILITY.md`, and the full per-mod list (MC 1.21.1 only — it does not cover 26.x) is [`COMPATIBILITY.md`](COMPATIBILITY.md) at this repository's root.
 
 ## 📊 Verified State
 
@@ -225,6 +226,7 @@ OptiFabric-Reforged/
 │   ├── mixin/                       # the two mixins this project ships
 │   └── util/                        # ASM / mixin / remap / zip helpers
 ├── src/main/resources/              # fabric.mod.json, optifabric.mixins.json, assets/…/icon.png
+├── COMPATIBILITY.md                 # the full per-mod compatibility list (MC 1.21.1)
 ├── docs/                            # PORT_26.x.md, DEVELOPMENT.md, VERSIONING.md, DESCRIPTION.md, PUBLISHING.md
 ├── release/                         # version.ps1, publish.ps1, notes/, MANUAL_RELEASE.md
 ├── build.gradle · gradle.properties · settings.gradle

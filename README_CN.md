@@ -16,6 +16,7 @@
 在 **Fabric Loader** 下加载 **OptiFine**。把 OptiFine 的 jar 和本模组一起放进 `mods/`,启动时会用 OptiFine 自带的补丁器给原版客户端打补丁、重建被搬走的 lambda,并把打过补丁的 Minecraft 类交给 Fabric Loader 的类转换器接管,从而让两者共存。**不包含、也不分发 OptiFine 本体。**
 
 本分支是 **26.x 线**,对应 **Minecraft 26.2**(当前)与 **Minecraft 26.1.2**。1.21.x 线(Minecraft 1.21 – 1.21.11)在 [`1.21.x` 分支](../../tree/1.21.x)上独立开发,两条线的 jar **不能互相替代**。
+完整兼容列表(MC 1.21.1)见 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
 
 ## 📖 概览
 
@@ -189,7 +190,7 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 
 **Architectury 是反过来的例子。** 上游声明 architectury 坏(architectury 自己的元数据至今也还写着 `breaks: optifabric <1.13.0`,而本线的 id 已经不再命中它)。在 1.21.x 线上,那个冲突在字节码层面被修掉了 —— OptiFine 往 `GameRenderer.render` 中间插自己的局部变量,把 Mixin `LocalCapture` 交给处理器的槽位整体顶高 —— 那边的 `architectury-api` 通过了实测扫描。**那个 fixer 属于 1.21.x 线,这条线里没有对应实现,也没有为这两个版本做过任何兼容性实测**,所以在 26.2 / 26.1.2 上 architectury 属于**未测**,而不是"已声明可用"。
 
-模组自己的实机记录在 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) 与 [`docs/PORT_26.x.md`](docs/PORT_26.x.md);那次实测的兼容性扫描(**只覆盖 1.21.1,不覆盖 26.x**)写在 1.21.x 线的 `docs/COMPATIBILITY.md` 里。
+模组自己的实机记录在 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) 与 [`docs/PORT_26.x.md`](docs/PORT_26.x.md);那次实测的兼容性扫描(**只覆盖 1.21.1,不覆盖 26.x**)写在 1.21.x 线的 `docs/COMPATIBILITY.md` 里;逐行完整列表(**只覆盖 1.21.1,不覆盖 26.x**)在仓库根目录的 [`COMPATIBILITY.md`](COMPATIBILITY.md)。
 
 ## 📊 验证状态
 
@@ -231,6 +232,7 @@ OptiFabric-Reforged/
 │   ├── mixin/                       # 本模组自己的两个 mixin
 │   └── util/                        # ASM / mixin / remap / zip 工具
 ├── src/main/resources/              # fabric.mod.json、optifabric.mixins.json、assets/…/icon.png
+├── COMPATIBILITY.md                 # 逐行完整兼容列表(1.21.1 实测)
 ├── docs/                            # PORT_26.x.md、DEVELOPMENT.md、VERSIONING.md、DESCRIPTION.md、PUBLISHING.md
 ├── release/                         # version.ps1、publish.ps1、notes/、MANUAL_RELEASE.md
 ├── build.gradle · gradle.properties · settings.gradle
