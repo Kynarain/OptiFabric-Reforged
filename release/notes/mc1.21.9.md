@@ -1045,7 +1045,7 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.13+mc1.21.9.jar` — 919050 字节
+`OptiFabric-2.2.13+mc1.21.9.jar` — 919079 字节
 
 `SHA-256: 2F2721DC540F75874F55303273E9D9B114E38A7B160C4277E26BF99AB5526BFB`
 ---
