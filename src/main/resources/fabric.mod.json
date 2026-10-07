@@ -11,8 +11,8 @@
     "Chocohead"
   ],
   "contact": {
-    "homepage": "https://www.curseforge.com/minecraft/mc-mods/optifabric",
-    "sources": "https://github.com/Chocohead/OptiFabric"
+    "homepage": "https://github.com/Kynarain/OptiFabric-Reforged",
+    "sources": "https://github.com/Kynarain/OptiFabric-Reforged"
   },
   "license": "MPL-2.0",
   "icon": "assets/optifabric/icon.png",
