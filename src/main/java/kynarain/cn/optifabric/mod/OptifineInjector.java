@@ -46,7 +46,20 @@ import kynarain.cn.optifabric.patcher.fixes.OptifineFixer;
  */
 public class OptifineInjector {
 	/** Game classes read for the fixes and for frame computation, keyed by internal name (null = not present). */
-	private static final Map<String, ClassNode> GAME_CLASSES = new HashMap<>();
+	/**
+	 * Game classes already read, by internal name. Bounded rather than unbounded: the patching pass runs once
+	 * at startup and this map then lives for the whole session, so an uncapped cache would hold every class it
+	 * ever looked at for hours. 512 is far above what one pass touches, and the least recently used entry goes
+	 * first, so the classes still being asked for are the ones that stay.
+	 */
+	private static final Map<String, ClassNode> GAME_CLASSES = new LinkedHashMap<>(64, 0.75f, true) {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<String, ClassNode> eldest) {
+			return size() > 512;
+		}
+	};
 
 	private final ClassCache classCache;
 

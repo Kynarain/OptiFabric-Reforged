@@ -128,6 +128,15 @@ public class LambdaRebuilder implements IMappingProvider, Closeable {
 				Member lambda = fuzz.getKey();
 				Pair<String, String> remap = fuzz.getValue();
 
+				
+//Only this class's own fuzzy pairs. The map accumulates across every class in the jar, and
+				
+//the key below is the name and descriptor alone, so a pair from another class used to be able
+				
+//to apply to a method here that happens to share them.
+				
+if (!patched.name.equals(fuzz.getKey().owner)) continue;
+
 				toCheck.put(lambda.name.concat(lambda.desc), remap.getLeft().concat(remap.getRight()));
 				checkedLambdas.put(lambda.name.concat(lambda.desc), lambda);
 			}
@@ -257,7 +266,7 @@ public class LambdaRebuilder implements IMappingProvider, Closeable {
 					}
 				}
 
-				if (fixedLambdas == originalLambdas.size()) return 0; //Caught all the lambdas
+				if (fixedLambdas == originalLambdas.size()) continue; //Caught all the lambdas: this method is done, the ones after it are not
 			}
 		}
 
