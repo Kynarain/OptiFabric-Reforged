@@ -249,12 +249,13 @@ public final class OptifineDownloader {
 
 	private static Payload fetchOne(String url, Progress progress) throws IOException {
 		URI uri = toUri(url);
+		requireHttps(uri);
 
 		if (!"http".equalsIgnoreCase(uri.getScheme()) && !"https".equalsIgnoreCase(uri.getScheme())) {
 			throw new IOException("only http and https sources are supported, not " + url);
 		}
 
-		if (url.contains("optifine.net")) {
+		if (isOfficial(uri)) {
 			progress.stage("page", url);
 			byte[] page = get(uri, progress);
 			String link = findDownloadLink(new String(page, StandardCharsets.ISO_8859_1));
@@ -266,6 +267,7 @@ public final class OptifineDownloader {
 			URI jarUri;
 			try {
 				jarUri = uri.resolve(link);
+				requireHttps(jarUri);
 			} catch (IllegalArgumentException e) {
 				throw new IOException("the download link on " + uri + " is not a usable URL: " + link, e);
 			}
@@ -332,6 +334,7 @@ public final class OptifineDownloader {
 	}
 
 	private static byte[] get(URI uri, Progress progress) throws IOException {
+	requireHttps(uri);
 		HttpRequest request = HttpRequest.newBuilder(uri)
 				.timeout(REQUEST_TIMEOUT)
 				.header("User-Agent", USER_AGENT)
