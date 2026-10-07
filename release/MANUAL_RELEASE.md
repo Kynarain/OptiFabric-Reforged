@@ -41,7 +41,7 @@
 
 | 版本 | 版本号 / 标签 | jar | 字节 | SHA-256 | 正文 |
 |---|---|---|---|---|---|
-| 26.2 | 2.2.9+mc26.2 / v2.2.8 | dist\OptiFabric-Reforged-2.2.9+mc26.2.jar | 186550 | 0FCB2FD40BD1B233912F4CDE828932E409713406F5928BF892BBE4EF8DAB1029 | release/notes/mc26.2.md |
+| 26.2 | 2.2.9+mc26.2 / v2.2.9 | dist\OptiFabric-Reforged-2.2.9+mc26.2.jar | 186547 | 49C482351DC2ED13E662143129E80CA23EC79110C6A24E6EFF5337110F3DD100 | release/notes/mc26.2.md |
 | 26.1.2 | 2.2.9+mc26.1.2 / v2.2.9+mc26.1.2 | dist\OptiFabric-Reforged-2.2.9+mc26.1.2.jar | 186550 | 0FCB2FD40BD1B233912F4CDE828932E409713406F5928BF892BBE4EF8DAB1029 | release/notes/mc26.1.2.md |
 
 > ⚠️ **`-RecordDigest` 会把这张表里每一行都改一遍,跑完必须 `git diff` 逐行看**
