@@ -168,7 +168,16 @@ public final class OptifineDownloader {
 		File target = new File(targetDir, build.file);
 
 		if (target.isFile() && isOptifineArchive(target)) {
-			return new Outcome(target, target.toURI().toString(), true, sha256(read(target.toPath())));
+			byte[] existing = read(target.toPath());
+
+			if (OptifineHashes.matches(build, existing)) {
+				return new Outcome(target, target.toURI().toString(), true, sha256(existing));
+			}
+
+			// A jar that does not match the recorded contents of this build is removed rather than returned:
+			// otherwise a download that was refused once would be accepted by the next launch.
+			System.out.println("[OptiFabric] " + target + " is not one of the recorded contents of " + build.file + "; downloading it again");
+			removeRejected(target);
 		}
 
 		return fetch(sourceTemplate, build, targetDir, build.file, progress);
@@ -185,9 +194,11 @@ public final class OptifineDownloader {
 
 		progress.stage("save", targetDir.getPath());
 
-		File target = write(payload.bytes, targetDir, fileName);
-
+		// Checked before it is written: a jar that fails the check must not be left on disk for the next launch
+		// to pick up as "already present".
 		OptifineHashes.require(build, payload.bytes, payload.source);
+
+		File target = write(payload.bytes, targetDir, fileName);
 		verifyIdentity(target, build, payload.source);
 
 		return new Outcome(target, payload.source, false, sha256(payload.bytes));
