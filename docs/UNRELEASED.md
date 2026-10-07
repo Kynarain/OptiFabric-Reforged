@@ -68,3 +68,13 @@ synthetic field count guard.
 
 1. **同一处修复要在 store 线与便利分支上分别确认**（`git log` 在该分支上能查到那次提交才算确认），发行前用"下载回来的 jar 里有没有对应标记"做最终验收；
 2. **提交前必须先构建通过** —— `convenience/1.20.6-1.1.6` 上曾经推过一个编译不过的提交，因为当时的脚本没有把"编译成功"当成提交前提。
+
+## Downloader integrity (all eight convenience branches)
+
+Every branch that carries the downloader now has all four checks - exact host, https only, the downloaded jar read
+back and compared against the build that was asked for, and its SHA-256 compared against the recorded contents of
+that build (OptifineHashes, new). A jar that matches none of the recorded contents is refused with both sides
+printed rather than accepted silently. The real hashes, and why the check accepts a set of contents instead of one
+pinned value, are in docs/DOWNLOAD_INTEGRITY.md. Per branch: 2.2.13 `e9d5e18`/`ebf8027`; 2.2.12 `3ea1c5b`/`2cfa0ab`;
+2.2.11 `4d507a2`/`2131291`; 26.x-2.2.8 `e19001c`/`1bbc839`; 26.x-2.2.7 `e1f123f`/`190364f`; rf-1.1.5 `8a561d9`;
+rf-1.1.6 `80c7e9e`; 1.20.6-1.1.6 `47e8554` (that one also gained verifyIdentity, which it never had).
