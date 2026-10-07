@@ -172,7 +172,7 @@ public class ZipUtils {
 		try {
 			tempZip = File.createTempFile("optifabric", ".zip");
 
-			transform(zip, ZipFile.OPEN_READ | ZipFile.OPEN_DELETE, transformer, tempZip);
+			transform(zip, ZipFile.OPEN_READ, transformer, tempZip);
 			if (zip.exists() && !zip.delete()) throw new IllegalStateException("Failed to clear " + zip); //Make sure it's definitely out of the way
 
 			moveFile(tempZip, zip);
