@@ -385,6 +385,7 @@ public final class C2meCompat {
 			Field field = entryPoint.getField(C2ME_WORLDGEN_ENABLED_FIELD);
 			return field.getBoolean(null);
 		} catch (Throwable t) {
+			// silent by design: an unreadable field means the setting could not be resolved, which the caller treats as "leave the config alone"
 			return null;
 		}
 	}

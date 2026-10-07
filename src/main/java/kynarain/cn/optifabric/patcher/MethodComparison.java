@@ -171,7 +171,10 @@ class MethodComparison {
 			} else if ("java/lang/runtime/ObjectMethods".equals(a.bsm.getOwner())) {
 				return Objects.equals(a.name, b.name) && Arrays.asList(a.bsmArgs).subList(2, a.bsmArgs.length).equals(Arrays.asList(b.bsmArgs).subList(2, b.bsmArgs.length));
 			} else {
-				throw new IllegalStateException(String.format("Unknown invokedynamic bsm: %s#%s%s (tag=%d iif=%b)", a.bsm.getOwner(), a.bsm.getName(), a.bsm.getDesc(), a.bsm.getTag(), a.bsm.isInterface()));
+				//An invokedynamic this comparison does not model cannot be shown to be the same, so it is reported as
+					//a difference. Throwing here killed the whole patch instead of one comparison.
+					System.out.println("[OptiFabric] MethodComparison treats an unrecognised invokedynamic as a difference");
+					return false;
 			}
 		}
 
@@ -196,14 +199,10 @@ class MethodComparison {
 
 				if (typeA.getSort() != typeB.getSort()) return false;
 
-				switch (typeA.getSort()) {
-				case Type.ARRAY:
-				case Type.OBJECT:
-					return Objects.equals(typeA.getDescriptor(), typeB.getDescriptor());
-
-				case Type.METHOD:
-					throw new UnsupportedOperationException("Bad sort: " + typeA);
-				}
+				//Every sort is compared by descriptor. The sorts were already required to be equal above, and
+				//the switch this replaces had no default: for the primitive sorts it fell out of the case block
+				//and ran the IINC comparison below with a Type in hand, which is a ClassCastException.
+				return Objects.equals(typeA.getDescriptor(), typeB.getDescriptor());
 			} else {
 				return a.cst.equals(b.cst);
 			}
@@ -290,7 +289,10 @@ class MethodComparison {
 				} else if ("java/lang/invoke/StringConcatFactory".equals(idin.bsm.getOwner()) || "java/lang/runtime/ObjectMethods".equals(idin.bsm.getOwner())) {
 					//These won't have any methods within the class to find
 				} else {
-					throw new IllegalStateException(String.format("Unknown invokedynamic bsm: %s#%s%s (tag=%d iif=%b)", idin.bsm.getOwner(), idin.bsm.getName(), idin.bsm.getDesc(), idin.bsm.getTag(), idin.bsm.isInterface()));
+					//An invokedynamic this comparison does not model. It holds no handle to a method of this class, so
+					//there is nothing to rebuild here and no reason to throw: the original exception took the whole
+					//patch down over one instruction it did not recognise.
+					System.out.println("[OptiFabric] MethodComparison does not model an invokedynamic in this method, skipping it");
 				}
 			}
 		}

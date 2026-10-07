@@ -189,6 +189,7 @@ public class OptifineVersion {
 
 			classNode = ASMUtils.readClass(jarFile, jarEntry);
 		} catch (ZipException | ZipError e) {
+			// silent by design: becomes JarType.CORRUPT_ZIP, which the dialog shows the user
 			return new Parsed(JarType.CORRUPT_ZIP, null, null);
 		}
 
