@@ -37,16 +37,16 @@ With version isolation (PCL2 / HMCL) the game directory, `mods/` and the `.optif
 
 | Minecraft | jar | OptiFine build | State |
 |---|---|---|---|
-| 1.21 | `OptiFabric-2.2.12+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ verified |
-| 1.21.1 | `OptiFabric-2.2.12+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ verified |
-| 1.21.3 | `OptiFabric-2.2.12+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ verified |
-| 1.21.4 | `OptiFabric-2.2.12+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ verified |
-| 1.21.6 | `OptiFabric-2.2.12+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ plays, **no shaders** (below) |
-| 1.21.7 | `OptiFabric-2.2.12+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ same |
-| 1.21.8 | `OptiFabric-2.2.12+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ verified |
-| 1.21.9 | `OptiFabric-2.2.12+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ verified |
-| 1.21.10 | `OptiFabric-2.2.12+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ verified |
-| 1.21.11 | `OptiFabric-2.2.12+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ verified |
+| 1.21 | `OptiFabric-2.2.13+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ verified |
+| 1.21.1 | `OptiFabric-2.2.13+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ verified |
+| 1.21.3 | `OptiFabric-2.2.13+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ verified |
+| 1.21.4 | `OptiFabric-2.2.13+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ verified |
+| 1.21.6 | `OptiFabric-2.2.13+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ plays, **no shaders** (below) |
+| 1.21.7 | `OptiFabric-2.2.13+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ same |
+| 1.21.8 | `OptiFabric-2.2.13+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ verified |
+| 1.21.9 | `OptiFabric-2.2.13+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ verified |
+| 1.21.10 | `OptiFabric-2.2.13+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ verified |
+| 1.21.11 | `OptiFabric-2.2.13+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ verified |
 
 OptiFine never shipped a build for **1.21.2 / 1.21.5**, so there is no jar for those. The build listed is the newest **final** OptiFine release for that Minecraft version, or the newest **preview** when no final exists yet (that is why 1.21.4 lists J3 rather than the newer J4_pre2). Any other build of the same Minecraft version still works: the in-game prompt only appears when the jar in `mods/` is a **preview older** than the one listed — a final build you already have is left alone even when a newer final exists.
 
@@ -56,16 +56,16 @@ This is the same list the mod itself carries and `release\notes\mc<MC>.md` state
 
 | OptiFabric version | Minecraft version | Required OptiFine build |
 |---|---|---|
-| `2.2.12+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
-| `2.2.12+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
-| `2.2.12+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
-| `2.2.12+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
-| `2.2.12+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
-| `2.2.12+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
-| `2.2.12+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
-| `2.2.12+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
-| `2.2.12+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
-| `2.2.12+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
+| `2.2.13+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` |
+| `2.2.13+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` |
+| `2.2.13+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` |
+| `2.2.13+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` |
+| `2.2.13+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` |
+| `2.2.13+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` |
+| `2.2.13+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` |
+| `2.2.13+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` |
+| `2.2.13+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` |
+| `2.2.13+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` |
 
 When that jar is missing, or is not the build its Minecraft version expects, the game says so in a dialog at the title screen instead of starting silently: the dialog names the file, offers a `Download OptiFine` button that fetches it from OptiFine's **official** site (`optifine.net`, the only source this mod ever uses), and opens the mods folder for you.
 

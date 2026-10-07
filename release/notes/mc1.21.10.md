@@ -1,8 +1,41 @@
-# OptiFabric 2.2.12+mc1.21.10
+# OptiFabric 2.2.13+mc1.21.10
 
 **Minecraft 1.21.10** / Fabric Loader 0.19.5 / Java 21+ / 需求 OptiFine `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar`
 
 状态:**已实测正常(含抗锯齿)**
+
+## 2.2.13 的改动
+
+**一句话:** 一份坏掉的 OptiFine jar 不再把**错误提示自己**打崩(实测:修复前产生崩溃报告与 `NullPointerException … jarType is null`,修复后无崩溃报告、无 NPE、进程存活);另有一轮来自代码审查的加固,九条分支同步。
+
+### 坏 jar 不再打崩错误路径
+
+`mods/` 里放一个**合法 zip、`net/optifine/Config.class` 却是坏字节**的 jar 时:旧版 `parseJarType` 只接住 `ZipException | ZipError`,而 `ClassReader` 对垃圾字节抛的是**未检查异常**,它一路穿透到标题界面,`switch (OptifineVersion.jarType)` 拿到 null ⇒ NPE —— 崩溃发生在**专门用来解释失败的那条路**上。两处改法:
+
+* `parseJarType` 把 `RuntimeException` 一并接住(读不懂的类文件与坏 zip 是同一类"不可用的 jar" ⇒ `JarType.CORRUPT_ZIP`,对话框照旧显示);
+* `MixinTitleScreen` 在 `jarType == null` 时落到 `INTERNAL_ERROR` 分支(复制堆栈/日志 + issues 链接)。同树的 `CrashReportMixin` 早有 null 守卫、`OptifinePrompt.gate()` 对 null 安全,这里是唯一漏掉的一处。
+
+**实测**:同一份坏 jar、同一个实例副本,分别用本提交与提交前构建的 jar 启动 —— 修复前有崩溃报告(`crash-2026-10-07_12.28.12-client.txt`)与两次 `NullPointerException`,进程自己退出;修复后**无崩溃报告、0 次 NPE**,客户端一直活到被测试脚手架主动停掉。那份崩溃报告同时证明错误当时**已经设置好**(进入 switch 前有 `if (!OptifabricError.hasError()) return;`),即对话框那条路确实被走到了。修复后**无法从日志证明对话框已显示**(`setError()` 只存不打印),如实写明。
+
+### 与其它分支同步的加固
+
+* `ChunkRendererFix`:先判参数个数再取最后一个参数(短参数表的调用以前会 `AIOOBE`);
+* `MethodComparison`:不认识的 `invokedynamic` bootstrap 记为"不同"而不是抛异常;LDC 的 sort switch 原先**无 default**、基本类型会穿透到 IINC 比较并强转(`ClassCastException`),改为统一按描述符比较;
+* `ClassCache`:文件声明的四个长度全部加上限,负数/超大值走"空缓存"(与其它损坏情形一致),不再抛 `NegativeArraySizeException`;
+* `OptifineSetup`:`LambdaRebuilder` 放进 `finally` 关闭(以前 transform 抛异常时原版 jar 与临时文件不释放);
+* `GAME_CLASSES`:改为**有界 LRU**(上限 512),而不是"只 put 不清空";
+* `LambdaRebuilder`:模糊配对只按**本类**回查(以前跨类套用同名同描述符的配对);"已全部配上"从 `return 0` 改成 `continue`;
+* `InjectionCallPointFix`:重建调用时按位置消费参数,并优先**照抄游戏自己那次调用的压栈指令**(以前同类型多形参会把同一个槽位用两次、静默传错值);
+* `ZipUtils.extract`:路径检查改成**无条件 + 带分隔符**(审查已把它降级为纵深防御 —— 唯一调用点在 `-Doptifabric.extract` 调试开关后面;仍然修了);
+* `release/publish.ps1`:`-DryRun` 打印前**脱敏令牌**,两条 curl 命令改成参数数组、不再用 `Invoke-Expression`。
+
+### 下载器(只影响 `-full` 构建;**本产物没有下载器**)
+
+`-full` 版本另外补了三处并做了**真实下载验证**:主机名精确比较(以前 `url.contains("optifine.net")`,`https://evil.example/?optifine.net` 会被当成官方页去抓对方页面并从里面找下载链接;`https://optifine.net@evil.example/` 这类写法同样堵住)、**一律要求 https**、以及**下载后校验下来的确实是所要的那个构建**(读它自己 `Config.class` 的 `VERSION` / `MC_VERSION`,不匹配就删掉文件并报错)。官网那个下载链接是**相对路径**,解析后仍是 https,所以强制 https 不影响正常下载。**本产物(默认产物)不联网、不启动进程。**
+
+
+> **光影包请用 Complementary 等主流包**:Photon 在 1.21.6 起的 OptiFine 上程序名对不上 ⇒ 画面错乱 / 闪烁,与本模组无关。
+
 
 ## 2.2.10 的改动
 
@@ -1002,14 +1035,14 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
 
 ## 校验
 
-`OptiFabric-2.2.12+mc1.21.10.jar` — 914328 字节
+`OptiFabric-2.2.13+mc1.21.10.jar` — 918879 字节
 
-`SHA-256: 6F31786B21240A1A27A26E641C62C9874EE39AE1CAEF1AB1BFE7CF47D532BA49`
+`SHA-256: 3EF0BB123663CB449AD273E356D624CC9173FF4D5AA8C9A6E879104AD01FB05B`
 ---
 
 ## 这一版有两条产物(装之前请看这一段)
 
-- `OptiFabric-2.2.12+mc1.21.10.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
+- `OptiFabric-2.2.13+mc1.21.10.jar` —— **上架到 CurseForge / Modrinth 的那一份(默认产物,没有后缀)**:
   运行时**不下载任何东西**,也**不启动任何进程**(平台的规则不允许模组在游戏运行时下载文件或启动进程)。
   OptiFine 要你自己从官网 <https://optifine.net/downloads> 下载,把 jar 放进这个 mod 旁边的 `mods` 文件夹;
   装好之后**手动重新启动游戏一次**(本产物不会自动重启)。找不到 OptiFine 时游戏仍会走到标题界面,并按 **2.1.0 的老办法**
@@ -1017,7 +1050,7 @@ class_761.method_22710 的 19 个候选槽位超过它的 MAX_MOVES(8),所以放
   版本换成正在运行的版本);对话框的两个按钮**只做复制**(mods 文件夹路径 / 帮助链接,内部错误时是堆栈或 `logs` 路径),
   **不打开文件夹、不打开网页、不启动任何进程**。装了**比本产物认识的最新构建更旧的预览版**时,同一个对话框**每个构建只弹
   一次**(已提示的构建记在 `config/optifabric-mismatch-ack.txt`);同版、更新版与任何正式版**从不提示**。
-- `OptiFabric-2.2.12+mc1.21.10-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
+- `OptiFabric-2.2.13+mc1.21.10-full.jar` —— **只放在 GitHub 上的便利版**:保留「自动从 optifine.net 下载」与
   「自动重启」这两项。除了这两项,它与默认产物是同一版修复。
 
 两条产物的 **mod id 相同**,所以配置与世界通用,但**只能装其中一个**。2.2.12 的默认产物构建自 `3edfe04`,

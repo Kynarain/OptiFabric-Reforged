@@ -1,5 +1,61 @@
 # 更新日志
 
+## 2.2.13+mc1.21 … 2.2.13+mc1.21.11 - 一份坏掉的 OptiFine jar 不再把错误提示自己打崩,外加一轮来自代码审查的加固
+
+**一句话:** 标题界面那个"出错时给你看的对话框"本身在一种输入下会崩 —— `mods/` 里放一个**合法 zip、里面的 `net/optifine/Config.class` 却是坏字节**的 jar,`jarType` 全程没被赋值,`switch (null)` 抛 `NullPointerException`:用户看到的是崩溃报告,而不是那段专门为他写的说明。本版修掉它,并一并处理审查报告里其余可修的缺陷。
+
+### 坏 jar 不再把错误路径打崩(附实测)
+
+`parseJarType` 只接住 `ZipException | ZipError`,而 `ClassReader` 对垃圾字节抛的是**未检查异常**(`IllegalArgumentException` / 数组越界)⇒ 它穿透 `optifineJarsInFolder`(只捕 `IOException`)与 `findOptifineJar`(只捕另外两种)⇒ `jarType` 未赋值 ⇒ 标题界面拿到 null。两处改法,方向都与旁边的代码一致:
+
+* `parseJarType` 把 `RuntimeException` 一并接住 —— 读不懂的类文件与坏 zip 是同一类"不可用的 jar",结果是 `JarType.CORRUPT_ZIP`,对话框照旧显示;
+* `MixinTitleScreen` 的 switch 在 null 时落到 `INTERNAL_ERROR` 分支(复制堆栈/日志 + issues 链接)。同树的 `CrashReportMixin` 早有 `jarType != null` 守卫、`OptifinePrompt.gate()` 经 `modeFor` 对 null 安全,这里是唯一漏掉的一处读取。
+
+**实测**(同一份坏 jar、同一个实例副本,分别用本提交与提交前构建的 jar 启动):
+
+| | 修复前 | 修复后 |
+|---|---|---|
+| 崩溃报告 | `crash-2026-10-07_12.28.12-client.txt` | **无** |
+| `NullPointerException` | **2 次** —— `Cannot invoke "…OptifineVersion$JarType.ordinal()" because "…jarType" is null`,栈顶在标题界面 `init` | **0 次** |
+| 进程 | 自己退出(崩了) | 由测试脚手架主动停掉 |
+
+那份崩溃报告同时证明**错误确实已经被设置好**:进入 switch 之前有一句 `if (!OptifabricError.hasError()) return;`,所以对话框那条路确实被走到了,只是被 NPE 打断在 switch 上。修复后**无法从日志证明对话框已显示**(`OptifabricError.setError()` 只存不打印,弹出的是一屏界面而不是日志行),这一点如实写明。
+
+### 九条分支同步的加固(来自同一份审查)
+
+* `ChunkRendererFix`:先判参数个数再取最后一个参数 —— 零参/短参数表的 `renderModel` / `renderBatched` 调用以前会在 `args[end]` 上 `AIOOBE`;
+* `MethodComparison`:不认识的 `invokedynamic` bootstrap 记为"不同"而不是抛异常(以前一个不认识的指令会把整个打补丁过程带走);LDC 的 sort switch 原来**没有 default**,基本类型会穿透到下面 IINC 的比较并强转成 `IincInsnNode`(`ClassCastException`),现在统一按描述符比较;
+* `ClassCache`:文件里声明的四个长度全部加上限,负数与超大值走"空缓存"这条路(与其它损坏情形一致,调用方依赖的契约不变),不再抛 `NegativeArraySizeException`;
+* `OptifineSetup`:`LambdaRebuilder` 放进 `finally` 关闭 —— transform 抛异常时,原版 jar 与其临时文件以前不会被释放;
+* `GAME_CLASSES`:改为**有界 LRU**(上限 512)。审查建议的"setup 后 clear"没有采纳:这个缓存的生命周期**跨越补丁阶段**(补丁跑一次,游戏随后运行数小时),在错的时机清空会破坏缓存本身的目的;
+* `LambdaRebuilder`:模糊配对回查时**只取本类自己的条目**(以前整个 jar 的配对混在一起、只按 name+desc 查,别的类里同名同描述符的配对会套到本类上);"已抓到全部 lambda"那条路从 `return 0` 改成 `continue`(以前会提前宣布整个 jar 都解完了);
+* `InjectionCallPointFix`:重建调用时**按位置消费参数**、并且优先**照抄游戏自己那次调用的压栈指令**(以前每个参数都从第一个形参重扫,同类型多形参时会把同一个槽位用两次,静默传错值);
+* `ZipUtils.extract`:路径检查改成**无条件**、且比对时带分隔符(审查把它降级为纵深防御 —— 唯一调用点在 `-Doptifabric.extract` 调试开关后面,且能放 jar 进 `mods/` 的人本来就能执行代码;仍然修了);
+* `release/publish.ps1`:`-DryRun` 打印前**脱敏令牌**(以前会把带 `Authorization:` 的完整 curl 命令打到控制台),两条 curl 命令改成参数数组、不再用 `Invoke-Expression`。
+
+### 下载器(只影响 `-full` 构建;本产物没有下载器)
+
+`-full` 版本另外补了三处,并且是**真实下载**验证过的:主机名改成**精确比较**(以前是 `url.contains("optifine.net")`,`https://evil.example/?optifine.net` 会被当成官方页、去抓对方页面并从里面找下载链接;`https://optifine.net@evil.example/` 这类写法同样被堵住)、**一律要求 https**、以及**下载后校验下来的确实是所要的那个构建**(读它自己 `Config.class` 里的 `VERSION` 与 `MC_VERSION`,即 `OptifineVersion` 一直在用的那一对;不匹配就删掉文件并报错)。实测日志:
+
+```
+[OptiFabric] download page: https://optifine.net/adloadx?f=preview_OptiFine_1.21.10_HD_U_J7_pre11.jar
+[OptiFabric] download download: https://optifine.net/downloadx?f=…&x=…
+[OptiFabric] … is an OptiFine jar (notch/net/optifine/Config.class)
+[OptiFabric] preview_OptiFine_1.21.10_HD_U_J7_pre11.jar declares OptiFine_1.21.10_HD_U_J7_pre11 for
+              Minecraft 1.21.10, which is the build that was asked for
+```
+
+顺带证实了一个此前的推断:官网页面里的下载链接是**相对路径**,以页面 URI 解析之后仍是 https,所以"一律要求 https"不会打断正常下载。
+
+### 质量门禁
+
+静默 catch 的 lint 从这一条线推到了 **26.x / wip / 并在四棵 convenience 分支上**;`.github/workflows/checks.yml` 里原先被注释掉的 `support-table` 与 `build` 两个 job 已启用(两者都离线、都**不启动 Minecraft**,文件头部写明这一点)。lint 的规则很简单:**一个 catch 要么出声,要么写明它为什么沉默**。
+
+### 一条被降级的项(如实说明)
+
+审查在第二轮把 zip-slip 从 P0 降为纵深防御(理由见上),把 `OPEN_DELETE` 从 P1 降为 P2/P3(两个调用方处理的都是 `.optifine` 里可再生的缓存/临时产物)。两条都**已经修了**,不回退。
+
+
 ## 2.2.12+mc1.21 … 2.2.12+mc1.21.11 - 游戏内告知"这一版 OptiFine 用不了光影"
 
 **一句话:** 1.21.6 与 1.21.7 的最新 OptiFine 构建(`J6_pre3` / `J6_pre7`)一旦选了光影包,就会在启动阶段崩在 OptiFine 自己的着色器代码里;而这条限制此前**只写在文档里,游戏内从不告诉用户**。本版把模组里那个一直存在、却从未被任何代码读取的标记接进现有的提示机制。
