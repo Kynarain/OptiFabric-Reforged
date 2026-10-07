@@ -2,11 +2,8 @@
 #
 # It does NOT launch Minecraft. A green build here does not mean the game runs: that is what the captured
 # logs under the verification toolchain are for (VerifyPatched for the patched classes, and one
-# launch-<version>.out.log per Minecraft version). Claiming more than a build and a lint in CI would be the
-# mistake this file exists to avoid - a gate that reports success while the thing itself is untested.
-#
-# It runs the checks that are cheap, deterministic and meaningful on every push and pull request:
-#   1. the silent-catch lint (tools/check-silent-catches.ps1)
+# launch-<version>.out.log per Minecraft version). Claiming more than this in CI would be the mistake this
+# file exists to avoid - a gate that reports success while the thing itself is untested.
 #
 # The windows runner matches the environment the release scripts are written for, and PowerShell is
 # available there without extra setup.
@@ -22,6 +19,7 @@ permissions:
   contents: read
 
 jobs:
+
   silent-catch-lint:
     name: silent-catch lint
     runs-on: windows-latest
@@ -32,18 +30,27 @@ jobs:
         shell: pwsh
         run: ./tools/check-silent-catches.ps1
 
-  # Enabled once the toolchain is in the repository. Both of these are meaningful offline; neither claims
-  # to have run the game.
-  #
-  # build:
-  #   runs-on: windows-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-java@v4
-  #       with:
-  #         distribution: temurin
-  #         java-version: '21'
-  #     - shell: pwsh
-  #       run: ./gradlew build "-Pmc=1.21.10" --console=plain
-  #     - shell: pwsh
-  #       run: ./release/version.ps1 -CheckSupport
+  support-table:
+    name: support table
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Support table cross-check
+        shell: pwsh
+        run: ./release/version.ps1 -CheckSupport
+
+  build:
+    name: build (1.21.10)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build
+        shell: pwsh
+        run: ./gradlew build "-Pmc=1.21.10" --console=plain

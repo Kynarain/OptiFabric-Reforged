@@ -162,40 +162,43 @@ public class OptifineSetup {
 
 		System.out.println("[OptiFabric] De-Volderfiying jar");
 
-		//Find all the SRG named classes and remove them
-		ZipUtils.transform(optifineModJar, new ZipTransformer() {
-			@Override
-			public String mapName(ZipEntry entry) {
-				String out = entry.getName();
-				return out.startsWith("notch/") ? out.substring(6) : out;
-			}
-
-			@Override
-			public InputStream apply(ZipFile zip, ZipEntry entry) throws IOException {
-				String name = entry.getName();
-
-				if (!name.startsWith("srg/")) {
-					if (name.endsWith(".class") && !name.startsWith("net/") && !name.startsWith("notch/net/") && !name.startsWith("optifine/") && !name.startsWith("javax/")) {
-						//The patched Minecraft classes: their lambdas point at the original methods, which moved.
-						//Frames have to be read expanded - they are what keeps these classes verifiable once the
-						//game loads them. Upstream read them with SKIP_FRAMES, which was harmless only because
-						//Mixin happened to recompute the frames when it rewrote the class.
-						ClassNode node = readClassWithFrames(zip, entry);
-						rebuilder.findLambdas(node);
-
-						ClassWriter writer = new ClassWriter(0);
-						node.accept(writer);
-						return new ByteArrayInputStream(writer.toByteArray());
-					} else {
-						return zip.getInputStream(entry);
-					}
-				} else {
-					return null;
+			try {
+			//Find all the SRG named classes and remove them
+			ZipUtils.transform(optifineModJar, new ZipTransformer() {
+				@Override
+				public String mapName(ZipEntry entry) {
+					String out = entry.getName();
+					return out.startsWith("notch/") ? out.substring(6) : out;
 				}
-			}
-		}, jarOfTheFree);
-		rebuilder.close();
 
+				@Override
+				public InputStream apply(ZipFile zip, ZipEntry entry) throws IOException {
+					String name = entry.getName();
+
+					if (!name.startsWith("srg/")) {
+						if (name.endsWith(".class") && !name.startsWith("net/") && !name.startsWith("notch/net/") && !name.startsWith("optifine/") && !name.startsWith("javax/")) {
+							//The patched Minecraft classes: their lambdas point at the original methods, which moved.
+							//Frames have to be read expanded - they are what keeps these classes verifiable once the
+							//game loads them. Upstream read them with SKIP_FRAMES, which was harmless only because
+							//Mixin happened to recompute the frames when it rewrote the class.
+							ClassNode node = readClassWithFrames(zip, entry);
+							rebuilder.findLambdas(node);
+
+							ClassWriter writer = new ClassWriter(0);
+							node.accept(writer);
+							return new ByteArrayInputStream(writer.toByteArray());
+						} else {
+							return zip.getInputStream(entry);
+						}
+					} else {
+						return null;
+					}
+				}
+			}, jarOfTheFree);
+			} finally {
+				rebuilder.close(); //Always: it holds the vanilla jar and its scratch files open.
+			}
+		rebuilder.close();
 		//In the "official" namespace the game's own names already are the runtime names, so OptiFine's patches are
 		//named correctly as they stand and the whole official -> intermediary remap is the identity. It cannot just be
 		//left in and allowed to be a no-op either: a jar is built for exactly one of the two worlds, and the build for
