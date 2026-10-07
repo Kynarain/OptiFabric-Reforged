@@ -81,11 +81,35 @@ public class ZipUtils {
 	 * @param to The directory to extract the zip into
 	 */
 	public static void extract(File zip, File to) {
+
+		String root;
+
+		try {
+			root = to.getCanonicalPath();
+		} catch (IOException e) {
+			throw new UncheckedIOException("Error resolving " + to, e);
+		}
+
+		String prefix = root.endsWith(File.separator) ? root : root + File.separator;
+
 		iterateContents(zip, (zipFile, entry) -> {
 			String name = entry.getName();
 			File extract = new File(to, name);
 
-			if (name.indexOf("..") >= 0 && !extract.getCanonicalPath().startsWith(to.getCanonicalPath())) {
+			//Every entry must land inside the output directory, so the check is unconditional and compares
+			//against the root plus a separator: a sibling that merely shares the root's prefix ("/tmp/out2"
+			//for "/tmp/out") is rejected too. An absolute entry name never gets past it either - File(File,
+			//String) folds it back inside or produces a path that cannot be resolved at all, and both cases
+			//are decided here rather than by the filesystem.
+			String canonical;
+
+			try {
+				canonical = extract.getCanonicalPath();
+			} catch (IOException e) {
+				throw new SecurityException("The file \"" + name + "\" (in " + zip + ") is not a usable path inside " + to + ": " + e);
+			}
+
+			if (!canonical.startsWith(prefix)) {
 				throw new SecurityException("The file \"" + name + "\" (in " + zip + ") tried to leave the output directory: " + to);
 			}
 
@@ -148,7 +172,7 @@ public class ZipUtils {
 		try {
 			tempZip = File.createTempFile("optifabric", ".zip");
 
-			transform(zip, ZipFile.OPEN_READ | ZipFile.OPEN_DELETE, transformer, tempZip);
+			transform(zip, ZipFile.OPEN_READ, transformer, tempZip);
 			if (zip.exists() && !zip.delete()) throw new IllegalStateException("Failed to clear " + zip); //Make sure it's definitely out of the way
 
 			moveFile(tempZip, zip);
