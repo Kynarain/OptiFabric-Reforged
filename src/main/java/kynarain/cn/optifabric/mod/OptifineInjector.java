@@ -182,20 +182,32 @@ public class OptifineInjector {
 
 		@Override
 		protected String getCommonSuperClass(String type1, String type2) {
+			//ASM calls this with the two types in either order, and the shared type is often an interface.
+			//The earlier version expanded only type1's ancestors and then followed superName on type2, so an
+			//interface in the first position was never recognised: it answered java/lang/Object, ASM wrote
+			//that into the merged frame, and the verifier rejected the class at load time. Minecraft 1.20.6's
+			//ShaderProgram.method_35785(String) is exactly that pair - it merges a class_284, which implements
+			//class_278, with class_278 itself.
 			try {
-				Set<String> supertypes = allSupertypes(type1);
+				Set<String> first = allSupertypes(type1);
 
-				if (supertypes != null) {
-					String type = type2;
+				if (first != null) {
+					Set<String> second = allSupertypes(type2);
 
-					while (type != null) {
-						if (supertypes.contains(type)) return type;
+					if (second != null) {
+						//Nearest first, so the frame names the most specific type both sides really share. Any
+						//genuine common supertype verifies; the nearest keeps the frame small. Object is only
+						//right when the two sides share nothing else - they always share it.
+						for (String type : nearestFirst(type2)) {
+							if (first.contains(type)) return type;
+						}
 
-						ClassNode node = gameClass(type);
-						type = node != null ? node.superName : null;
+						for (String type : nearestFirst(type1)) {
+							if (second.contains(type)) return type;
+						}
+
+						return "java/lang/Object";
 					}
-
-					return "java/lang/Object";
 				}
 			} catch (Throwable ignored) {
 				//fall through to the standard implementation
@@ -209,31 +221,38 @@ public class OptifineInjector {
 		}
 	}
 
-	/** Every class and interface {@code internalName} extends or implements, or null when it is unknown. */
-	private static Set<String> allSupertypes(String internalName) {
-		ClassNode start = gameClass(internalName);
-		if (start == null) return null;
-
-		Set<String> supertypes = new HashSet<>();
+	/** {@code internalName}, then every class and interface it is a subtype of, nearest first. */
+	private static List<String> nearestFirst(String internalName) {
+		List<String> order = new ArrayList<>();
+		Set<String> seen = new HashSet<>();
 		Deque<String> queue = new ArrayDeque<>();
-		queue.add(internalName);
+
+		if (seen.add(internalName)) queue.add(internalName);
 
 		while (!queue.isEmpty()) {
 			String name = queue.poll();
+			order.add(name);
+
 			ClassNode node = gameClass(name);
+			if (node == null) continue; //Unknown type, the walk ends here
 
-			if (node == null) continue; //Unknown type, the caller falls back to something conservative
-
-			if (node.superName != null && supertypes.add(node.superName)) {
+			if (node.superName != null && seen.add(node.superName)) {
 				queue.add(node.superName);
 			}
 
 			for (String iface : node.interfaces) {
-				if (supertypes.add(iface)) queue.add(iface);
+				if (seen.add(iface)) queue.add(iface);
 			}
 		}
 
-		return supertypes;
+		return order;
+	}
+
+	/** Every class and interface {@code internalName} is or is a subtype of, or null when it is unknown. */
+	private static Set<String> allSupertypes(String internalName) {
+		if (gameClass(internalName) == null) return null;
+
+		return new HashSet<>(nearestFirst(internalName));
 	}
 
 	private static ClassNode readClass(byte[] bytes) {
