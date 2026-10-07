@@ -40,6 +40,7 @@ abstract class CrashReportMixin {
 		try {
 			return ConstructorUtils.invokeExactConstructor(CrashReportCategory.class, name);
 		} catch (ReflectiveOperationException e) {
+			// silent by design: the plain constructor is the fallback, and the section still gets its name
 			return new CrashReportCategory(name);
 		}
 	}
