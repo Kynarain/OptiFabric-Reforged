@@ -6,13 +6,13 @@
 
 本分支是 **1.20.6 线**的 `wip/1.20.6-reforged`,发布的是**替代产物** `OptiFabric-Reforged-<版本>-reforged+mc1.20.6.jar`(mod id `optifabric_reforged`)。同一仓库里 1.20.6 的**已发布主线产物**(mod id `optifabric`,`main` 分支)、以及更新的 1.21.x / 26.x 线都在各自的分支上;各线的 jar **不能互相替代**。
 
-**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `1.1.5-reforged`
+**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `1.1.6-reforged`
 
 ## 支持的版本
 
 | Minecraft | 产物 | OptiFine 构建 | Java |
 |---|---|---|---|
-| 1.20.6 | `OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar`(**本分支**) | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
+| 1.20.6 | `OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar`(**本分支**) | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
 | 1.20.6 | `OptiFabric-1.1.3+mc1.20.6.jar`(`main` 分支的已发布主线产物) | 同上 | 21 |
 
 - 本分支产物 mod id 是 `optifabric_reforged`,仅客户端,要求 **Fabric Loader ≥ 0.19.3**。
@@ -28,7 +28,7 @@
 
 | OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 |
 |---|---|---|
-| `1.1.5-reforged+mc1.20.6` | 1.20.6 | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` |
+| `1.1.6-reforged+mc1.20.6` | 1.20.6 | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` |
 
 当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是在标题界面弹出**这个模组唯一的那一个对话框**,告诉你缺哪个文件、mods 文件夹在哪。
 
@@ -66,7 +66,7 @@
 .\gradlew build
 ```
 
-产物为 `build/libs/OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar`。
+产物为 `build/libs/OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar`。
 
 开发环境不受支持:`gradlew runClient` 会被明确拒绝,因为开发环境的命名空间是 `named`,需要额外的 contextual mapping 层。
 
@@ -166,9 +166,9 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 
 ## 校验状态
 
-离线字节码校验(**本分支 1.1.5**:解出 426 个补丁类,与 intermediary 客户端基线逐类比对,再逐个交给 JVM 的加载与链接校验)**426 / 426 通过、0 失败、0 跳过**;ASM 数据流校验 425 / 426,唯一一条报告是 `class_156` 上「预期 `Thread`、实际 `class_156$7`」,而 `javap` 显示该类**正是** `extends java.lang.Thread`、且 JVM 权威校验对它通过,属校验器的层级解析限制。
+离线字节码校验(**本分支 1.1.6**:解出 426 个补丁类,与 intermediary 客户端基线逐类比对,再逐个交给 JVM 的加载与链接校验)**426 / 426 通过、0 失败、0 跳过**;ASM 数据流校验 425 / 426,唯一一条报告是 `class_156` 上「预期 `Thread`、实际 `class_156$7`」,而 `javap` 显示该类**正是** `extends java.lang.Thread`、且 JVM 权威校验对它通过,属校验器的层级解析限制。
 
-真机验证:`1.1.5` 在干净实例(仅 Fabric API + 本产物 + OptiFine)里**到标题界面、0 条 `[ERROR]`、无 mixin/注入/校验错误**,并实测到两处针对 `class_778`(`BlockModelRenderer`)的修复在真实打补丁时触发:
+真机验证:`1.1.6` 在干净实例(仅 Fabric API + 本产物 + OptiFine)里**到标题界面、0 条 `[ERROR]`、无 mixin/注入/校验错误**,并实测到两处针对 `class_778`(`BlockModelRenderer`)的修复在真实打补丁时触发:
 
 ```
 [OptiFabric] Re-created the injection point net/minecraft/class_2680.method_26213()I in net/minecraft/class_778.method_3374(…)V
@@ -204,7 +204,7 @@ Sodium 冲突这一条与其中三条 `breaks` **继承自上游**:[Chocohead/Op
 1. 支持开发环境(dev 命名空间是 `named`,需要两段式重映射并补回上游的 contextual mapping 修正)。
 2. 把上游 `compat/**` 的按模组兼容搬回来(需要重写 early riser 机制)。
 3. 对着真实的 OptiFine 1.20.6 反编译产物,逐个核对 `patcher/fixes` 里硬编码的 intermediary id 与描述符。
-4. 给 1.20.6 找一个存档,把 `1.1.5` 的"进世界"那一步实测补齐。
+4. 给 1.20.6 找一个存档,把 `1.1.6` 的"进世界"那一步实测补齐。
 
 ## 许可与致谢
 

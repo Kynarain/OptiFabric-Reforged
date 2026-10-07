@@ -3,11 +3,11 @@
 本文档记录"把本项目发出去"需要做的步骤。仓库里已经准备好的东西、以及**你还需要自己做的部分**都写在下面。
 
 > 本分支是 **1.20.6 线**(`main`),只出一个 jar:`OptiFabric-1.1.3+mc1.20.6.jar`。
-> 另有 `wip/1.20.6-reforged` 分支出的**替代产物** `OptiFabric-Reforged-1.1.5-reforged+mc1.20.6.jar`
+> 另有 `wip/1.20.6-reforged` 分支出的**替代产物** `OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar`
 > (mod id `optifabric_reforged`,与上面那个**只能装一个**;它按自己的 `mod_version` 走,发布与否是另一个决定) —
 > 见 [`REFORGED_BUILD.md`](REFORGED_BUILD.md)。
 > 它自己的元数据草稿与取件目录按同一套规则、带 `-reforged` 后缀:
-> `.\release\make-metadata.ps1 -Version 1.1.5-reforged -Product OptiFabric-Reforged -Tag -reforged`
+> `.\release\make-metadata.ps1 -Version 1.1.6-reforged -Product OptiFabric-Reforged -Tag -reforged`
 > → `release\tmp\{modrinth,curseforge}-1.20.6-reforged.json`,取件目录
 > `C:\Users\kynar\IdeaProjects\OptiFabric\release-upload\1.20.6-reforged-<版本>\`(jar + `metadata\`)。
 > 该分支上的 `.\release\make-metadata.ps1` 不带参数时生成的也是**它自己**的产品(第一条 CHANGELOG 小节就是它的)。
