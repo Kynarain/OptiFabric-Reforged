@@ -212,7 +212,7 @@ others are all tagged "renderer overhaul" in the matrix. The typical evidence is
 > inside the same mod, which is why a per-row list built from one run of each recorded only the first one. **Seven of
 > the 33 rows are not about the named mod at all** — five are sodium's failure reached through a staged dependency
 > (`sodium-extra`, `reeses-sodium-options`, `indium`, `sodium-shadowy-path-blocks`, `chloride`),
-> `sample--mr-betternether` is bclib's client entrypoint and `sample--mr-spectrumjei` is modonomicon's mixin (the
+> `sample--mr-betternether` is bclib's client entrypoint, `the-shooting-star-demo` is The Shooting Star Demo's client entrypoint (it reads a `net.optifine.Config` field from an entrypoint, where `Config.gameSettings` is still null) and `sample--mr-spectrumjei` is modonomicon's mixin (the
 > source report says "six" of the 33 while listing these seven rows; the enumeration is what was measured) — so a
 > per-row list that names only the mod jar keeps mis-attributing them. The per-row verdicts are in this line's
 > `COMPATIBILITY.md` (repository root) and the 2.2.10 section of `CHANGELOG.md`.

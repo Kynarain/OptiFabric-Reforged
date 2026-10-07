@@ -190,7 +190,7 @@ unexplained,而它的逐行数据只给出 **3** 条(第 4 条是 `carpet-fixes`
 > `iris`、`immediatelyfast` 与 `sample--mr-spectrumjei` 是**级联**而不是单点缺口:每修一处,这次运行就走到同一个模组里的
 > 下一处;这正是"每行只跑一次"的清单只记到第一处的原因。**这 33 行里有 7 行根本不是被点名模组自己的问题** ——
 > 5 行是经由暂存依赖 sodium 暴露出来的(`sodium-extra`、`reeses-sodium-options`、`indium`、
-> `sodium-shadowy-path-blocks`、`chloride`),`sample--mr-betternether` 是 bclib 的客户端入口点,
+> `sodium-shadowy-path-blocks`、`chloride`),`sample--mr-betternether` 是 bclib 的客户端入口点、`the-shooting-star-demo` 是 The Shooting Star Demo 的客户端入口点(入口点里读 `net.optifine.Config` 的字段 ⇒ `Config.gameSettings` 还是 null),
 > `sample--mr-spectrumjei` 是 modonomicon 的 mixin(报告正文把这项写成"6 行",但它列出的正是这 7 行;以逐行为准) ——
 > 所以只写模组 jar 名字的逐行清单会一直把它们归错。逐行结论见本线仓库根目录的 `COMPATIBILITY.md`,以及
 > `CHANGELOG.md` 的 2.2.10 一节。
