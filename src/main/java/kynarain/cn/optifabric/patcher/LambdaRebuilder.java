@@ -74,7 +74,7 @@ public class LambdaRebuilder implements IMappingProvider, Closeable {
 		}
 		File optifine = new File(args[1]);
 		if (!optifine.exists() || !optifine.isFile()) {
-			System.err.println("Invalid OptiFine class: " + args[0]);
+			System.err.println("Invalid OptiFine class: " + args[1]);
 			System.exit(1);
 		}
 
