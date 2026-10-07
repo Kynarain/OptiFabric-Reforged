@@ -48,7 +48,7 @@
 
 | | |
 |---|---|
-| 上传的 jar | `dist\OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar`(732,355 B,`68802C88…8795C9`) |
+| 上传的 jar | `dist\OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar`(732,367 B,`935C7281...A9FF53`) |
 | 取件目录 | `I:\mods\release-upload\1.20.6-reforged-1.1.6\`(jar + `-sources.jar` + `metadata\`) |
 | 元数据草稿 | [`release\tmp\modrinth-1.20.6-reforged.json`](tmp/modrinth-1.20.6-reforged.json)、[`release\tmp\curseforge-1.20.6-reforged.json`](tmp/curseforge-1.20.6-reforged.json) |
 | 标签 | `v1.1.6-reforged+mc1.20.6`(本线 1.1.3 / 1.1.4 也是带 `-reforged` 的写法;**1.1.5 那次破了例、用了不带后缀的裸标签**,而 `main` 线这次要发 `v1.1.6+mc1.20.6`,所以本次必须带后缀,否则两条线撞标签) |
