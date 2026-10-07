@@ -45,6 +45,19 @@ public class ChunkRendererFix implements ClassFixer {
 							 */
 
 							Type[] args = Type.getArgumentTypes(methodInsnNode.desc);
+
+							
+if (args.length < 3) {
+							
+	//renderModel and renderBatched always carry a block state, a position and the world, so a
+							
+	//call this short is not the shape this rewrite is for - and taking the last argument below
+							
+	//would index off the front of the array before the check that wants three of them.
+							
+	continue;
+							
+}
 							int end = args.length - 1;
 							boolean trailingBoolean = Type.BOOLEAN == args[end].getSort();
 							if (trailingBoolean) end--;
