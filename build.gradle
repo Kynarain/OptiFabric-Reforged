@@ -26,6 +26,9 @@ repositories {
 // is this project. Nothing is pulled in from a sibling directory any more.
 
 dependencies {
+    // ClassCache uses Validate from commons-lang3. Minecraft brings it in, but it is a compile-time
+    // dependency of this project in its own right, so it is named here instead of being inherited by accident.
+    compileOnly "org.apache.commons:commons-lang3:3.17.0"
     minecraft "com.mojang:minecraft:${targetMc}"
 
     // No `mappings` dependency exists for these releases, and Loader comes in as a plain dependency: the
