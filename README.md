@@ -35,8 +35,8 @@ This line is called **Reforged** because it carries **its own mod id** (`optifab
 
 | Minecraft | jar | OptiFine build | Java | State |
 |---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.2.8+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ verified in game (**no shaders** — see below) |
-| 26.1.2 | `OptiFabric-Reforged-2.2.8+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
+| 26.2 | `OptiFabric-Reforged-2.2.9+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ verified in game (**no shaders** — see below) |
+| 26.1.2 | `OptiFabric-Reforged-2.2.9+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
 
 Both OptiFine builds are **previews** — OptiFine has no final release for either Minecraft version yet.
 
@@ -46,8 +46,8 @@ This is the same list the mod itself carries and `release\notes\mc<MC>.md` state
 
 | OptiFabric version | Minecraft version | Recommended OptiFine build | Build kind |
 |---|---|---|---|
-| `2.2.8+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview (no final exists) |
-| `2.2.8+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) |
+| `2.2.9+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview (no final exists) |
+| `2.2.9+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) |
 
 ### The 26.2 shader limitation
 
