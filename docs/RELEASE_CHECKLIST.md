@@ -51,3 +51,22 @@
 
 干跑会打印 CF 的 `projects//upload`（project id 为空）与 `Authorization:` 为空 —— **那就是缺凭据的样子**。
 补齐四个环境变量后，`publish.ps1` 会同时提交；提交前用 `-DryRun` 复核一遍打印出来的 multipart 命令与脱敏后的头部。
+
+## Fix coverage sweep (checked 2026-10-07, and to be re-run before each release)
+
+Every tree that carries one of the fixes below has it; where a column reads n/a the file itself is not on
+that line, which is by design and not a gap. The sweep is three greps over src/main/java:
+
+| tree | targets() in AddInterfaceFix | assignedBefore in OptifineJarFixer | requireHttps in OptifineDownloader |
+|---|---|---|---|
+| 1.21.x | ok | ok | n/a |
+| 26.x | ok | ok | n/a |
+| wip/1.20.6, main/1.20.6 | n/a | n/a | n/a |
+| conv 1.21.x-2.2.13, -2.2.12, -2.2.11 | ok | ok | ok |
+| conv 26.x-2.2.8, -2.2.7 | ok | ok | ok |
+| conv rf-1.1.5, rf-1.1.6, 1.20.6-1.1.6 | n/a | n/a | ok |
+
+Two of those entries were added late, both after a check that compared the branch sources with the published
+jars: convenience/26.x-2.2.8 and convenience/26.x-2.2.7 were missing the annotation value form, and
+convenience/1.20.6-1.1.6 had lost the downloader checks to a step that reverted files copied from the store
+branch. All three are in now, each verified in the jar that branch builds.
