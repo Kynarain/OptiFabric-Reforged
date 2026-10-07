@@ -38,6 +38,8 @@ import com.sun.jna.platform.win32.WinBase.STARTUPINFO;
 import java.util.zip.ZipError;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Fetches the OptiFine jar the support table asks for and puts it into a {@code mods} folder.
@@ -171,6 +173,7 @@ public final class OptifineDownloader {
 	}
 
 	/** One source, resolved and validated. Throws with the reason, so the caller can show it. */
+
 	private static Payload fetchValidated(String url, Progress progress) throws IOException {
 		Payload payload = fetchOne(url, progress);
 
@@ -216,6 +219,30 @@ public final class OptifineDownloader {
 		return new Payload(get(uri, progress), url);
 	}
 
+	/** The only host whose pages are asked for a download token. */
+	private static final Set<String> OFFICIAL_HOSTS = Set.of("optifine.net", "www.optifine.net");
+
+	/**
+	 * Whether this URI is the official site. The host is compared exactly rather than searched for in the
+	 * string: {@code https://evil.example/?optifine.net} contains the name and is not the site, and it would
+	 * otherwise be handed the two-step flow, which means fetching a page of somebody else's choosing and
+	 * following the download link found on it.
+	 */
+	private static boolean isOfficial(URI uri) {
+		String host = uri.getHost();
+
+		return host != null && OFFICIAL_HOSTS.contains(host.toLowerCase(Locale.ROOT));
+	}
+
+	/**
+	 * Every request this mod makes goes over TLS. The download is not pinned to a digest, so a plain-http
+	 * source would be a way to hand the user a different jar than the one that was asked for.
+	 */
+	private static void requireHttps(URI uri) throws IOException {
+		if (!"https".equalsIgnoreCase(uri.getScheme())) {
+			throw new IOException("refusing " + uri + ": only https sources are supported");
+		}
+	}
 	private static URI toUri(String url) throws IOException {
 		try {
 			return new URI(url);
