@@ -293,6 +293,34 @@ public class OptifineJarFixer {
 	 * Drops the unconditional {@code cancelled = true} OptiFine's 1.21.6 / 1.21.7 builds put in front of the
 	 * shaderpack load, so the flag the two checks above set is the one that decides again.
 	 */
+	/**
+	 * Whether the given local already holds a value earlier in this instruction list, so that removing a store to
+	 * it cannot leave the read that follows looking at an uninitialised slot.
+	 */
+	private static boolean assignedBefore(java.util.List<AbstractInsnNode> instructions, int index, int local) {
+		for (int i = 0; i < index; i++) {
+			AbstractInsnNode insn = instructions.get(i);
+
+			if (insn instanceof VarInsnNode var && var.var == local) {
+				switch (var.getOpcode()) {
+				case Opcodes.ISTORE:
+				case Opcodes.LSTORE:
+				case Opcodes.FSTORE:
+				case Opcodes.DSTORE:
+				case Opcodes.ASTORE:
+				case Opcodes.RET:
+					return true;
+				default:
+					break;
+				}
+			}
+
+			if (insn instanceof org.objectweb.asm.tree.IincInsnNode inc && inc.var == local) return true;
+		}
+
+		return false;
+	}
+
 	private static byte[] enableShaderPackLoad(ZipFile zip, ZipEntry entry) throws IOException {
 		ClassNode node = new ClassNode();
 
@@ -318,6 +346,16 @@ public class OptifineJarFixer {
 				if (!(instructions.get(i + 1) instanceof VarInsnNode store) || store.getOpcode() != Opcodes.ISTORE) continue;
 				if (!(instructions.get(i + 2) instanceof VarInsnNode load) || load.getOpcode() != Opcodes.ILOAD || load.var != store.var) continue;
 				if (!(instructions.get(i + 3) instanceof JumpInsnNode jump) || jump.getOpcode() != Opcodes.IFNE) continue;
+
+				//The ILOAD that follows this pair stays, so the slot has to hold something by the time it runs.
+				//Dropping a store that was the slot's first assignment would leave that read uninitialised, and
+				//ClassWriter(0) below would not recompute a frame to say so, so the pair is only dropped when the
+				//slot already had a value earlier in the same method.
+				if (!assignedBefore(instructions, i, store.var)) {
+					System.err.println("[OptiFabric] Shaders.loadShaderPack writes its cancelled flag to a slot that has no"
+							+ " earlier value; OptiFine's instructions are left alone rather than risk an uninitialised read");
+					continue;
+				}
 
 				method.instructions.remove(instructions.get(i + 1));
 				method.instructions.remove(instructions.get(i));
