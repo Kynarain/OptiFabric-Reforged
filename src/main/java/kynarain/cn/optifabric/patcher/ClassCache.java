@@ -78,7 +78,13 @@ public class ClassCache {
 	private static final int MAX_CLASSES = 100_000;
 
 	public static ClassCache read(File input) throws IOException {
-		try (DataInputStream dis = new DataInputStream(new GZIPInputStream(new FileInputStream(input)))) {
+		FileInputStream fileIn = new FileInputStream(input);
+
+		//The file stream is a resource of its own. When the gzip header is missing the GZIPInputStream
+		//constructor throws before its declaration completes, and a file stream created inside that same
+		//declaration would then never be registered, so it would never be closed on exactly the corrupt-file
+		//path this method exists to survive.
+		try (DataInputStream dis = new DataInputStream(new GZIPInputStream(fileIn))) {
 			char formatRevision = dis.readChar(); //Check the format of the file
 			if (formatRevision != 'E') return new ClassCache(null);
 

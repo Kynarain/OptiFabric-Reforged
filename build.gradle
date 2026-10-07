@@ -26,6 +26,10 @@ repositories {
 // is this project. Nothing is pulled in from a sibling directory any more.
 
 dependencies {
+    // JUnit 5 for src/test: the tests cover the pure logic (zip handling, the cache format) and need no
+    // Minecraft classes, so they run as an ordinary JVM test run.
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.10.2"
     // ClassCache uses Validate from commons-lang3. Minecraft brings it in, but it is a compile-time
     // dependency of this project in its own right, so it is named here instead of being inherited by accident.
     compileOnly "org.apache.commons:commons-lang3:3.17.0"
@@ -124,4 +128,13 @@ tasks.named("build") {
         println "Building ${project.archives_base_name} ${project.version} (Minecraft ${targetMc}," +
                 " official (unobfuscated) names, Fabric Loader ${project.loader_version})"
     }
+}
+
+// JUnit lives in Maven Central: Loom's repositories do not carry it.
+repositories {
+    mavenCentral()
+}
+
+test {
+    useJUnitPlatform()
 }
