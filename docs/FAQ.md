@@ -26,6 +26,7 @@ instead of guessing.
 16. [Can I use it in a development environment?](#16-can-i-use-it-in-a-development-environment)
 17. [Was this written by AI?](#17-was-this-written-by-ai)
 18. [How do I report a problem so that it can actually be looked at?](#18-how-do-i-report-a-problem-so-that-it-can-actually-be-looked-at)
+19. [It crashes at startup with `Config.gameSettings is null` - whose problem is that?](#19-it-crashes-at-startup-with-configgamesettings-is-null---whose-problem-is-that)
 
 ---
 
@@ -228,3 +229,27 @@ Include, in this order:
    plain Fabric is not this mod's problem, and that control is the fastest way to tell.
 5. For a rendering problem: whether it also happens with shaders **off**, and with a different pack. That
    pair of controls is what separates a pack-side problem from a patching-side one.
+
+## 19. It crashes at startup with `Config.gameSettings is null` - whose problem is that?
+
+**Symptom**: the client dies during **initialisation**, before the title screen, with a stack like:
+
+```
+java.lang.NullPointerException: Cannot read field "ofRandomEntities" because "net.optifine.Config.gameSettings" is null
+	at net.optifine.Config.isRandomEntities(Config.java:…)
+	at net.minecraft.class_1921.getCustomTexture(class_1921.java:…)
+	at …<some mod>…<clinit>
+Caused by: Could not execute entrypoint stage 'client' … provided by '<that mod>'
+```
+
+Fields like `ofTelemetry` and `ofFastRender` produce the same stack.
+
+**Why it happens**: Fabric's `client` entrypoints run **before the game constructs `GameSettings`**, and `net.optifine.Config.gameSettings` is exactly what OptiFine fills in at that later moment. So any mod that reads an OptiFine `Config` field from an entrypoint - and in particular from a static initialiser - gets `null`.
+
+**Why we do not "just default it"**: a default object would let those mods carry on with **default** values, and they read fields like `ofRandomEntities` to decide **which models and textures to register** - so they would silently register the wrong things. That is worse than this clear NPE, so this is a deliberate trade-off, not a defect waiting to be fixed.
+
+**What to do**:
+
+* ask that mod to move the read into a **client tick or a client lifecycle callback** (usually a one-line change, at the point named in its `onInitializeClient` or in the static initialiser that triggers it);
+* until then, take it out of `mods/` and the client starts;
+* the cases seen so far: `ebe`, `sample--mr-betternether` (bclib's client entrypoint) and `shooting_star_demo` (The Shooting Star Demo's `RemoteRenderer` static initialiser).

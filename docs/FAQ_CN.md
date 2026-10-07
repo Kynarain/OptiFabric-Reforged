@@ -12,7 +12,7 @@
 4. [Sodium 生态的其它模组呢(Iris、Indium、Chloride、Sodium Extra……)?](#4-sodium-生态的其它模组呢irisindiumchloridesodium-extra)
 5. [我能用 Photon 吗?天空和水面在闪。](#5-我能用-photon-吗天空和水面在闪)
 6. [日志刷满 `Invalid program name` 和 `Error compiling vertex shader`,是坏了吗?](#6-日志刷满-invalid-program-name-和-error-compiling-vertex-shader是坏了吗)
-7. [1.21.6 / 1.21.7 上光影会崩。](#7-1216-1217-上光影会崩)
+7. [1.21.6 / 1.21.7 上光影会崩。](#7-1216--1217-上光影会崩)
 8. [兼容信雅互联(Sinytra Connector)和 Kilt 吗?](#8-兼容信雅互联sinytra-connector和-kilt-吗)
 9. [这个模组会下载或打包 OptiFine 吗?](#9-这个模组会下载或打包-optifine-吗)
 10. [有哪些已知不兼容的模组?](#10-有哪些已知不兼容的模组)
@@ -24,6 +24,7 @@
 16. [能用于开发环境吗?](#16-能用于开发环境吗)
 17. [这是 AI 写的吗?](#17-这是-ai-写的吗)
 18. [报告问题时,要附什么才能真正被看?](#18-报告问题时要附什么才能真正被看)
+19. [启动时崩在 `Config.gameSettings is null`,是谁的问题?](#19-启动时崩在-configgamesettings-is-null是谁的问题)
 
 ---
 
@@ -149,3 +150,27 @@ GitHub 上另外发布的 **`-full`** 便利版**确实带下载器**(8 个类),
 3. **崩溃报告**(如果有)—— 里面的 `OptiFabric` 一节会写明 jar 状态。
 4. **模组列表**,以及"**不装 OptiFabric 时同一套是否也失败**"。在纯 Fabric 下也失败的模组不是本模组的问题,而这个对照是判断它最快的方法。
 5. 渲染类问题:请说明**关掉光影**时是否仍然出现,以及**换另一个光影包**时是否仍然出现。这两个对照正是把"包侧问题"与"补丁侧问题"分开的东西。
+
+## 19. 启动时崩在 `Config.gameSettings is null`,是谁的问题?
+
+**症状**:客户端在**初始化阶段**就崩(还没到标题界面),栈形如:
+
+```
+java.lang.NullPointerException: Cannot read field "ofRandomEntities" because "net.optifine.Config.gameSettings" is null
+	at net.optifine.Config.isRandomEntities(Config.java:…)
+	at net.minecraft.class_1921.getCustomTexture(class_1921.java:…)
+	at …<某个模组>…<clinit>
+Caused by: Could not execute entrypoint stage 'client' … provided by '<那个模组>'
+```
+
+读 `ofTelemetry`、`ofFastRender` 这类字段时也是同一个栈。
+
+**原因**:Fabric 的 `client` 入口点跑在**游戏构造 `GameSettings` 之前**,而 `net.optifine.Config.gameSettings` 正是 OptiFine 在那一刻才填进去的。所以**任何在入口点里(尤其是静态初始化里)读 OptiFine `Config` 字段的模组**,拿到的都是 `null`。
+
+**为什么我们不"顺手给个默认值"**:给一个默认对象会让这些模组按**默认值**继续跑,而它们正是读 `ofRandomEntities` 之类来决定**注册哪些模型/材质**的 —— 那就会静默注册**错误的东西**,比现在这个清清楚楚的 NPE 更糟。所以这是**有意的取舍**,不是待修的缺陷。
+
+**怎么办**:
+
+* 让那个模组把读取挪到**客户端 tick 或客户端生命周期回调**里(通常一行改动,位置见它的 `onInitializeClient` 或触发它的静态初始化);
+* 在那之前先把它移出 `mods/`,客户端就能起来;
+* 已经见过的实例:`ebe`、`sample--mr-betternether`(bclib 的客户端入口点)、`shooting_star_demo`(The Shooting Star Demo 的 `RemoteRenderer` 静态初始化)。
