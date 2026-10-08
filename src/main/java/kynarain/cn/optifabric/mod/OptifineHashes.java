@@ -40,7 +40,7 @@ public final class OptifineHashes {
 			Map.entry("preview_OptiFine_1.21_HD_U_J1_pre9.jar", List.of("b26b22478592ca85c3ea829784c3b7bf0d98d882d18a937af969dcc14372d37f")));
 
 	/** The recorded contents of the given build, or an empty list when nothing is recorded for it. */
-	public static List<String> accepted(String file) {
+	private static List<String> accepted(String file) {
 		return ACCEPTED.getOrDefault(file, List.of());
 	}
 
