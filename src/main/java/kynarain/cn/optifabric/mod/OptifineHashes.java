@@ -32,7 +32,7 @@ public final class OptifineHashes {
 			Map.entry("preview_OptiFine_26.2_HD_U_K2_pre1.jar", List.of("db05b25f8aa5ac688a77354680ef939d4f3135350e64e7ccfe5996cfaf925927")));
 
 	/** The recorded contents of the given build, or an empty list when nothing is recorded for it. */
-	public static List<String> accepted(String file) {
+	private static List<String> accepted(String file) {
 		return ACCEPTED.getOrDefault(file, List.of());
 	}
 
