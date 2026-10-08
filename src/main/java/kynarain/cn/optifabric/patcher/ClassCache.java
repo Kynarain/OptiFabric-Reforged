@@ -99,9 +99,7 @@ public class ClassCache {
 
 			int count = dis.readInt();
 			if (count < 0 || count > MAX_CLASSES) return new ClassCache(null);
-			for (int i = 0;
-			i < count;
-			i++) {
+			for (int i = 0; i < count; i++) {
 				int nameLength = dis.readInt();
 				if (nameLength < 0 || nameLength > MAX_NAME_BYTES) return new ClassCache(null);
 				byte[] nameBytes = new byte[nameLength];
