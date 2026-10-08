@@ -193,7 +193,6 @@ public class OptifineSetup {
 			} finally {
 				rebuilder.close(); //Always: it holds the vanilla jar and its scratch files open.
 			}
-		rebuilder.close();
 		System.out.println("[OptiFabric] Remapping OptiFine from official to " + namespace);
 		File completeJar = new File(workDir, "Optifine-remapped.jar");
 		remapOptifine(jarOfTheFree, getLibs(), completeJar, createMappings("official", namespace));
