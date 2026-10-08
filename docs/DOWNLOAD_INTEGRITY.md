@@ -62,7 +62,7 @@ The 1.20.6 branch needed the identity check as well: its downloader comes from t
 the downloaded jar back, which is what the review meant by the -full 1.1.6 having no identity at all. Two of the
 commits above (`e9d5e18` and its siblings) added only the table, because the step that was supposed to insert the
 call passed three arguments to a two argument method, and the message on them said otherwise; the follow-up
-commits wire the call and say so. Everything this document describes is now in published jars: the -full variants of 2.2.14, 2.2.9, 1.1.7 and 1.1.7-reforged were rebuilt and re-uploaded for exactly these reasons, and the older ones that promised the same things (2.2.11, 2.2.12, 2.2.8, 1.1.6-reforged) were rebuilt afterwards.
+commits wire the call and say so. Everything this document describes is now in published jars: the -full variants of 2.2.14, 2.2.9, 1.1.7 and 1.1.7-reforged were rebuilt and re-uploaded for exactly these reasons, and the older ones that promised the same things (2.2.11, 2.2.12, 2.2.8, 1.1.6-reforged) were rebuilt afterwards, and 2.2.11 and 2.2.12 were rebuilt a second time once the missed branches were fixed. The two lines whose older releases never promised this (26.x-2.2.7, 1.20.6-1.1.6) have the corrected code on their branches but their published jars predate it and are not going to be replaced.
 
 ## Correction (after the seven-round review)
 
@@ -77,6 +77,6 @@ Two defects in the first implementation of this check, both found by the reviewe
    now runs before the write, and a jar already on disk has to match the recorded contents or it is removed and
    fetched again.
 
-Both corrections are in every branch that carries the downloader, and the fourteen -full jars that had been
+Both corrections are in every branch that carries the downloader - after the first attempt they were in eight of the twelve, which the reviewer caught by reading the bytecode of the 2.2.11 and 2.2.12 jars: those twenty had been rebuilt from branches that still wrote before checking. They were rebuilt again. The fourteen -full jars that had been
 published with the first implementation were rebuilt and re-uploaded; each was then pulled back from the release
 and compared byte for byte with the local build.
