@@ -31,7 +31,7 @@ public final class OptifineHashes {
 			Map.entry("preview_OptiFine_1.20.6_HD_U_J1_pre18.jar", List.of("451b8ac78e291b720ecc5e5c125610c2feec0d2590d529ff1be65345054d50f4", "8721c3b11aee3e634e3e18c2209e3de1d6eea3a3c2110396112119c32226d517")));
 
 	/** The recorded contents of the given build, or an empty list when nothing is recorded for it. */
-	public static List<String> accepted(String file) {
+	private static List<String> accepted(String file) {
 		return ACCEPTED.getOrDefault(file, List.of());
 	}
 
