@@ -70,3 +70,21 @@ Two of those entries were added late, both after a check that compared the branc
 jars: convenience/26.x-2.2.8 and convenience/26.x-2.2.7 were missing the annotation value form, and
 convenience/1.20.6-1.1.6 had lost the downloader checks to a step that reverted files copied from the store
 branch. All three are in now, each verified in the jar that branch builds.
+
+## OptiFine 出了新构建时(与每次发行一起做)
+
+每个带下载器的分支都有一份自己的 `OptifineHashes`,记录**本线**支持的那些构建的 SHA-256;这份表是**手工维护**的,没有构建期生成步骤。
+因此:OptiFine 为某个本线支持的版本发布了新构建之后,**发行前**必须把那个文件的 SHA-256 加进对应分支的 `OptifineHashes`。
+校验是 **fail-closed** 的:表里没有该构建名(或哈希都不匹配)时,下载会被**直接拒绝**并打印期望集合与实际值。
+
+```powershell
+# 1) 取真实哈希(不要凭记忆写)
+Get-FileHash "$env:APPDATA\.minecraft\versions\<实例>\mods\preview_OptiFine_<版本>.jar" -Algorithm SHA256
+# 2) 加进该分支 src\main\java\kynarain\cn\optifabric\mod\OptifineHashes.java 的 ACCEPTED
+# 3) 编译通过后再提交;发布后在下载回来的 -full jar 里确认表里含该构建名
+```
+
+已经被记录过的构建若被 OptiFine **重传**(同名不同内容),把**两份**都留在 `List.of(...)` 里 —— 只留一份会让另一半用户被拒。
+
+另一个已知边界:`download()` 里的 already-present 校验只在**进入下载路径**时执行;若流程判定"这个实例已经有 OptiFine"而完全不下载,
+那么**修复之前**留下的不合格 jar 不会被重新检查(新逻辑只防止新增残留)。发行说明里不要把它写成"每次启动都校验"。
