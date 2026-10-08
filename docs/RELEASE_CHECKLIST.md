@@ -52,39 +52,31 @@
 干跑会打印 CF 的 `projects//upload`（project id 为空）与 `Authorization:` 为空 —— **那就是缺凭据的样子**。
 补齐四个环境变量后，`publish.ps1` 会同时提交；提交前用 `-DryRun` 复核一遍打印出来的 multipart 命令与脱敏后的头部。
 
-## Fix coverage sweep (checked 2026-10-07, and to be re-run before each release)
+## Fix coverage sweep (all sixteen trees; re-run before each release)
 
-Every tree that carries one of the fixes below has it; where a column reads n/a the file itself is not on
-that line, which is by design and not a gap. The sweep is three greps over src/main/java:
+Three greps were not enough: the two hash corrections of the seven round review were applied to eight of the
+twelve trees that carry the downloader, and the two columns that would have shown it (whether a jar already on
+disk is checked, and whether the check runs before the jar is written) were missing from this table. They are
+columns now. "no downloader" means that line has no OptifineDownloader.java at all, which is by design.
 
-| tree | targets() in AddInterfaceFix | assignedBefore in OptifineJarFixer | requireHttps in OptifineDownloader |
-|---|---|---|---|
-| 1.21.x | ok | ok | n/a |
-| 26.x | ok | ok | n/a |
-| wip/1.20.6, main/1.20.6 | n/a | n/a | n/a |
-| conv 1.21.x-2.2.13, -2.2.12, -2.2.11 | ok | ok | ok |
-| conv 26.x-2.2.8, -2.2.7 | ok | ok | ok |
-| conv rf-1.1.5, rf-1.1.6, 1.20.6-1.1.6 | n/a | n/a | ok |
+| tree | targets() | assignedBefore | requireHttps | per line hash table | checks a jar already there | require before write |
+|---|---|---|---|---|---|---|
+| 1.21.x store | yes | yes | no downloader | no downloader | no downloader | no downloader |
+| 26.x store | yes | yes | no downloader | no downloader | no downloader | no downloader |
+| wip store | n/a | n/a | no downloader | no downloader | no downloader | no downloader |
+| main store | n/a | n/a | no downloader | no downloader | no downloader | no downloader |
+| conv 1.21.x-2.2.11 | yes | yes | yes | yes | yes | yes |
+| conv 1.21.x-2.2.12 | yes | yes | yes | yes | yes | yes |
+| conv 1.21.x-2.2.13 | yes | yes | yes | yes | yes | yes |
+| conv 1.21.x-2.2.14 | yes | yes | yes | yes | yes | yes |
+| conv 26.x-2.2.7 | yes | yes | yes | yes | yes | yes |
+| conv 26.x-2.2.8 | yes | yes | yes | yes | yes | yes |
+| conv 26.x-2.2.9 | yes | yes | yes | yes | yes | yes |
+| conv rf-1.1.5 | n/a | n/a | yes | yes | yes | yes |
+| conv rf-1.1.6 | n/a | n/a | yes | yes | yes | yes |
+| conv rf-1.1.7 | n/a | n/a | yes | yes | yes | yes |
+| conv 1.20.6-1.1.6 | n/a | n/a | yes | yes | yes | yes |
+| conv 1.20.6-1.1.7 | n/a | n/a | yes | yes | yes | yes |
 
-Two of those entries were added late, both after a check that compared the branch sources with the published
-jars: convenience/26.x-2.2.8 and convenience/26.x-2.2.7 were missing the annotation value form, and
-convenience/1.20.6-1.1.6 had lost the downloader checks to a step that reverted files copied from the store
-branch. All three are in now, each verified in the jar that branch builds.
-
-## OptiFine 出了新构建时(与每次发行一起做)
-
-每个带下载器的分支都有一份自己的 `OptifineHashes`,记录**本线**支持的那些构建的 SHA-256;这份表是**手工维护**的,没有构建期生成步骤。
-因此:OptiFine 为某个本线支持的版本发布了新构建之后,**发行前**必须把那个文件的 SHA-256 加进对应分支的 `OptifineHashes`。
-校验是 **fail-closed** 的:表里没有该构建名(或哈希都不匹配)时,下载会被**直接拒绝**并打印期望集合与实际值。
-
-```powershell
-# 1) 取真实哈希(不要凭记忆写)
-Get-FileHash "$env:APPDATA\.minecraft\versions\<实例>\mods\preview_OptiFine_<版本>.jar" -Algorithm SHA256
-# 2) 加进该分支 src\main\java\kynarain\cn\optifabric\mod\OptifineHashes.java 的 ACCEPTED
-# 3) 编译通过后再提交;发布后在下载回来的 -full jar 里确认表里含该构建名
-```
-
-已经被记录过的构建若被 OptiFine **重传**(同名不同内容),把**两份**都留在 `List.of(...)` 里 —— 只留一份会让另一半用户被拒。
-
-另一个已知边界:`download()` 里的 already-present 校验只在**进入下载路径**时执行;若流程判定"这个实例已经有 OptiFine"而完全不下载,
-那么**修复之前**留下的不合格 jar 不会被重新检查(新逻辑只防止新增残留)。发行说明里不要把它写成"每次启动都校验"。
+The two right hand columns were checked in the built jars as well, by reading the bytecode of fetch() out of them:
+a build that has the order wrong shows write() before require().
