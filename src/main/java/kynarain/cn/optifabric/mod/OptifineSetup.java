@@ -198,7 +198,6 @@ public class OptifineSetup {
 			} finally {
 				rebuilder.close(); //Always: it holds the vanilla jar and its scratch files open.
 			}
-		rebuilder.close();
 		//In the "official" namespace the game's own names already are the runtime names, so OptiFine's patches are
 		//named correctly as they stand and the whole official -> intermediary remap is the identity. It cannot just be
 		//left in and allowed to be a no-op either: a jar is built for exactly one of the two worlds, and the build for
