@@ -39,7 +39,7 @@ SHA-256 就在本线 `OptifineHashes` 的记录里。装载组合含 `c2me`、`l
 `Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2` —— 这三类都是 **OptiFine 自己**
 面对 Fabric 的资源包类型与 Java 22 模块限制发出的抱怨,与本补丁无关,不要读成回归。
 
-## 2. 同一天两次"无异常退出"(2026-10-10 19:57 / 19:58,均在 1.21.1)"无异常退出"(2026-10-10 19:57 / 19:58,均在 1.21.1)
+## 2. 同一天两次无异常的退出(2026-10-10 19:57 / 19:58,均在 1.21.1)
 
 **来源**:作者导出的 PCL 错误报告 zip(`错误报告-2026-10-10_19.59.33.zip`,我复制到 `I:\mods\OptiFabric-workspace\crash-2026-10-10\` 后解包)。包里是
 `latest.log`、`游戏崩溃前的输出.txt`、`PCL 启动器日志.txt`(5870 行)、`启动脚本.bat`、版本 json —— **没有** `crash-*.txt`,**没有** `hs_err_pid*.log`。
