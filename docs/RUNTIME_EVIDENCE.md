@@ -38,3 +38,30 @@ SHA-256 就在本线 `OptifineHashes` 的记录里。装载组合含 `c2me`、`l
 `Unknown resource pack type: …`, `InaccessibleObjectException: … jdk.internal.misc.VM.maxDirectMemory()`,
 `Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2` —— 这三类都是 **OptiFine 自己**
 面对 Fabric 的资源包类型与 Java 22 模块限制发出的抱怨,与本补丁无关,不要读成回归。
+
+## 2. 同一天两次"无异常退出"(2026-10-10 19:57 / 19:58,均在 1.21.1)"无异常退出"(2026-10-10 19:57 / 19:58,均在 1.21.1)
+
+**来源**:作者导出的 PCL 错误报告 zip(`错误报告-2026-10-10_19.59.33.zip`,我复制到 `I:\mods\OptiFabric-workspace\crash-2026-10-10\` 后解包)。包里是
+`latest.log`、`游戏崩溃前的输出.txt`、`PCL 启动器日志.txt`(5870 行)、`启动脚本.bat`、版本 json —— **没有** `crash-*.txt`,**没有** `hs_err_pid*.log`。
+
+**日志能直接读到的**
+
+| 观察 | 原文 |
+|---|---|
+| 两次都是异常终止 | 启动器:`[31484] Minecraft 已退出,返回值:-1`、`[58432] Minecraft 已退出,返回值:-1` |
+| 分析器找不到原因 | `开始进行 Minecraft 日志堆栈分析,发现 0 个报错项` → `未找到可能的原因` |
+| 第二次的死前状态 | `19:58:03 Kynarain logged in with entity id 41` → 反复存档 → `19:58:46` 退出(中间约 43 秒,日志无异常) |
+| 崩溃报告的系统信息里出现图形驱动 | 13:01 与 13:07 那两次的 dump 里有 `atio6axx.dll:AMD OpenGL Driver:25.11.250605_36cd845:Advanced Micro Devices, Inc` |
+
+**据此能说与不能说**
+
+* 能说:这两次退出**不是**补丁抛出的 Java 异常 —— 日志零异常、退出码 `-1`(异常终止),而包里可见的崩溃报告系统信息指向图形驱动层。
+* 不能因此定论驱动是唯一原因:要区分"原生崩"与"Java 层崩",必须看 `hs_err_pid*.log`(有则是 JVM 级)或 `crash-*.txt`(有 Java 栈则是 Java 级)。**这两份都不在这个 zip 里**。
+* 时间上值得注意:两次都发生在**进世界约一分钟后**、且当时**没有加载 shaderpack**(`No shaderpack loaded`)。
+
+**要继续查,需要补的两样**
+
+1. `C:\Users\<用户>\AppData\Roaming\.minecraft\versions\1.21.1-Fabric 0.19.5\crash-reports\crash-*.txt` —— 启动器日志确认这些文件存在(13:01/13:07/14:36 等次都写了报告)。
+2. 实例目录或游戏目录下的 `hs_err_pid*.log`(如果存在)—— 有它就是 JVM 级崩溃,里面会直接写明 `SIGSEGV`/`EXCEPTION_ACCESS_VIOLATION` 与出错的**本地库**。
+
+若确实是驱动层,可做的对照:**关掉 c2me/lithium/entityculling 只留 OptiFabric + OptiFine** 跑同一个世界;以及查 Windows 事件查看器里有没有 `Display driver amdkmdap stopped responding`(TDR)。
