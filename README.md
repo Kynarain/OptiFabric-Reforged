@@ -45,9 +45,9 @@ Both OptiFine builds are **previews** — OptiFine has no final release for eith
 This is the same list the mod itself carries and `release\notes\mc<MC>.md` states per release; the release tooling fails when the copies disagree.
 
 | OptiFabric version | Minecraft version | Recommended OptiFine build | Build kind | SHA-256 | Bytes |
-|---|---|---|---|---|---|
-| `2.2.9+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview (no final exists) | (not on this machine) | (unknown) |
-| `2.2.9+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) | (not on this machine) | (unknown) |
+|---|---|---|---|---|---|---|---|
+| `2.2.9+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | `DB05B25F` | 7783636 |
+| `2.2.9+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | `F8EB9026` | 7797229 |
 
 ### The 26.2 shader limitation
 
