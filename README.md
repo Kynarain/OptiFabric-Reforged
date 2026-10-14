@@ -26,9 +26,9 @@
 
 这张表与模组里自带的那张(`OptifineSupport`)一致;本分支只构建 1.20.6 一个版本,所以只有一行。
 
-| OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 |
-|---|---|---|
-| `1.1.6-reforged+mc1.20.6` | 1.20.6 | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` |
+| OptiFabric 版本 | Minecraft 版本 | 需要的 OptiFine 构建 | SHA-256 | Bytes |
+|---|---|---|---|---|
+| `1.1.7-reforged+mc1.20.6` | 1.20.6 | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | `451B8AC7` / `8721C3B1` | 7330328 / 6827483 |
 
 当 OptiFabric 加载了、而上面那个 jar 不在(或者不是该 Minecraft 版本需要的那个构建)时,游戏不再默默启动,而是在标题界面弹出**这个模组唯一的那一个对话框**,告诉你缺哪个文件、mods 文件夹在哪。
 
