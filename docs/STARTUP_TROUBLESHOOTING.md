@@ -2,7 +2,28 @@
 
 这份文档只讲**有据可查**的失败方式,以及**在那台机器上要收集什么**。它不替代日志:每条判断都给"该在日志里看到什么"。
 
-## 一、最常见的一种:Loader 在**模组解析阶段**硬拒载
+## 零、先核对两个 jar 的 mod id(2026-10-13 在本机读 jar 核实)
+
+不需要在出问题的机器上做任何实验就能定性:失败与否只取决于**装的那个 OptiFabric jar 的 mod id**。下面是直接读各 jar 内
+`fabric.mod.json` 得到的事实(不是推测):
+
+| jar | 它写的 mod id | 它写没写 `breaks: optifabric` |
+|---|---|---|
+| `lithium-fabric-0.15.3+mc1.21.4.jar`(**stock**) | `lithium` | **写了** ⇒ `"breaks": {"optifabric": "*"}` |
+| `lithium-fabric-mc1.21.4-patched.jar`(**打过补丁**) | `lithium` | **没有了** —— 补丁把整段 `breaks` 删掉了 |
+| `OptiLithium-1.0.0+mc1.21.4.jar` | `optilithium` | 没写(它只写 `conflicts: sodium`) |
+| `OptiFabric-2.2.14+mc1.21.4.jar`(**现行产物**) | **`optifabric_reforged`** | —— |
+| `OptiFabric-1.1.2+mc1.21.4.jar`(**旧**) | **`optifabric`** | —— |
+| `OptiFabric-1.1.7+mc1.20.6.jar`(1.20.6 主线) | `optifabric` | —— |
+
+**结论**:
+
+* 装 **`OptiFabric-2.2.14+mc1.21.4.jar` + stock Lithium ⇒ 能启动**。stock Lithium 的 `breaks: optifabric` 匹配的是 id `optifabric`,
+  而现行产物的 id 是 `optifabric_reforged`,**匹配不上** —— 这是本线刻意改的名,目的就是让它与这类第三方声明脱钩。
+* 装 **旧的 `+mc1.21.4`(id `optifabric`)** 或**上游 OptiFabric** + stock Lithium ⇒ Loader 在**模组解析阶段硬拒载**,
+  **不产生 crash-report、也没有 Java 异常** —— 这就是"起不来又看不到原因"的样子。
+
+## 一、这一类失败在日志里长什么样:Loader 在**模组解析阶段**硬拒载
 
 **症状**:游戏**根本起不来**,没有窗口或窗口一闪而过;**没有** `crash-reports\crash-*.txt`;**没有** Java 异常栈 —— 因为失败发生在加载模组之前/之中。
 
