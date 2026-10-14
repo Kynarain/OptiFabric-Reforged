@@ -12,16 +12,6 @@ OptiFine installer.** Put the jar named in the table below next to OptiFabric in
 
 | Minecraft | OptiFabric line | OptiFabric artifact | OptiFine build to use | Build kind | SHA-256 (whole) | Bytes |
 |---|---|---|---|---|---|---|
-| OptiFabric-2.2.14+mc1.21.jar | 1.21.x | `1.21` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | preview | `b26b22478592ca85c3ea829784c3b7bf0d98d882d18a937af969dcc14372d37f` | 7355487 |
-| OptiFabric-2.2.14+mc1.21.1.jar | 1.21.x | `1.21.1` | `OptiFine_1.21.1_HD_U_J1.jar` | final | `db6d2d14db0009bdea2d8f848e5cb55aac52b555e8e50506dbf7876755b79082` | 7322249 |
-| OptiFabric-2.2.14+mc1.21.3.jar | 1.21.x | `1.21.3` | `OptiFine_1.21.3_HD_U_J2.jar` | final | `3916aadff6fd8814f93d5ca0fddf4921f67772737b1208099b1debaeb671667b` | 7304461 |
-| OptiFabric-2.2.14+mc1.21.4.jar | 1.21.x | `1.21.4` | `OptiFine_1.21.4_HD_U_J3.jar` | final | `db8a1c508ecb3f89ae8f7b69ae25c78cbdb3d31131c4f789ffae50e2047be1d3` | 7423659 |
-| OptiFabric-2.2.14+mc1.21.6.jar | 1.21.x | `1.21.6` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | preview | `f73e5b90a89e523873b5b876cbd7601f08eface74879e8dd528bd25328ef5c7a` | 7518992 |
-| OptiFabric-2.2.14+mc1.21.7.jar | 1.21.x | `1.21.7` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | preview | `4e7340eb61b39f100da639e62490e50432ba34380f96bbea822336dbef157e6c` | 7587441 |
-| OptiFabric-2.2.14+mc1.21.8.jar | 1.21.x | `1.21.8` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | preview | `ffe496b39065fedc897dc179965f9a21f01ab1f816be973e496d94c9617d462c` | 7704702 |
-| OptiFabric-2.2.14+mc1.21.9.jar | 1.21.x | `1.21.9` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | preview | `dc7d1182360c2b23b0c96797103ef1946fae6d1bda78ec2640117df3f368f4c4` | 7664893 |
-| OptiFabric-2.2.14+mc1.21.10.jar | 1.21.x | `1.21.10` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | preview | `bf845cfc6a387b0cc879512caefa86039fd5ca9e37aa6828a1967577ae96b6d7` | 7805444 |
-| OptiFabric-2.2.14+mc1.21.11.jar | 1.21.x | `1.21.11` | `OptiFine_1.21.11_HD_U_J9.jar` | final, two known contents | `63a60c48b3370920e96d4c32570d7154d17b3a86654c4f1d1df418be668d3903`<br>`f97b5d06df53760e21c5a91733ac55af5a250caca2c29945c855aef7ed2d0ec8` | 8045116<br>8045105 |
 | 1.21 | 1.21.x | `2.2.14+mc1.21` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | preview | `b26b22478592ca85c3ea829784c3b7bf0d98d882d18a937af969dcc14372d37f` | 7355487 |
 | 1.21.1 | 1.21.x | `2.2.14+mc1.21.1` | `OptiFine_1.21.1_HD_U_J1.jar` | final | `db6d2d14db0009bdea2d8f848e5cb55aac52b555e8e50506dbf7876755b79082` | 7322249 |
 | 1.21.3 | 1.21.x | `2.2.14+mc1.21.3` | `OptiFine_1.21.3_HD_U_J2.jar` | final | `3916aadff6fd8814f93d5ca0fddf4921f67772737b1208099b1debaeb671667b` | 7304461 |
@@ -32,23 +22,19 @@ OptiFine installer.** Put the jar named in the table below next to OptiFabric in
 | 1.21.9 | 1.21.x | `2.2.14+mc1.21.9` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | preview | `dc7d1182360c2b23b0c96797103ef1946fae6d1bda78ec2640117df3f368f4c4` | 7664893 |
 | 1.21.10 | 1.21.x | `2.2.14+mc1.21.10` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | preview | `bf845cfc6a387b0cc879512caefa86039fd5ca9e37aa6828a1967577ae96b6d7` | 7805444 |
 | 1.21.11 | 1.21.x | `2.2.14+mc1.21.11` | `OptiFine_1.21.11_HD_U_J9.jar` | final, two known contents | `63a60c48b3370920e96d4c32570d7154d17b3a86654c4f1d1df418be668d3903`<br>`f97b5d06df53760e21c5a91733ac55af5a250caca2c29945c855aef7ed2d0ec8` | 8045116<br>8045105 |
-| OptiFabric-Reforged-2.2.9+mc26.2.jar | 26.x | `26.2` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview | `db05b25f8aa5ac688a77354680ef939d4f3135350e64e7ccfe5996cfaf925927` | 7783636 |
-| OptiFabric-Reforged-2.2.9+mc26.1.2.jar | 26.x | `26.1.2` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview | `f8eb9026e4da2444e18d5601d3dede2bd19cf514d02095ffcdb0e101687c2172` | 7797229 |
 | 26.2 | 26.x | `2.2.9+mc26.2` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview | `db05b25f8aa5ac688a77354680ef939d4f3135350e64e7ccfe5996cfaf925927` | 7783636 |
 | 26.1.2 | 26.x | `2.2.9+mc26.1.2` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview | `f8eb9026e4da2444e18d5601d3dede2bd19cf514d02095ffcdb0e101687c2172` | 7797229 |
-| OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar(**本分支**) | 1.20.6 (reforged) | `1.20.6` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | preview, two known contents | `451b8ac78e291b720ecc5e5c125610c2feec0d2590d529ff1be65345054d50f4`<br>`8721c3b11aee3e634e3e18c2209e3de1d6eea3a3c2110396112119c32226d517` | 7330328<br>6827483 |
 | 1.20.6 | 1.20.6 (reforged) | `1.1.7-reforged+mc1.20.6` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | preview, two known contents | `451b8ac78e291b720ecc5e5c125610c2feec0d2590d529ff1be65345054d50f4`<br>`8721c3b11aee3e634e3e18c2209e3de1d6eea3a3c2110396112119c32226d517` | 7330328<br>6827483 |
-| OptiFabric-1.1.6+mc1.20.6.jar(最近一次已发布的主线产物) | 1.20.6 | `1.20.6` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | preview, two known contents | `451b8ac78e291b720ecc5e5c125610c2feec0d2590d529ff1be65345054d50f4`<br>`8721c3b11aee3e634e3e18c2209e3de1d6eea3a3c2110396112119c32226d517` | 7330328<br>6827483 |
 | 1.20.6 | 1.20.6 | `1.1.7+mc1.20.6` | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | preview, two known contents | `451b8ac78e291b720ecc5e5c125610c2feec0d2590d529ff1be65345054d50f4`<br>`8721c3b11aee3e634e3e18c2209e3de1d6eea3a3c2110396112119c32226d517` | 7330328<br>6827483 |
 
 ## What each line needs
 
 | Line | Minecraft versions | Mod id inside the jar | Java | Notes |
 |---|---|---|---|---|
-| 1.21.x | OptiFabric-2.2.14+mc1.21.jar, OptiFabric-2.2.14+mc1.21.1.jar, OptiFabric-2.2.14+mc1.21.3.jar, OptiFabric-2.2.14+mc1.21.4.jar, OptiFabric-2.2.14+mc1.21.6.jar, OptiFabric-2.2.14+mc1.21.7.jar, OptiFabric-2.2.14+mc1.21.8.jar, OptiFabric-2.2.14+mc1.21.9.jar, OptiFabric-2.2.14+mc1.21.10.jar, OptiFabric-2.2.14+mc1.21.11.jar, 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, 1.21.11 | `optifabric_reforged` | Java 21 or newer | ten Minecraft releases, every one of which has an OptiFine build |
-| 26.x | OptiFabric-Reforged-2.2.9+mc26.2.jar, OptiFabric-Reforged-2.2.9+mc26.1.2.jar, 26.2, 26.1.2 | `optifabric_reforged` | Java 25 | preview builds only: OptiFine has never shipped a final build for 26.2 or 26.1.2 |
-| 1.20.6 (reforged) | OptiFabric-Reforged-1.1.6-reforged+mc1.20.6.jar(**本分支**), 1.20.6 | `optifabric_reforged` | Java 21 | preview builds only; 2.0.0-style id, so it loads beside nothing named optifabric |
-| 1.20.6 | OptiFabric-1.1.6+mc1.20.6.jar(最近一次已发布的主线产物), 1.20.6 | `optifabric` | Java 21 | preview builds only; this line keeps the original mod id |
+| 1.21.x | 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, 1.21.11 | `optifabric_reforged` | Java 21 or newer | every Minecraft release OptiFine has shipped a build for |
+| 26.x | 26.2, 26.1.2 | `optifabric_reforged` | Java 25 | preview builds only: OptiFine has never shipped a final build for 26.2 or 26.1.2 |
+| 1.20.6 (reforged) | 1.20.6 | `optifabric_reforged` | Java 21 | preview builds only |
+| 1.20.6 | 1.20.6 | `optifabric` | Java 21 | preview builds only; this line keeps the original mod id |
 
 ## How to check what you downloaded
 
