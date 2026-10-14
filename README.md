@@ -145,6 +145,8 @@ The jars land in `build/libs/OptiFabric-Reforged-<version>+mc<mc>.jar`.
 | Java | **25** (the game's own hard requirement; Java 21 fails before the window appears) |
 | Side | client |
 | OptiFine | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` for 26.2, `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` for 26.1.2 (preview only, both of them) |
+
+The **SHA-256** column carries the first eight hex digits of the file, and **Bytes** its exact size — check the jar you downloaded against them before putting it into `mods/`. Two rows list **two** hashes separated by `/`: those are builds OptiFine re-uploaded under the same file name with different contents, and this mod accepts either of them.
 | Fabric API | optional — tested with `0.161.0+26.2` on 26.2 and `0.155.3+26.1.2` on 26.1.2 |
 
 ## 📝 Project Structure
