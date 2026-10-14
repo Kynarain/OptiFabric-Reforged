@@ -67,6 +67,8 @@ This is the same list the mod itself carries and `release\notes\mc<MC>.md` state
 | `2.2.14+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | `BF845CFC` | 7805444 |
 | `2.2.14+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` | `63A60C48` / `F97B5D06` | 8045116 / 8045105 |
 
+The **SHA-256** column carries the first eight hex digits of the file, and **Bytes** its exact size — check the jar you downloaded against them before putting it into `mods/`. Two rows list **two** hashes separated by `/`: those are builds OptiFine re-uploaded under the same file name with different contents, and this mod accepts either of them.
+
 When that jar is missing, or is not the build its Minecraft version expects, the game says so in a dialog at the title screen instead of starting silently: the dialog names the file, offers a `Download OptiFine` button that fetches it from OptiFine's **official** site (`optifine.net`, the only source this mod ever uses), and opens the mods folder for you.
 
 ### The 1.21.6 / 1.21.7 shader limitation
@@ -164,8 +166,6 @@ Measured with the third-party **FPS Benchmark** mod (`fpstest-1.0.jar`, sha256 `
 |---|---|---|
 | **A** | vanilla baseline | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` |
 | **C** | OptiFabric + OptiFine only | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` |
-
-The **SHA-256** column carries the first eight hex digits of the file, and **Bytes** its exact size — check the jar you downloaded against them before putting it into `mods/`. Two rows list **two** hashes separated by `/`: those are builds OptiFine re-uploaded under the same file name with different contents, and this mod accepts either of them.
 | **D** | the recommended set | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` |
 | **B** | Sodium route (not compatible with OptiFine) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` |
 
