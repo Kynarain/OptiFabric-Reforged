@@ -49,6 +49,8 @@ This is the same list the mod itself carries and `release\notes\mc<MC>.md` state
 | `2.2.9+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | `DB05B25F` | 7783636 |
 | `2.2.9+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | `F8EB9026` | 7797229 |
 
+The **SHA-256** column carries the first eight hex digits of the file, and **Bytes** its exact size — check the jar you downloaded against them before putting it into `mods/`. Two rows list **two** hashes separated by `/`: those are builds OptiFine re-uploaded under the same file name with different contents, and this mod accepts either of them.
+
 ### The 26.2 shader limitation
 
 On **26.2**, selecting a shader pack in OptiFine **does nothing** with this OptiFine build: the game keeps rendering without it. It is not a crash and not this mod's doing — that build does not load shader packs on this Minecraft version. Since **2.2.7** the mod says so in the same title-screen dialog as soon as it sees that build installed. **26.1.2 is not affected.**
@@ -145,8 +147,6 @@ The jars land in `build/libs/OptiFabric-Reforged-<version>+mc<mc>.jar`.
 | Java | **25** (the game's own hard requirement; Java 21 fails before the window appears) |
 | Side | client |
 | OptiFine | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` for 26.2, `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` for 26.1.2 (preview only, both of them) |
-
-The **SHA-256** column carries the first eight hex digits of the file, and **Bytes** its exact size — check the jar you downloaded against them before putting it into `mods/`. Two rows list **two** hashes separated by `/`: those are builds OptiFine re-uploaded under the same file name with different contents, and this mod accepts either of them.
 | Fabric API | optional — tested with `0.161.0+26.2` on 26.2 and `0.155.3+26.1.2` on 26.1.2 |
 
 ## 📝 Project Structure
