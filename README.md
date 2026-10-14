@@ -65,7 +65,7 @@ This is the same list the mod itself carries and `release\notes\mc<MC>.md` state
 | `2.2.14+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | `FFE496B3` | 7704702 |
 | `2.2.14+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | `DC7D1182` | 7664893 |
 | `2.2.14+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | `BF845CFC` | 7805444 |
-| `2.2.14+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` | `63A60C48` | 8045116 |
+| `2.2.14+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` | `63A60C48` / `F97B5D06` | 8045116 / 8045105 |
 
 When that jar is missing, or is not the build its Minecraft version expects, the game says so in a dialog at the title screen instead of starting silently: the dialog names the file, offers a `Download OptiFine` button that fetches it from OptiFine's **official** site (`optifine.net`, the only source this mod ever uses), and opens the mods folder for you.
 
