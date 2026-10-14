@@ -320,63 +320,53 @@ public final class OptifineDownloader {
 	}
 
 		private static byte[] get(URI uri, Progress progress) throws IOException {
-		requireHttps(uri);
-		HttpRequest request = HttpRequest.newBuilder(uri)
-				.timeout(REQUEST_TIMEOUT)
-				.header("User-Agent", USER_AGENT)
-				.header("Accept", "*/*")
-				.GET()
-				.build();
+			requireHttps(uri);
 
-		HttpResponse<InputStream> response;
-		try {
-			response = CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream());
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new IOException("interrupted while downloading " + uri, e);
-		} catch (IllegalArgumentException e) {
-			throw new IOException("refusing to fetch " + uri + ": " + e.getMessage(), e);
-		} catch (IOException e) {
-			// An unreachable host, a refused connection or a connect timeout arrives here; the URL is added
-			// because a bare ConnectException has no message of its own to show the user.
-			throw new IOException("could not reach " + uri + ": " + e, e);
-		}
+			HttpRequest request = HttpRequest.newBuilder(uri)
+					.timeout(REQUEST_TIMEOUT)
+					.header("User-Agent", USER_AGENT)
+					.header("Accept", "*/*")
+					.GET()
+					.build();
 
-		try (InputStream in = response.body()) {
+			// The whole body is read inside send(), not from the stream it hands back: the request timeout ends when
+			// the response is received, so with an ofInputStream body a server that accepts the connection and then
+			// stops sending leaves the read blocked for as long as it likes. That is what happened on a network
+			// that throttles optifine.net: the game sat in preLaunch and the window never appeared. Buffering the
+			// body here puts the whole exchange under REQUEST_TIMEOUT.
+			HttpResponse<byte[]> response;
+			try {
+				response = CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new IOException("interrupted while downloading " + uri, e);
+			} catch (IllegalArgumentException e) {
+				throw new IOException("refusing to fetch " + uri + ": " + e.getMessage(), e);
+			} catch (java.net.http.HttpTimeoutException e) {
+				throw new IOException("no complete response from " + uri + " within " + REQUEST_TIMEOUT.toSeconds()
+						+ "s, giving up. For the OptiFine download this usually means the connection to optifine.net is"
+						+ " throttled or blocked: put OptiFine into the mods folder yourself and this build uses that"
+						+ " instead of downloading it", e);
+			} catch (IOException e) {
+				// An unreachable host, a refused connection or a connect timeout arrives here; the URL is added
+				// because a bare ConnectException has no message of its own to show the user.
+				throw new IOException("could not reach " + uri + ": " + e, e);
+			}
+
 			if (response.statusCode() != 200) {
 				throw new IOException("HTTP " + response.statusCode() + " from " + uri);
 			}
 
-			long total = response.headers().firstValueAsLong("content-length").orElse(-1L);
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			byte[] buffer = new byte[16384];
-			long received = 0;
-			long lastReport = 0;
-			long reported = -1;
-			int read;
+			byte[] body = response.body();
 
-			while ((read = in.read(buffer)) > 0) {
-				received += read;
-
-				if (received > MAX_BYTES) {
-					throw new IOException("the response from " + uri + " is larger than " + MAX_BYTES + " bytes, refusing it");
-				}
-
-				out.write(buffer, 0, read);
-
-				long now = System.nanoTime();
-				if (now - lastReport >= PROGRESS_INTERVAL_NANOS) {
-					lastReport = now;
-					reported = received;
-					progress.bytes(received, total);
-				}
+			if (body.length > MAX_BYTES) {
+				throw new IOException("the response from " + uri + " is larger than " + MAX_BYTES + " bytes, refusing it");
 			}
 
-			if (received != reported) progress.bytes(received, total);
-
-			return out.toByteArray();
+			long total = response.headers().firstValueAsLong("content-length").orElse((long) body.length);
+			progress.bytes(body.length, total);
+			return body;
 		}
-	}
 
 	/**
 	 * Rejects everything that is not an OptiFine jar: a response that is not a zip at all, a corrupt zip, and a
