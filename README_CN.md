@@ -55,17 +55,17 @@ OptiFine **从未**为 **1.21.2 / 1.21.5** 出过构建,所以这两版没有 ja
 这张表与模组自带的清单、以及 `release\notes\mc<MC>.md` 逐版写的是同一批;三者不一致时 `release\version.ps1 -CheckSupport` 会报错。
 
 | OptiFabric version | Minecraft version | Required OptiFine build | SHA-256 | Bytes |
-|---|---|---|---|---|
-| `2.2.14+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | (not on this machine) | (unknown) |
-| `2.2.14+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` | (not on this machine) | (unknown) |
-| `2.2.14+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` | (not on this machine) | (unknown) |
-| `2.2.14+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` | (not on this machine) | (unknown) |
-| `2.2.14+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | (not on this machine) | (unknown) |
-| `2.2.14+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | (not on this machine) | (unknown) |
-| `2.2.14+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | (not on this machine) | (unknown) |
-| `2.2.14+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | (not on this machine) | (unknown) |
-| `2.2.14+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | (not on this machine) | (unknown) |
-| `2.2.14+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` | `63A60C48` / `F97B5D06` | 8045116 / 8045105 |
+|---|---|---|---|---|---|---|
+| `2.2.14+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | `B26B2247` | 7355487 |
+| `2.2.14+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` | `DB6D2D14` | 7322249 |
+| `2.2.14+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` | `3916AADF` | 7304461 |
+| `2.2.14+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` | `DB8A1C50` | 7423659 |
+| `2.2.14+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | `F73E5B90` | 7518992 |
+| `2.2.14+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | `4E7340EB` | 7587441 |
+| `2.2.14+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | `FFE496B3` | 7704702 |
+| `2.2.14+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | `DC7D1182` | 7664893 |
+| `2.2.14+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | `BF845CFC` | 7805444 |
+| `2.2.14+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` | `63A60C48` | 8045116 |
 
 那个 jar 缺失、或不是其 Minecraft 版本该有的构建时,游戏会在标题界面弹出对话框而不是默默启动:对话框写出文件名、提供「下载 OptiFine」按钮(从 OptiFine **官网** `optifine.net` 取,那是本模组唯一会用的来源),并替你打开 mods 文件夹。
 
