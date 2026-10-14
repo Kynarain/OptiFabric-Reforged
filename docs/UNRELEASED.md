@@ -1,3 +1,19 @@
 # Not yet in a released jar
 
 Nothing: everything listed here before was released as 1.1.7-reforged+mc1.20.6.
+
+## The OptiFine download can no longer hang forever (all twelve branches with a downloader)
+
+Found on a machine whose network throttles optifine.net: the -full build fetched the download page, got its
+token, read 3076 KiB of the 7424 KiB jar and then blocked in the read of the response body for 24 minutes, with
+the game sitting in preLaunch and no window ever appearing. The cause is that HttpRequest.timeout ends when the
+response is received, not when its body is finished, and the body was being read from the stream handed back by
+BodyHandlers.ofInputStream. The body is now buffered inside send(), so the three minute request timeout covers
+the whole exchange; a timeout explains itself and says that putting OptiFine into mods is the way around it.
+
+Verified by reading the built jar: OptifineDownloader.class references BodyHandlers.ofByteArray, no longer
+references ofInputStream, and carries both HttpTimeoutException and the message.
+
+Commits: 1.21.x-2.2.11 eb8031c, -2.2.12 bf32a5f, -2.2.13 7653105, -2.2.14 0627135, 26.x-2.2.7 d17b6a8,
+-2.2.8 7debcdc, -2.2.9 f2a4b69, 1.20.6-reforged-1.1.5 ba9e996, -1.1.6 dc30672, -1.1.7 7938abd,
+1.20.6-1.1.6 6e08de3, -1.1.7 6b17abf. Not yet in any published jar.
