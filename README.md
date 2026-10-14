@@ -55,7 +55,7 @@ OptiFine never shipped a build for **1.21.2 / 1.21.5**, so there is no jar for t
 This is the same list the mod itself carries and `release\notes\mc<MC>.md` states per release; `release\version.ps1 -CheckSupport` fails when the three disagree.
 
 | OptiFabric version | Minecraft version | Required OptiFine build | SHA-256 | Bytes |
-|---|---|---|---|---|---|---|
+|---|---|---|---|---|
 | `2.2.14+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | `B26B2247` | 7355487 |
 | `2.2.14+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` | `DB6D2D14` | 7322249 |
 | `2.2.14+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` | `3916AADF` | 7304461 |

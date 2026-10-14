@@ -55,7 +55,7 @@ OptiFine **从未**为 **1.21.2 / 1.21.5** 出过构建,所以这两版没有 ja
 这张表与模组自带的清单、以及 `release\notes\mc<MC>.md` 逐版写的是同一批;三者不一致时 `release\version.ps1 -CheckSupport` 会报错。
 
 | OptiFabric version | Minecraft version | Required OptiFine build | SHA-256 | Bytes |
-|---|---|---|---|---|---|---|
+|---|---|---|---|---|
 | `2.2.14+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | `B26B2247` | 7355487 |
 | `2.2.14+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` | `DB6D2D14` | 7322249 |
 | `2.2.14+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` | `3916AADF` | 7304461 |
