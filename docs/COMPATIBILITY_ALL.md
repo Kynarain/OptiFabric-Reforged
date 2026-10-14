@@ -520,12 +520,12 @@ the combination was tested - not that each line was tested on its own Minecraft 
 | Supplementaries | `supplementaries` | ❌ | ❌ | ❌ | ❌ |
 | The Shooting Star (Demo) | `the-shooting-star-demo` | ❌ | - | - | - |
 | ToolTipFix | `tooltipfix` | ❌ | ❌ | ❌ | ❌ |
-| Bobby | `bobby` | ✅ | ❌ | ❌ | ❌ |
-| Concurrent Chunk Management Engine (Fabric) | `c2me-fabric` | ✅ | ❌ | ❌ | ❌ |
-| Falling Leaves | `fallingleaves` | ✅ | ❌ | ❌ | ❌ |
-| Freecam | `freecam` | ✅ | ❌ | ❌ | ❌ |
-| sample--mr-bedrockify | `sample--mr-bedrockify` | ✅ | ❌ | ❌ | ❌ |
-| sample--mr-c2me-fabric | `sample--mr-c2me-fabric` | ✅ | ❌ | ❌ | ❌ |
+| Bobby | `bobby` | OK (retested) | ❌ | ❌ | ❌ |
+| Concurrent Chunk Management Engine (Fabric) | `c2me-fabric` | OK (retested) | ❌ | ❌ | ❌ |
+| Falling Leaves | `fallingleaves` | OK (retested) | ❌ | ❌ | ❌ |
+| Freecam | `freecam` | OK (retested) | ❌ | ❌ | ❌ |
+| sample--mr-bedrockify | `sample--mr-bedrockify` | OK (retested) | ❌ | ❌ | ❌ |
+| sample--mr-c2me-fabric | `sample--mr-c2me-fabric` | OK (retested) | ❌ | ❌ | ❌ |
 | cf--aether | `cf--aether` | 🚫 | 🚫 | 🚫 | 🚫 |
 | cf--better-compatibility-checker | `cf--better-compatibility-checker` | 🚫 | 🚫 | 🚫 | 🚫 |
 | cf--the-twilight-forest | `cf--the-twilight-forest` | 🚫 | 🚫 | 🚫 | 🚫 |
@@ -684,7 +684,7 @@ the combination was tested - not that each line was tested on its own Minecraft 
 
 | Mark | 1.21.x | 26.x | 1.20.6 (reforged) | 1.20.6 |
 |---|---|---|---|---|
-| OK | 0 | 0 | 0 | 0 |
+| OK | 6 | 0 | 0 | 0 |
 | NO | 0 | 0 | 0 | 0 |
 | BAD | 0 | 0 | 0 | 0 |
 | BLOCKED | 0 | 0 | 0 | 0 |
