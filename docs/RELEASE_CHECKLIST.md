@@ -80,3 +80,11 @@ columns now. "no downloader" means that line has no OptifineDownloader.java at a
 
 The two right hand columns were checked in the built jars as well, by reading the bytecode of fetch() out of them:
 a build that has the order wrong shows write() before require().
+
+### A third thing the sweep did not have a column for
+
+The downloader fix above was found on a user machine rather than by any check here, so the sweep table above is
+still incomplete: it has no column for "the body of a download is read under a timeout". For the record it was
+checked by reading the built jars instead: every branch with a downloader references BodyHandlers.ofByteArray
+and none references ofInputStream (commits listed in docs/UNRELEASED.md). Add it as a column the next time this
+table is regenerated.
