@@ -163,6 +163,8 @@ mods/OptiFine_1.21.11_HD_U_J9.jar
 |---|---|---|
 | **A** | 纯净基线 | `fabric-api-0.116.17+1.21.1.jar` `79AC44B4` + `fpstest-1.0.jar` `F1168191` |
 | **C** | 仅 OptiFabric + OptiFine | A + `OptiFabric-2.2.10+mc1.21.1.jar` `A897DA34` + `OptiFine_1.21.1_HD_U_J1.jar` `DB6D2D14` |
+
+**SHA-256** 列是文件哈希的前 8 位,**字节** 列是它的精确大小 —— 放进 `mods/` 之前先拿你下载的那份对一下。有两行写了**两个**用 `/` 分开的哈希:那是 OptiFine **用同一个文件名重传过、内容不同**的构建,本模组**两个都接受**。
 | **D** | 推荐组合 | C + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `ferritecore-7.0.3-fabric.jar` `98C3AB1D` + `c2me-fabric-mc1.21.1-0.4.0-alpha.0.29.jar` `9C4C1C4C` |
 | **B** | Sodium 路线(与 OptiFine 不兼容) | A + `lithium-fabric-0.15.4+mc1.21.1.jar` `92329D98` + `sodium-fabric-0.8.13+mc1.21.1.jar` `3D43C149` |
 
