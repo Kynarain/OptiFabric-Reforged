@@ -1500,7 +1500,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-versio
 - 离线字节码校验(与游戏一致的单一加载器):被补丁的 **570 / 570** 个游戏类通过 JVM 校验,OptiFine 自身的 **874 / 874** 个类通过,ASM 数据流验证器 **0 问题**。
 - 扫描器:mixin 成员引用缺失 **0**、破坏的抽象契约/丢失的虚方法覆写/无法解析的成员引用 **0/0/0**;`@At` 注入点仅剩 4 条,全部属于**已被停用**的 indigo。
 - 真机(final session):启动、主界面、单人世界、**多人服务器**、方块/区块/物品渲染、光影(`ComplementaryReimagined` 加载成功)、F3 调试屏;`[ERROR]` 0 条、无崩溃报告。
-- 过程、每一类的根因与修法、可复现工具见 [`docs/DEVELOPMENT.md`](../docs/DEVELOPMENT.md)。
+- 过程、每一类的根因与修法、可复现工具见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
 
 ---
 
@@ -1542,4 +1542,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File test-downloads\verify-versio
 
 - 离线字节码校验:与游戏一致的单一加载器下 **425 / 425 通过**,ASM 数据流验证器 **0 问题**。
 - 真机:带 Fabric API 进主界面、开单人存档、进多人服务器、模型与区块渲染、光影生效。
-- 过程与可复现工具见 [`docs/DEVELOPMENT.md`](../docs/DEVELOPMENT.md)。
+- 过程与可复现工具见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。

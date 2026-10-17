@@ -1,5 +1,7 @@
 # OptiFabric + OptiFine compatibility matrix — Minecraft 1.21.1 / Fabric
 
+> This is the raw 2026-10-03 sweep data. **Current per-mod verdicts**, including the mods that were re-tested afterwards, are in [`docs/COMPATIBILITY_ALL.md`](../COMPATIBILITY_ALL.md). Where the two disagree (c2me-fabric is `FAIL` here and `OK (retested)` there), the retest is the newer evidence.
+
 Generated 2026-10-03T04:40:46.188Z from pool.json, plan.json, deps\*.json and results.json by `tools/build-report.mjs`.
 
 ## Summary
