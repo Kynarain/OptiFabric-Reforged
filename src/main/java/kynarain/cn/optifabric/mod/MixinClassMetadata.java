@@ -102,7 +102,10 @@ public final class MixinClassMetadata {
 			//throws away the accessor-derived hierarchy the @Coerce check reads. The metadata that matters for
 			//LVTGeneratorError is a *method's* access flags on a top-level class (class_757 / GameRenderer.getFov
 			//private -> public), which nested entries do not describe, so they keep their entry.
-			if (internalName.indexOf('$') >= 0) continue;   // nested classes keep their cached metadata
+			// Nested classes keep their cached metadata: on this line a $-suffixed class is handled by its own fixer, and the
+	// 1.21.x line deliberately does not skip them here. Changing either side needs an in-game run on the release it
+	// belongs to - it has not been measured, so the difference is documented instead of guessed away.
+	if (internalName.indexOf('$') >= 0) continue;   // nested classes keep their cached metadata
 
 			//Once per class only: a second drop could not reach anything older than the metadata Mixin has
 			//meanwhile rebuilt from the bytes we installed, which is exactly the metadata that has to stay.
