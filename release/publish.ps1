@@ -28,6 +28,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# A red documentation gate means the documents do not describe what is about to be shipped; refuse to publish then.
+$docsGate = Join-Path $PSScriptRoot 'tools\check-docs.ps1'
+if (-not (Test-Path -LiteralPath $docsGate)) { $docsGate = Join-Path (Split-Path -Parent $PSScriptRoot) 'tools\check-docs.ps1' }
+if (Test-Path -LiteralPath $docsGate) {
+	& powershell -NoProfile -ExecutionPolicy Bypass -File $docsGate
+	if ($LASTEXITCODE -ne 0) { Write-Host "  发布前检查未通过:tools\check-docs.ps1 报了问题,先修好再发布。"; exit 1 }
+}
 $root = Split-Path -Parent $PSScriptRoot
 # 本仓库只有 26.x 一条发布线(见 release\MANUAL_RELEASE.md)。
 # 版本基数:$defaultModVersion 是这一线**当前在发**的那个产物的版本号 —— 26.2 那一份。
