@@ -73,7 +73,7 @@ public final class OptifineSupport {
 			//
 			// The prompt only ever names a *preview* that is older than this row: a final build the user already
 			// has is a proper release, so a newer final - or a final at all - is not worth interrupting them for.
-			new Build("26.2", "HD_U_K2", "pre1", "preview_OptiFine_26.2_HD_U_K2_pre1.jar", NOTE_NO_SHADERS),
+			new Build("26.2", "HD_U_K2", "pre4", "preview_OptiFine_26.2_HD_U_K2_pre4.jar", NOTE_NO_SHADERS),
 			new Build("26.1.2", "HD_U_K1", "pre2", "preview_OptiFine_26.1.2_HD_U_K1_pre2.jar", null));
 
 	/**
