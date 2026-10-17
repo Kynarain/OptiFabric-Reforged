@@ -19,6 +19,16 @@ permissions:
   contents: read
 
 jobs:
+  docs-gate:
+    name: documentation gate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Links, version numbers, encoding
+        shell: pwsh
+        run: ./tools/check-docs.ps1
+
 
   silent-catch-lint:
     name: silent-catch lint
