@@ -59,8 +59,9 @@ def mixinCompatibilityLevel = "JAVA_" + targetJavaVersion
 // The 26.x line carries its own mod id, and that is not cosmetic: mods that declare "breaks": {"optifabric": "*"}
 // (LambdaBetterGrass does) are refusing the 1.21.x line, where Indigo has to step aside - and Fabric Loader
 // matches on the id, not on the display name, so the only way to be a different mod to them is to *be* a
-// different mod id. The 1.21.x line, on its own branch, keeps "optifabric" and the published 1.1.0 jars are
-// untouched.
+// different mod id. The 1.21.x line, on its own branch, publishes the same id now (its 1.1.0 jars did not);
+// the 1.20.6 "main" line is the one that still publishes "optifabric", and the two 1.20.6 jars therefore declare
+// each other in "conflicts" so that only one of them can be installed.
 def modId = "optifabric_reforged"
 def modName = "OptiFabric Reforged"
 
