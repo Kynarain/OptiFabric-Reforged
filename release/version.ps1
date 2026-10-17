@@ -1,4 +1,4 @@
-# 版本号自动化(SemVer 2.0.0,见 docs/VERSIONING.md)
+﻿# 版本号自动化(SemVer 2.0.0,见 docs/VERSIONING.md)
 #
 # 一次版本号改动要同时落在 9 个地方:项目的 gradle.properties、release\publish.ps1 的映射,以及
 # README / CHANGELOG / docs\ / release\notes\ / release\MANUAL_RELEASE.md / dist\README.txt 里所有
