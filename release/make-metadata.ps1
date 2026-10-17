@@ -35,9 +35,17 @@ if ($Version -eq "") {
 
 $full = "$Version+mc$McVersion"
 $text = [System.IO.File]::ReadAllText($changelogPath, (New-Object System.Text.UTF8Encoding($false)))
-$start = $text.IndexOf("## $full")
+# The heading is matched with its line ending, not as a prefix: "## 1.1.8+mc1.20.6" must not be satisfied by
+# "## 1.1.8+mc1.20.6-reforged".
+$headingMatch = [regex]::Match($text, "(?m)^" + [regex]::Escape("## $full") + "\r?$")
+$start = if ($headingMatch.Success) { $headingMatch.Index } else { -1 }
 if ($start -lt 0) { throw "CHANGELOG.md has no section '## $full'" }
-$next = $text.IndexOf("`r`n## ", $start + 5)
+if ($start -lt 0) { throw "CHANGELOG.md has no section '## $full'" }
+# The section ends at the next heading. The line ending here is whatever the file uses: a changelog written on
+# Windows has CRLF and one normalised by a tool may have LF, and both must end the section in the same place.
+$tail = $text.Substring($start + $full.Length)
+$nextMatch = [regex]::Match($tail, "\r?\n## ")
+$next = if ($nextMatch.Success) { $start + $full.Length + $nextMatch.Index } else { $text.Length }
 if ($next -lt 0) { $next = $text.Length }
 
 $section = $text.Substring($start, $next - $start).Trim()
