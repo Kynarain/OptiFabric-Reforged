@@ -249,6 +249,18 @@ public class OptifineFixer {
 	private void registerFix(String className, ClassFixer classFixer) {
 		//RemappingUtils prefixes "net.minecraft." - right for intermediary names and renames, wrong for the classes
 		//that keep their Mojang name (com/mojang/...), which the lookup asks for verbatim.
+		//Two shapes are accepted and nothing else: an internal name with slashes, or a simple intermediary-style name
+		//that RemappingUtils maps. A name written with dots would be prefixed and then match nothing at all, which is
+		//how a fixer used to disappear without a word - so it is refused here instead.
+		if (className == null || className.isEmpty()) {
+			throw new IllegalArgumentException("A class fixer was registered without a class name");
+		}
+
+		if (className.indexOf('.') >= 0) {
+			throw new IllegalArgumentException("Class name " + className + " uses dots: give an internal name with slashes"
+					+ " (net/minecraft/...) or an intermediary name (class_846), or the fixer will never match");
+		}
+
 		String key = className.indexOf('/') >= 0 ? className : RemappingUtils.getClassName(className);
 		classFixes.computeIfAbsent(key, s -> new ArrayList<>()).add(classFixer);
 	}
