@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  *
  * <p>Nothing here is invented. {@code https://optifine.net/downloads} is the only source, read on 2026-10-02:
  * <ul>
- *   <li><b>26.2</b> has a <em>preview only</em> ("Preview versions": {@code OptiFine HD U K2 pre1}, 22.09.2026)
+ *   <li><b>26.2</b> has <em>previews only</em> ("Preview versions": {@code OptiFine HD U K2 pre4}, newest of pre1..pre4)
  *       and an <em>empty</em> main table, so the newest final build for 26.2 does not exist and the newest
  *       preview is what this row names;</li>
  *   <li><b>26.1.2</b> is in the same state ({@code OptiFine HD U K1 pre2}, 22.06.2026, and {@code pre1} before
@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  * <p>The build a jar is compared against is not the file name but OptiFine's own version string -
  * {@code net.optifine.Config.VERSION}, which {@link OptifineVersion} reads. That string is the file name
  * without {@code .jar} and without the {@code preview_} prefix, so the comparison is exact rather than a
- * guess: the two jars of this line carry {@code OptiFine_26.2_HD_U_K2_pre1} and
+ * guess: the two jars of this line carry {@code OptiFine_26.2_HD_U_K2_pre4} and
  * {@code OptiFine_26.1.2_HD_U_K1_pre2}.
  *
  * <p>A row names the <em>newest</em> build of its release, and a row is only about that release. An installed
@@ -77,7 +77,7 @@ public final class OptifineSupport {
 			//
 			// The prompt only ever names a *preview* that is older than this row: a final build the user already
 			// has is a proper release, so a newer final - or a final at all - is not worth interrupting them for.
-			new Build("26.2", "HD_U_K2", "pre1", "preview_OptiFine_26.2_HD_U_K2_pre1.jar", NOTE_NO_SHADERS),
+			new Build("26.2", "HD_U_K2", "pre4", "preview_OptiFine_26.2_HD_U_K2_pre4.jar", NOTE_NO_SHADERS),
 			new Build("26.1.2", "HD_U_K1", "pre2", "preview_OptiFine_26.1.2_HD_U_K1_pre2.jar", null));
 
 	/**
