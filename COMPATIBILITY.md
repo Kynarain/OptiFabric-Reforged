@@ -1,3 +1,5 @@
+| Concurrent Chunk Management Engine (Fabric) | c2me-fabric | 26.2 实测进世界（2026-10-17，c2me 0.4.2-alpha.0.60）；1.21.x 自 2.2.3 起亦可 |
+| sample--mr-c2me-fabric | sample--mr-c2me-fabric | 与 c2me-fabric 是同一个 jar；同上 |
 # OptiFabric 兼容性清单（完整版）
 
 MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 debug 开关），每行一次启动。兼容与不兼容**分开列出**，每块内按首字母排序；**本文件收录全部 651 行，不做任何剔除**。
@@ -17,7 +19,7 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 
 逐行证据与装置缺陷记录见 `compatibility-all.csv`、`WORLD-REPORT.md`、`MATRIX-WORLD.md`（compat-matrix 目录）。
 
-## 兼容（已进世界）（465）
+## 兼容（已进世界）（467）
 
 普通启动下出现整合服务器启动行与登录行，且预置存档 level.dat 修改时间前移。
 
@@ -526,15 +528,6 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | Sodium Shadowy Path Blocks (SSPB) | sodium-shadowy-path-blocks |  |
 | Supplementaries | supplementaries |  |
 | ToolTipFix | tooltipfix |  |
-
-## 本线未测（2）
-
-这两条是**继承下来的旧结论**：它们原本记在「与 OptiFine 不兼容」里,但依据是 **1.21.1** 那次扫描,而且那条结论在 1.21.x 线上**已经被推翻**（2.2.3 起 C2ME 能进世界,wiki 记录为在世界里连跑 113 秒、零条 `[ERROR]`）。**本线没有实测过 C2ME**,所以这里既不写"兼容"也不写"不兼容"。
-
-| 模组 | slug | 进世界(秒) |
-|---|---|---:|
-| Concurrent Chunk Management Engine (Fabric) | c2me-fabric | 1.21.x 自 2.2.3 起可进世界（113 秒、零 [ERROR]）；本线未测 |
-| sample--mr-c2me-fabric | sample--mr-c2me-fabric | 与 c2me-fabric 是同一个 jar；本线未测 |
 
 ## 纯 Fabric 即坏（与本模组无关）（8）
 

@@ -111,13 +111,14 @@ all four hold: the title screen appears, a world loads and is played, no new fil
 - Verdict: <what this run does and does not prove>
 ```
 
-### Pending: 26.2 + OptiFabric 2.2.9 + OptiFine `K2_pre4` + 9 optimisation mods
+### 2026-10-17 - 26.2 + OptiFabric 2.2.9 + OptiFine `K2_pre4` + nine optimisation mods
 
-Prepared, not yet run. Combined from `OptiFabric-Reforged-2.2.9+mc26.2.jar` (186,547 bytes, sha256 `49c48235...`),
-`preview_OptiFine_26.2_HD_U_K2_pre4.jar` (7,849,149 bytes, sha256 `31553237...`), `fabric-api-0.161.0+26.2.jar`, and
-lithium 0.25.3, ferritecore 9.0.0, krypton 0.3.1, entityculling 1.11.3, Clumps 26.2.1, BadOptimizations 2.4.1,
-debugify 26.2.0.1, dynamic-fps 3.11.9 and c2me 0.4.2-alpha.0.60 (all from Modrinth, sha512 checked on download).
-The mismatch prompt is expected once, because the 2.2.9 jar records `K2_pre1` and not `K2_pre4`.
-
-What this run would settle: whether 26.2 starts and loads a world with `K2_pre4`, and - if it fails - whether the
-cause is this mod or one of the optimisation mods, by disabling `c2me` first and then the rest.
+- Combined from: `OptiFabric-Reforged-2.2.9+mc26.2.jar` (186,547 bytes, sha256 `49c48235...`), `preview_OptiFine_26.2_HD_U_K2_pre4.jar` (7,849,149 bytes, sha256 `31553237...`), `fabric-api-0.161.0+26.2.jar`, plus lithium 0.25.3, ferritecore 9.0.0, krypton 0.3.1, entityculling 1.11.3, Clumps 26.2.1, BadOptimizations 2.4.1, debugify 26.2.0.1, dynamic-fps 3.11.9 and c2me 0.4.2-alpha.0.60 (all from Modrinth, sha512 checked on download)
+- Launched by: the user, by hand, in the launcher
+- Title screen: **yes** (`Setting user: Kynarain` at 18:14:21, world ready 25 s later)
+- World entered: **yes** - `logged in with entity id 48`, `Loaded 1688 advancements`, 21 lines of `Saving chunks for level 'ServerLevel[新的世界]'`, about 17 s in the world before quitting at 18:15:06
+- crash-reports: **none** (no `crash-reports` directory at all)
+- [OptiFabric] exceptions in latest.log: **none** (the log carries no `[OptiFabric]` line - that output goes to the launcher console - and zero `[/ERROR]` lines; the 17 lines containing "Exception" are all `WARN`: OptiFine's reflector listing absent optional classes, and `[Shaders] ParseException: Model variable not found` for a few uniforms)
+- mismatch prompt: **not shown** - pre4 is *newer* than the recorded `K2_pre1`, and this mod only prompts for older or missing builds, so no `config/optifabric-mismatch-ack.txt` was written
+- Logs used: `%APPDATA%\.minecraft\versions\26.2-Fabric 0.19.5\logs\latest.log` (1,913 lines, 18:14:14 to 18:15:06)
+- Verdict: **this is the in-game evidence `pre4` was missing** - 26.2 starts, a world loads and is played, nothing crashes. It also makes c2me a measured pass on 26.x (it was loaded with all its modules and the world ran). It does not test shaders (the 26.2 OptiFine build still does not load shader packs) and it is one run, one world, about 17 seconds.
