@@ -165,7 +165,7 @@ git push origin v2.2.6 "v2.2.7+mc26.1.2"
 - [ ] jar 里**没有** `mappings/mappings.tiny`:这一线未混淆,本来就没有映射表可打包(有的话说明构建配置被改错了)。
 - [ ] `LICENSE.txt` 还在(打包成 `LICENSE.txt_OptiFabric-Reforged`),`fabric.mod.json` 里的 `license` 仍是 `MPL-2.0`,
       README 里保留了对上游项目的署名。
-- [ ] 项目描述里写明"需要自行获取 OptiFine 26.2"(目前只有 preview 构建 `HD_U_K2_pre1`)。
+- [ ] 项目描述里写明"需要自行获取 OptiFine 26.2"(目前只有 preview 构建,最新为 `HD_U_K2_pre4`)。
 - [ ] 项目描述与发布说明里写明 **26.2 上光影不可用**(选了光影包不会有任何效果),不要留下"光影正常"的说法。
 - [ ] 用**干净的实例**实测一次:只放 Fabric API + OptiFabric + OptiFine,能进主界面、能进存档;
       Java 必须是 25(26.2 的硬要求,Java 21 会在游戏窗口出现前就失败)。
