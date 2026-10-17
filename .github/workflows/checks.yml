@@ -50,8 +50,12 @@ jobs:
         shell: pwsh
         run: ./tools/check-docs.ps1
   build:
-    name: build (1.21.10)
+    name: build (${{ matrix.mc }})
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mc: ['1.21', '1.21.1', '1.21.3', '1.21.4', '1.21.6', '1.21.7', '1.21.8', '1.21.9', '1.21.10', '1.21.11']
     steps:
       - uses: actions/checkout@v4
 
@@ -62,4 +66,4 @@ jobs:
 
       - name: Build
         shell: pwsh
-        run: ./gradlew build "-Pmc=1.21.10" --console=plain
+        run: ./gradlew build "-Pmc=${{ matrix.mc }}" --console=plain
