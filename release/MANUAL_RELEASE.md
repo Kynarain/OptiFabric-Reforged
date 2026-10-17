@@ -1,5 +1,21 @@
 手动发布清单(1.20.6 线,每个版本一个发布条目)
 
+#! 发布命令必须带 --target <本线分支> 和 --latest=false
+#
+# `gh release create <tag> <jar...>` 不写 --target 时,tag 会打在**仓库默认分支(main)**的头上 —— 不是本线。
+# 1.1.8 与 1.1.9 的 reforged 两条就因此指到了 main 的提交,只能删掉 release 和 tag 重做。
+#
+#   gh release create "v<版本>+mc1.20.6" ` 
+#     dist\OptiFabric-Reforged-<版本>+mc1.20.6.jar `
+#     dist\OptiFabric-Reforged-<版本>+mc1.20.6-sources.jar `
+#     dist\OptiFabric-Reforged-<版本>+mc1.20.6-full.jar `
+#     --target main `
+#     --title "OptiFabric Reforged <版本>+mc1.20.6" `
+#     --notes-file <CHANGELOG 的对应节> `
+#     --latest=false
+#
+# 发完核对一条:gh api repos/Kynarain/OptiFabric-Reforged/commits/<tag> --jq .sha,该提交必须在本分支的历史上。
+
 > 本文件只讲 **1.20.6 线**(`main`):整条线**只出一个 jar**,mod id 是 `optifabric`。
 > 同仓库还有 1.21.x 与 26.x 两条线,各线的 jar **不能互相替代**;此外 `wip/1.20.6-reforged` 分支上还有
 > **第二个 1.20.6 产物**(mod id `optifabric_reforged`),它**不是**已发布线,而且两个 1.20.6 产物**只能装一个**。
