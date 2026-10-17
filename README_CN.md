@@ -56,15 +56,15 @@ OptiFine **从未**为 **1.21.2 / 1.21.5** 出过构建,所以这两版没有 ja
 
 | OptiFabric version | Minecraft version | Required OptiFine build | SHA-256 | Bytes |
 |---|---|---|---|---|
-| `2.2.16+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | `B26B2247` | 812264 |
-| `2.2.16+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` | `DB6D2D14` | 812341 |
-| `2.2.16+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` | `3916AADF` | 844124 |
-| `2.2.16+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` | `DB8A1C50` | 851908 |
-| `2.2.16+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | `F73E5B90` | 891675 |
-| `2.2.16+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | `4E7340EB` | 891725 |
-| `2.2.16+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | `FFE496B3` | 891797 |
-| `2.2.16+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | `DC7D1182` | 919829 |
-| `2.2.16+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | `BF845CFC` | 919847 |
+| `2.2.16+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | `B26B2247` | 812510 |
+| `2.2.16+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` | `DB6D2D14` | 812587 |
+| `2.2.16+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` | `3916AADF` | 844371 |
+| `2.2.16+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` | `DB8A1C50` | 852155 |
+| `2.2.16+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | `F73E5B90` | 891922 |
+| `2.2.16+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | `4E7340EB` | 891972 |
+| `2.2.16+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | `FFE496B3` | 892044 |
+| `2.2.16+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | `DC7D1182` | 920076 |
+| `2.2.16+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | `BF845CFC` | 920094 |
 | `2.2.16+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` | `63A60C48` / `F97B5D06` | 8045116 / 8045105 |
 
 **SHA-256** 列是文件哈希的前 8 位,**字节** 列是它的精确大小 —— 放进 `mods/` 之前先拿你下载的那份对一下。有两行写了**两个**用 `/` 分开的哈希:那是 OptiFine **用同一个文件名重传过、内容不同**的构建,本模组**两个都接受**。
