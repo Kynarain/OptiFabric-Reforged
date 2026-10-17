@@ -58,6 +58,10 @@ import org.objectweb.asm.tree.VarInsnNode;
 
 import kynarain.cn.optifabric.util.RemappingUtils;
 
+// Two assumptions this fixer makes, both of which have held on every release it is registered for: the store it
+	// inserts goes immediately before the method's last RETURN, and the value slot it copies is assumed to hold the
+	// field's type. Nothing checks either, by design - a wrong guess here shows up as a verify error at load rather
+	// than as a silently wrong frame, and the registration sites are the ones with the bytecode to compare against.
 public class InjectionFieldPointFix implements ClassFixer {
 	/** The class that declares the field, in intermediary notation ({@code class_7764}). */
 	private final String owner;

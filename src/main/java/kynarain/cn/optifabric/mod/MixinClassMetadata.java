@@ -44,7 +44,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public final class MixinClassMetadata {
+// Unlike the 26.x line this one does not skip nested ($-suffixed) classes here. Whether a synthetic class keeps
+	// its cached metadata on this line has not been measured in game, and the two lines disagree on purpose until it
+	// is: mirroring 26.x without that run could drop a class whose metadata is needed.
+	public final class MixinClassMetadata {
 	/** The classes whose entry this has already dropped; see drop. */
 	private static final Set<String> dropped = new HashSet<>();
 
