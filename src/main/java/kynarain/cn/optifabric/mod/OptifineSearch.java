@@ -395,6 +395,7 @@ final class OptifineSearch {
 
 			return jars.size() == 1 ? jars.get(0) : null;
 		} catch (IOException e) {
+			// silent by design: nothing to do here; the caller decides what the failure means
 			return null;
 		}
 	}

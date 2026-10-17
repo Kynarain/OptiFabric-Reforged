@@ -132,7 +132,7 @@ public class OptifineVersion {
 				if ("VERSION".equals(fieldNode.name)) return (String) fieldNode.value;
 			}
 		} catch (IOException e) {
-			// Unreadable: not orderable, which the caller treats as "cannot be compared".
+			// silent by design: Unreadable: not orderable, which the caller treats as "cannot be compared".
 		}
 
 		return null;

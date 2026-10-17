@@ -101,7 +101,7 @@ public final class RendererApiFallback {
 				renderer = Class.forName(candidate, false, RendererApiFallback.class.getClassLoader());
 				break;
 			} catch (ClassNotFoundException ignored) {
-				//try the next location
+				// silent by design: try the next location
 			}
 		}
 
