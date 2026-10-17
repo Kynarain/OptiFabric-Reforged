@@ -10,6 +10,8 @@
 > **发布正文就是 [`CHANGELOG.md`](../CHANGELOG.md) 里对应那一节。** 商店页文案在
 > [`docs/DESCRIPTION.md`](../docs/DESCRIPTION.md);构建与上传步骤见 [`docs/PUBLISHING.md`](../docs/PUBLISHING.md)。
 
+发布前先跑一遍 `.\release\preflight.ps1`(门禁 + lint + 构建);红了就不要发 —— 手工发布没有脚本能替你拦住,只能靠这一步。
+
 ## 一、逐版数据
 
 > **顺序**:先 `.\gradlew build --offline`,把新 jar(与 `-sources.jar`)复制进 `dist\`,给下面这张表**加一行**,
