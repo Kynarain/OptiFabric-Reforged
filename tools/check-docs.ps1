@@ -46,7 +46,6 @@ foreach ($pair in $pairs) {
 	foreach ($readme in $pair.Readmes) {
 		$p = Join-Path $root $readme
 		if (-not (Test-Path -LiteralPath $p)) { continue }
-		# the label, then any of the quoting styles a version may be written in
 		foreach ($line in [IO.File]::ReadAllLines($p, [Text.Encoding]::UTF8)) {
 			if ($line -notmatch '(?i)(current version|当前版本|本分支版本|mod_version)') { continue }
 			foreach ($c in [regex]::Matches($line, '`([0-9][0-9A-Za-z.\-]*)`|\*\*([0-9][0-9A-Za-z.\-]*)\*\*')) {
@@ -66,14 +65,17 @@ foreach ($pair in $pairs) {
 Write-Host ("  version numbers     : " + $versionProblems + " stale")
 
 # 3. encoding.
-#    Two different accidents leave legal-looking characters behind, so two checks are needed:
-#    a) a *whole* run of text that was UTF-8, read as GBK and saved again. Reversing it works: its GBK bytes are
-#       exactly the UTF-8 bytes it was corrupted from, so they decode back to the original. Real Chinese encoded as GBK
-#       is not valid UTF-8, so genuine text never trips this. Done line by line, so one mangled line among good ones is
-#       still found.
-#    b) a *partial* residue, where only a character or two were left behind. Its GBK bytes are not valid UTF-8, so the
-#       round trip cannot see it; the characters that this accident produces are listed instead. The list holds only
-#       what has actually been seen here, and a broad heuristic was dropped for false positives.
+#    Three unambiguous accidents are checked:
+#      a) the bytes are not valid UTF-8 at all, or hold U+FFFD;
+#      b) a whole line was UTF-8, read as GBK and saved again. Reversing it works: its GBK bytes are exactly the UTF-8
+#         it was corrupted from, so they decode back to the original, and genuine Chinese encoded as GBK is not valid
+#         UTF-8. Done line by line, so one mangled line among good ones is still found.
+#      c) a one-character residue, whose GBK bytes are not valid UTF-8 at all, so (b) cannot see it; the characters
+#         this accident produced are listed instead.
+#    NOT checked, deliberately: the lossy form, where a few characters were lost and the rest survived. A '?' left
+#    behind by a lost byte is the same character as a '?' the author typed, and this repository has lines with two of
+#    them (version wildcards, "??" in release notes). Two narrower rules were tried and both flagged ordinary
+#    documents, so this is a known blind spot rather than an oversight.
 $encodingProblems = 0
 $strict = New-Object Text.UTF8Encoding($false, $true)
 $gbk = [Text.Encoding]::GetEncoding(936)
@@ -90,22 +92,6 @@ foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 		$problems.Add('U+FFFD (mojibake): ' + (Rel $f.FullName))
 		$encodingProblems++
 	}
-	# A lossy accident leaves the same shape in the middle of otherwise fine text: several characters that did not
-	# survive, next to the ones that did. Two or more of them on one CJK-bearing line is not something this repository
-	# writes on purpose; one on its own is ordinary punctuation and is left to the residue list above.
-	$lossyLine = -1
-	$lossyNo = 0
-	foreach ($line in ($text -split "`r?`n")) {
-		$lossyNo++
-		if ($line -notmatch '[\u4e00-\u9fff]') { continue }
-		$lost = ([regex]::Matches($line, '\?')).Count + ([regex]::Matches($line, [string][char]0xFFFD)).Count
-		if ($lost -ge 2) { $lossyLine = $lossyNo; break }
-	}
-	if ($lossyLine -gt 0) {
-		$problems.Add('line ' + $lossyLine + ' lost two or more characters (looks like a lossy encoding round trip): ' + (Rel $f.FullName))
-		$encodingProblems++
-	}
-	# a) the round trip, line by line
 	$mangledLine = -1
 	$lineNo = 0
 	foreach ($line in ($text -split "`r?`n")) {
@@ -123,7 +109,6 @@ foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 		$problems.Add('UTF-8 read as GBK then saved again (line ' + $mangledLine + '): ' + (Rel $f.FullName))
 		$encodingProblems++
 	}
-	# b) the known partial residues
 	foreach ($ch in $residue) {
 		if ($text.Contains([string]$ch)) {
 			$problems.Add('a known mojibake residue (' + $ch + ') in ' + (Rel $f.FullName))
