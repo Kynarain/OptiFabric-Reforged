@@ -33,3 +33,9 @@ the read throw instead of hang. A slow but steady transfer is never cut off that
 Closing the stream from the watchdog made the blocked read throw, but the exception carried the transport's own word for
 it - `Stream closed` - which tells the user nothing. The read now reports `the download stopped sending data for 60 s,
 giving up; check the connection and try again`. The response stream is also closed exactly once: the guard owns it.
+
+## Released
+
+The stall message and the single close were published on 2026-10-17: 2.2.16 (1.21.x, ten targets), 2.2.11 (26.x, both
+targets) and 1.1.9 (both 1.20.6 lines). Their -full jars carry the message; the default jars differ only in the version
+string, because they do not contain the downloader.
