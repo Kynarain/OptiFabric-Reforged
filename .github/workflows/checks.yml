@@ -51,3 +51,22 @@ jobs:
 
 # No build job on this line yet. It would need the Java version and the build switch this line uses, and
 # neither has been exercised on a runner - a job that is red for the wrong reason is worse than no job.
+
+  build:
+    name: build (${{ matrix.mc }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mc: ['26.2', '26.1.2']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Build
+        shell: pwsh
+        run: ./gradlew build "-Pminecraft_version=${{ matrix.mc }}" --console=plain
