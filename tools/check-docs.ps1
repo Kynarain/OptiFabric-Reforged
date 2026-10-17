@@ -66,15 +66,18 @@ foreach ($pair in $pairs) {
 Write-Host ("  version numbers     : " + $versionProblems + " stale")
 
 # 3. encoding.
-#    * the bytes must be valid UTF-8, with no replacement character;
-#    * a PowerShell script with non-ASCII must carry a BOM (5.1 reads it as ANSI otherwise);
-#    * the file must not be UTF-8 that was once read as GBK and saved again. That accident leaves characters which are
-#      themselves legal CJK, so a validity check cannot see it. The test is the inverse of the accident: real Chinese
-#      encoded as GBK is not valid UTF-8, while a mangled file encoded as GBK reproduces exactly the UTF-8 bytes it was
-#      corrupted from - so if the GBK bytes of a CJK-bearing text decode as UTF-8, the text is the mangled kind.
+#    Two different accidents leave legal-looking characters behind, so two checks are needed:
+#    a) a *whole* run of text that was UTF-8, read as GBK and saved again. Reversing it works: its GBK bytes are
+#       exactly the UTF-8 bytes it was corrupted from, so they decode back to the original. Real Chinese encoded as GBK
+#       is not valid UTF-8, so genuine text never trips this. Done line by line, so one mangled line among good ones is
+#       still found.
+#    b) a *partial* residue, where only a character or two were left behind. Its GBK bytes are not valid UTF-8, so the
+#       round trip cannot see it; the characters that this accident produces are listed instead. The list holds only
+#       what has actually been seen here, and a broad heuristic was dropped for false positives.
 $encodingProblems = 0
 $strict = New-Object Text.UTF8Encoding($false, $true)
 $gbk = [Text.Encoding]::GetEncoding(936)
+$residue = @([char]0x947A)
 foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 	$bytes = [IO.File]::ReadAllBytes($f.FullName)
 	$text = ''
@@ -87,18 +90,30 @@ foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 		$problems.Add('U+FFFD (mojibake): ' + (Rel $f.FullName))
 		$encodingProblems++
 	}
-	if ($text -match '[\u4e00-\u9fff]') {
-		$mangled = $false
+	# a) the round trip, line by line
+	$mangledLine = -1
+	$lineNo = 0
+	foreach ($line in ($text -split "`r?`n")) {
+		$lineNo++
+		if ($line -notmatch '[\u4e00-\u9fff]') { continue }
 		try {
-			$recovered = $strict.GetString($gbk.GetBytes($text))
-			if ($recovered -ne $text -and $recovered -match '[\u4e00-\u9fff]') { $mangled = $true }
+			$recovered = $strict.GetString($gbk.GetBytes($line))
+			if ($recovered -ne $line -and $recovered -match '[\u4e00-\u9fff]') { $mangledLine = $lineNo; break }
 		}
 		catch {
-			# GBK bytes that are not valid UTF-8: this is what genuine Chinese looks like, so it is fine.
+			# GBK bytes that are not valid UTF-8: this is what genuine Chinese looks like.
 		}
-		if ($mangled) {
-			$problems.Add('UTF-8 read as GBK then saved again (the GBK bytes decode as UTF-8): ' + (Rel $f.FullName))
+	}
+	if ($mangledLine -gt 0) {
+		$problems.Add('UTF-8 read as GBK then saved again (line ' + $mangledLine + '): ' + (Rel $f.FullName))
+		$encodingProblems++
+	}
+	# b) the known partial residues
+	foreach ($ch in $residue) {
+		if ($text.Contains([string]$ch)) {
+			$problems.Add('a known mojibake residue (' + $ch + ') in ' + (Rel $f.FullName))
 			$encodingProblems++
+			break
 		}
 	}
 	if ($f.Extension -eq '.ps1') {
