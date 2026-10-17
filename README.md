@@ -35,8 +35,8 @@ This line is called **Reforged** because it carries **its own mod id** (`optifab
 
 | Minecraft | jar | OptiFine build | Java | State |
 |---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.2.9+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | 25 | ✅ verified in game on **K2_pre4** (2026-10-17, one world, about 17 s; **no shaders** — see below) |
-| 26.1.2 | `OptiFabric-Reforged-2.2.9+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
+| 26.2 | `OptiFabric-Reforged-2.2.10+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | 25 | ✅ verified in game on **K2_pre4** (2026-10-17, one world, about 17 s; **no shaders** — see below) |
+| 26.1.2 | `OptiFabric-Reforged-2.2.10+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
 
 Both OptiFine builds are **previews** — OptiFine has no final release for either Minecraft version yet.
 
@@ -46,8 +46,8 @@ This is the same list the mod itself carries and `release\notes\mc<MC>.md` state
 
 | OptiFabric version | Minecraft version | Recommended OptiFine build | Build kind | SHA-256 | Bytes |
 |---|---|---|---|---|---|
-| `2.2.9+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | preview (no final exists) | `31553237` | 7849149 |
-| `2.2.9+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) | `F8EB9026` | 7797229 |
+| `2.2.10+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | preview (no final exists) | `31553237` | 7849149 |
+| `2.2.10+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) | `F8EB9026` | 7797229 |
 
 The **SHA-256** column carries the first eight hex digits of the file, and **Bytes** its exact size — check the jar you downloaded against them before putting it into `mods/`. Two rows list **two** hashes separated by `/`: those are builds OptiFine re-uploaded under the same file name with different contents, and this mod accepts either of them.
 
