@@ -50,6 +50,10 @@ dependencies {
     // This is the convenience build only: the store build has no restart and no JNA.
     compileOnly "net.java.dev.jna:jna:5.17.0"
     compileOnly "net.java.dev.jna:jna-platform:5.17.0"
+
+	// JUnit 5 for src/test: the tests need no Minecraft classes.
+	testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.10.2"
 }
 
 // The release itself requires Java 25.
@@ -128,4 +132,8 @@ tasks.named("build") {
         println "Building ${project.archives_base_name} ${project.version} (Minecraft ${targetMc}," +
                 " official (unobfuscated) names, Fabric Loader ${project.loader_version})"
     }
+}
+
+test {
+	useJUnitPlatform()
 }
