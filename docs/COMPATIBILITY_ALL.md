@@ -21,6 +21,7 @@ tested, not that each line was tested on its own Minecraft version.
 | 🧩 | a required dependency was not resolved |
 | ➖ | not testable here (server only, or no 1.21.1 Fabric build available) |
 | ▫️ | not reached in this sweep |
+| ❔ | not measured on this line: the entry is carried over from the 1.21.1 sweep and nothing here has tested it |
 | - | this line's list has no entry for the mod: unknown, which is not the same as working |
 
 ## The table
@@ -521,11 +522,11 @@ tested, not that each line was tested on its own Minecraft version.
 | The Shooting Star (Demo) | `the-shooting-star-demo` | ❌ | - | - | - |
 | ToolTipFix | `tooltipfix` | ❌ | ❌ | ❌ | ❌ |
 | Bobby | `bobby` | ✅ (retested) | ❌ | ❌ | ❌ |
-| Concurrent Chunk Management Engine (Fabric) | `c2me-fabric` | ✅ (retested) | ❌ | ❌ | ❌ |
+| Concurrent Chunk Management Engine (Fabric) | `c2me-fabric` | ✅ (retested) | ? | ? | ? |
 | Falling Leaves | `fallingleaves` | ✅ (retested) | ❌ | ❌ | ❌ |
 | Freecam | `freecam` | ✅ (retested) | ❌ | ❌ | ❌ |
 | sample--mr-bedrockify | `sample--mr-bedrockify` | ✅ (retested) | ❌ | ❌ | ❌ |
-| sample--mr-c2me-fabric | `sample--mr-c2me-fabric` | ✅ (retested) | ❌ | ❌ | ❌ |
+| sample--mr-c2me-fabric | `sample--mr-c2me-fabric` | ✅ (retested) | ? | ? | ? |
 | cf--aether | `cf--aether` | 🚫 | 🚫 | 🚫 | 🚫 |
 | cf--better-compatibility-checker | `cf--better-compatibility-checker` | 🚫 | 🚫 | 🚫 | 🚫 |
 | cf--the-twilight-forest | `cf--the-twilight-forest` | 🚫 | 🚫 | 🚫 | 🚫 |
@@ -685,13 +686,14 @@ tested, not that each line was tested on its own Minecraft version.
 | Mark | 1.21.x | 26.x | 1.20.6 (reforged) | 1.20.6 |
 |---|---|---|---|---|
 | ✅ | 471 | 465 | 465 | 465 |
-| ❌ | 28 | 33 | 33 | 33 |
+| ❌ | 28 | 31 | 31 | 31 |
 | 🚫 | 8 | 8 | 8 | 8 |
 | ⛔ | 1 | 1 | 1 | 1 |
 | ⚠️ | 10 | 10 | 10 | 10 |
 | 🧩 | 8 | 8 | 8 | 8 |
 | ➖ | 112 | 112 | 112 | 112 |
 | ▫️ | 14 | 14 | 14 | 14 |
+| ❔ | 0 | 0 | 0 | 0 |
 | - | 0 | 1 | 1 | 1 |
 
 ## What this does not say
