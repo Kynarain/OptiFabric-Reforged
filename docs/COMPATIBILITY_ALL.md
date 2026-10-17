@@ -522,11 +522,11 @@ tested, not that each line was tested on its own Minecraft version.
 | The Shooting Star (Demo) | `the-shooting-star-demo` | ❌ | - | - | - |
 | ToolTipFix | `tooltipfix` | ❌ | ❌ | ❌ | ❌ |
 | Bobby | `bobby` | ✅ (retested) | ❌ | ❌ | ❌ |
-| Concurrent Chunk Management Engine (Fabric) | `c2me-fabric` | ✅ (retested) | ? | ? | ? |
+| Concurrent Chunk Management Engine (Fabric) | `c2me-fabric` | ✅ (retested) | ❔ | ❔ | ❔ |
 | Falling Leaves | `fallingleaves` | ✅ (retested) | ❌ | ❌ | ❌ |
 | Freecam | `freecam` | ✅ (retested) | ❌ | ❌ | ❌ |
 | sample--mr-bedrockify | `sample--mr-bedrockify` | ✅ (retested) | ❌ | ❌ | ❌ |
-| sample--mr-c2me-fabric | `sample--mr-c2me-fabric` | ✅ (retested) | ? | ? | ? |
+| sample--mr-c2me-fabric | `sample--mr-c2me-fabric` | ✅ (retested) | ❔ | ❔ | ❔ |
 | cf--aether | `cf--aether` | 🚫 | 🚫 | 🚫 | 🚫 |
 | cf--better-compatibility-checker | `cf--better-compatibility-checker` | 🚫 | 🚫 | 🚫 | 🚫 |
 | cf--the-twilight-forest | `cf--the-twilight-forest` | 🚫 | 🚫 | 🚫 | 🚫 |
@@ -693,7 +693,7 @@ tested, not that each line was tested on its own Minecraft version.
 | 🧩 | 8 | 8 | 8 | 8 |
 | ➖ | 112 | 112 | 112 | 112 |
 | ▫️ | 14 | 14 | 14 | 14 |
-| ❔ | 0 | 0 | 0 | 0 |
+| ❔ | 0 | 2 | 2 | 2 |
 | - | 0 | 1 | 1 | 1 |
 
 ## What this does not say
