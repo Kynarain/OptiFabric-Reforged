@@ -42,7 +42,8 @@
   },
 
   "conflicts": {
-    "sodium": "*"
+    "sodium": "*",
+    "optifabric": "*"
   },
 
   "breaks": {

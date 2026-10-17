@@ -50,6 +50,10 @@ public class OptifineInjector {
 	 * at startup and this map then lives for the whole session, so an uncapped cache would hold every class it
 	 * ever looked at for hours. 512 is far above what one pass touches, and the least recently used entry goes
 	 * first, so the classes still being asked for are the ones that stay.
+	 *
+	 * Not cleared when the patching pass ends. allSupertypes can still be asked while mixins are applied, and an
+	 * emptied map would lose the conservative fallback that keeps the common-superclass answer from breaking a
+	 * frame. The bound is the 512 entries above, not the end of the pass.
 	 */
 	private static final Map<String, ClassNode> GAME_CLASSES = new LinkedHashMap<>(64, 0.75f, true) {
 		private static final long serialVersionUID = 1L;
