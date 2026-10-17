@@ -1,6 +1,16 @@
 # 更新日志
 
+## 1.1.9-reforged+mc1.20.6
+
+这是 `optifabric_reforged`(1.20.6 的**替代产物**)的新版本。**相对 1.1.8 只改下载器的错误信息与资源处理**:
+
+* 停摆被看门狗断开后,抛的不再是传输层自己的 `Stream closed`,而是可操作的一句:the download stopped sending data for 60 s, giving up; check the connection and try again;
+* 响应流只被关闭一次 —— 看门狗持有它,不再与 try-with-resources 重复关闭。
+
+其余行为与 1.1.8 完全相同:边收边读、`Content-Length` 预检、连续 60 秒无字节才判定停摆、进度随读随报。
+
 ## 1.1.8-reforged+mc1.20.6
+
 
 这是 `optifabric_reforged`(1.20.6 的**替代产物**)的新版本。**相对 1.1.7 只改下载器**:`-full` 构建下载 OptiFine 的方式换了——
 

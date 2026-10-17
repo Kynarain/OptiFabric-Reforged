@@ -60,6 +60,7 @@
 | **1.1.7** | `1.1.7-reforged+mc1.20.6` / `v1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6.jar` | 732365 | `B21C47F758C4B381F68E120BD1F1A7878EAE696AB5B8C570DB3AAB3CBE9D9D26` | CHANGELOG 1.1.7 |
 | 1.1.7(GitHub only: `-full`) | `1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6-full.jar` | 753969 | `704F0EFA6BBE1E327DA42ED6FB570A0DE0A2D9025FF412A479CAA7010FCB31C2` | CHANGELOG 1.1.7 |
 | 1.1.8-reforged+mc1.20.6 | `1.1.8-reforged+mc1.20.6` / `v1.1.8-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.8-reforged+mc1.20.6.jar` | 732383 | `CE9C3046C16842FAC84BF7A8EE9FDBE43DE1A83D4246209D220E67FBF2896CB0` | `CHANGELOG.md` 1.1.8 节|
+| 1.1.9-reforged+mc1.20.6 | `1.1.9-reforged+mc1.20.6` / `v1.1.9-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.9-reforged+mc1.20.6.jar` | 732726 | `4898E2F20EFCF4D25A947E594E04580E1EAFCD58D8E5D9D0021D50D50705882E` | `CHANGELOG.md` 1.1.9 节 |
 
 ## 三、核对命令(每次升版都跑一遍)
 
