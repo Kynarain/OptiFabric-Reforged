@@ -1,6 +1,16 @@
 # 更新日志
 
+## 1.1.9+mc1.20.6
+
+这是 `main` 线的 1.20.6 产物(mod id 仍是 `optifabric`)。**相对 1.1.8 只改下载器的错误信息与资源处理**:
+
+* 停摆被看门狗断开后,抛的是可操作的一句:the download stopped sending data for 60 s, giving up; check the connection and try again;
+* 响应流只被关闭一次(看门狗持有它)。
+
+其余行为与 1.1.8 相同。
+
 ## 1.1.8+mc1.20.6
+
 
 这是 `main` 线的 1.20.6 产物(mod id 仍是 `optifabric`)。**相对 1.1.7 只改下载器**:`-full` 构建下载 OptiFine 时,
 
