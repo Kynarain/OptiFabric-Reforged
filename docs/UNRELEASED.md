@@ -20,3 +20,9 @@ references ofInputStream, and carries both HttpTimeoutException and the message.
 Commits: 1.21.x-2.2.11 eb8031c, -2.2.12 bf32a5f, -2.2.13 7653105, -2.2.14 0627135, 26.x-2.2.7 d17b6a8,
 -2.2.8 7debcdc, -2.2.9 f2a4b69, 1.20.6-reforged-1.1.5 ba9e996, -1.1.6 dc30672, -1.1.7 7938abd,
 1.20.6-1.1.6 6e08de3, -1.1.7 6b17abf. Not yet in any published jar.
+
+## A stalled download now says so (after the released builds)
+
+Closing the stream from the watchdog made the blocked read throw, but the exception carried the transport's own word for
+it - `Stream closed` - which tells the user nothing. The read now reports `the download stopped sending data for 60 s,
+giving up; check the connection and try again`. The response stream is also closed exactly once: the guard owns it.
