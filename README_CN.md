@@ -100,7 +100,7 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 ```text
 # 26.2 和 26.1.2 都只有预览版,两个文件都在同一个页面的「Preview versions」列表里:
 #   https://optifine.net/downloads
-#   Minecraft 26.2   -> preview_OptiFine_26.2_HD_U_K2_pre4.jar
+#   Minecraft 26.2   -> preview_OptiFine_26.2_HD_U_K2_pre1.jar
 #   Minecraft 26.1.2 -> preview_OptiFine_26.1.2_HD_U_K1_pre2.jar
 # 打开上面那个页面,展开你的 Minecraft 版本下的「Preview versions」,下载这里写的那个文件。
 # OptiFine 官网是本模组唯一会去下载的地方,也是这份说明里唯一给出的地址。
@@ -133,14 +133,14 @@ PCL2 / HMCL 开启版本隔离时,游戏目录与 `mods/` 都在 `versions/<版�
 | Fabric Loader | ≥ 0.19.5 |
 | Java | **25**(游戏自身的硬性要求;用 Java 21 会在窗口出现之前就失败) |
 | 侧 | 客户端 |
-| OptiFine | 26.2 用 `preview_OptiFine_26.2_HD_U_K2_pre4.jar`,26.1.2 用 `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`(两个都还是 preview) |
+| OptiFine | 26.2 用 `preview_OptiFine_26.2_HD_U_K2_pre1.jar`,26.1.2 用 `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`(两个都还是 preview) |
 | Fabric API | 可选 —— 26.2 实测 `0.161.0+26.2`,26.1.2 实测 `0.155.3+26.1.2` |
 
 ## 🤝 兼容性
 
 | Minecraft | 产物 | OptiFine 构建 | Java | 状态 |
 |---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.2.7+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | 25 | ✅ 已实机验证(**没有光影**,见下) |
+| 26.2 | `OptiFabric-Reforged-2.2.7+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**没有光影**,见下) |
 | 26.1.2 | `OptiFabric-Reforged-2.2.7+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
 
 `2.1.1` 是修订版,它**取代 `2.1.0+mc26.2`**:那一版把 OptiFine 取消掉的光影包加载强行打开,而选了光影包之后世界
@@ -159,7 +159,7 @@ OptiFine 只对这两个版本出过构建,别的版本一个都没有:26.1、26
 
 | OptiFabric 版本 | Minecraft 版本 | 建议的 OptiFine 构建 | 类型 |
 |---|---|---|---|
-| `2.2.7+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | 预览版(尚无正式版) |
+| `2.2.7+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 预览版(尚无正式版) |
 | `2.2.7+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 预览版(尚无正式版) |
 
 同一 Minecraft 版本的其它构建同样可用;只有当你 `mods/` 里的 jar 是**预览版**、且比表里这个更旧时,提示才会出现。已经装了**正式版**就不会被打扰,哪怕有更新的正式版。
