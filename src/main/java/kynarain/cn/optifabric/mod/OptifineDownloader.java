@@ -8,6 +8,7 @@ package kynarain.cn.optifabric.mod;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,6 +98,7 @@ public final class OptifineDownloader {
 	public static final String CONFIG_SRG = "srg/net/optifine/Config.class";
 
 	private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(15);
+	private static final Duration STALL_TIMEOUT = Duration.ofSeconds(60);
 	private static final Duration REQUEST_TIMEOUT = Duration.ofMinutes(3);
 	private static final long MAX_BYTES = 64L * 1024 * 1024;
 	private static final long PROGRESS_INTERVAL_NANOS = 250_000_000L;
@@ -350,51 +352,138 @@ public final class OptifineDownloader {
 
 	private static byte[] get(URI uri, Progress progress) throws IOException {
 		requireHttps(uri);
-
 		HttpRequest request = HttpRequest.newBuilder(uri)
 				.timeout(REQUEST_TIMEOUT)
 				.header("User-Agent", USER_AGENT)
 				.header("Accept", "*/*")
 				.GET()
 				.build();
-
-		// The whole body is read inside send(), not from the stream it hands back: the request timeout ends when
-		// the response is received, so with an ofInputStream body a server that accepts the connection and then
-		// stops sending leaves the read blocked for as long as it likes. That is what happened on a network
-		// that throttles optifine.net: the game sat in preLaunch and the window never appeared. Buffering the
-		// body here puts the whole exchange under REQUEST_TIMEOUT.
-		HttpResponse<byte[]> response;
+	
+		HttpResponse<InputStream> response;
 		try {
-			response = CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
+			response = CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream());
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			throw new IOException("interrupted while downloading " + uri, e);
 		} catch (IllegalArgumentException e) {
 			throw new IOException("refusing to fetch " + uri + ": " + e.getMessage(), e);
-		} catch (java.net.http.HttpTimeoutException e) {
-			throw new IOException("no complete response from " + uri + " within " + REQUEST_TIMEOUT.toSeconds()
-					+ "s, giving up. For the OptiFine download this usually means the connection to optifine.net is"
-					+ " throttled or blocked: put OptiFine into the mods folder yourself and this build uses that instead"
-					+ " of downloading it", e);
 		} catch (IOException e) {
 			// An unreachable host, a refused connection or a connect timeout arrives here; the URL is added
 			// because a bare ConnectException has no message of its own to show the user.
 			throw new IOException("could not reach " + uri + ": " + e, e);
 		}
-
+	
 		if (response.statusCode() != 200) {
 			throw new IOException("HTTP " + response.statusCode() + " from " + uri);
 		}
-
-		byte[] body = response.body();
-
-		if (body.length > MAX_BYTES) {
-			throw new IOException("the response from " + uri + " is larger than " + MAX_BYTES + " bytes, refusing it");
+	
+		// Checked before a single byte is read: the stream is consumed until the limit would be crossed, but a
+		// response that already says it is too large never gets that far.
+		long declared = response.headers().firstValueAsLong("content-length").orElse(-1L);
+		if (declared > MAX_BYTES) {
+			throw new IOException("the response from " + uri + " declares " + declared + " bytes, more than the "
+					+ MAX_BYTES + " byte limit, refusing it");
 		}
-
-		long total = response.headers().firstValueAsLong("content-length").orElse((long) body.length);
-		progress.bytes(body.length, total);
-		return body;
+	
+		// Read as the bytes arrive, so the size limit stops an oversized response at once and progress is reported
+		// while it downloads. A read that stops returning is not covered by the request timeout - that one ends when
+		// the response is received - so the stream is watched separately: STALL_TIMEOUT without a byte closes it and
+		// the read throws. A slow but steady transfer is never cut off this way, only one that has stopped.
+		try (InputStream raw = response.body(); InputStream in = new StallGuard(raw, STALL_TIMEOUT)) {
+			long total = declared;
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			byte[] buffer = new byte[16384];
+			long received = 0;
+			long lastReport = 0;
+			long reported = -1;
+			int read;
+	
+			while ((read = in.read(buffer)) > 0) {
+				received += read;
+	
+				if (received > MAX_BYTES) {
+					throw new IOException("the response from " + uri + " is larger than " + MAX_BYTES + " bytes, refusing it");
+				}
+	
+				out.write(buffer, 0, read);
+	
+				long now = System.nanoTime();
+				if (now - lastReport >= PROGRESS_INTERVAL_NANOS) {
+					lastReport = now;
+					reported = received;
+					progress.bytes(received, total);
+				}
+			}
+	
+			if (received != reported) progress.bytes(received, total);
+	
+			return out.toByteArray();
+		}
+	}
+	
+	/**
+	 * Wraps the response stream and closes it when no byte has arrived for {@code timeout}. Closing it is what makes a
+	 * blocked read throw: a server that accepts the connection and then stops sending would otherwise keep the game in
+	 * preLaunch for as long as it liked, which is exactly what happened on a network that throttles optifine.net.
+	 */
+	private static final class StallGuard extends FilterInputStream {
+		private volatile long lastActivity = System.nanoTime();
+		private final long timeoutNanos;
+		private final Thread watchdog;
+	
+		StallGuard(InputStream in, Duration timeout) {
+			super(in);
+			this.timeoutNanos = timeout.toNanos();
+			this.watchdog = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						while (true) {
+							Thread.sleep(200L);
+	
+							if (System.nanoTime() - lastActivity >= timeoutNanos) {
+								shut();
+								return;
+							}
+						}
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+				}
+			}, "OptiFabric download watchdog");
+			this.watchdog.setDaemon(true);
+			this.watchdog.start();
+		}
+	
+		@Override
+		public int read() throws IOException {
+			int value = super.read();
+			lastActivity = System.nanoTime();
+	
+			return value;
+		}
+	
+		@Override
+		public int read(byte[] buffer, int offset, int length) throws IOException {
+			int value = super.read(buffer, offset, length);
+			lastActivity = System.nanoTime();
+	
+			return value;
+		}
+	
+		@Override
+		public void close() throws IOException {
+			watchdog.interrupt();
+			super.close();
+		}
+	
+		private void shut() {
+			try {
+				this.in.close();
+			} catch (IOException ignored) {
+				// The read that is blocked on this stream is the one that reports the problem.
+			}
+		}
 	}
 
 	/**
