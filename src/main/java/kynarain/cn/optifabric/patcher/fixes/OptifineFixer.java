@@ -122,6 +122,18 @@ public class OptifineFixer {
 	}
 
 	private void registerFix(String className, ClassFixer classFixer) {
+		//This line registers intermediary names only (class_846), because RemappingUtils.getClassName maps every name it
+		//is given. A name written with dots, or an internal name with slashes, would be mapped into something the
+		//lookup never asks for and the fixer would vanish without a word - so both are refused here.
+		if (className == null || className.isEmpty()) {
+			throw new IllegalArgumentException("A class fixer was registered without a class name");
+		}
+
+		if (className.indexOf('.') >= 0 || className.indexOf('/') >= 0) {
+			throw new IllegalArgumentException("Class name " + className + " is not an intermediary name: this line"
+					+ " registers class_846 style names, and RemappingUtils maps whatever it is given");
+		}
+
 		classFixes.computeIfAbsent(RemappingUtils.getClassName(className), s -> new ArrayList<>()).add(classFixer);
 	}
 
