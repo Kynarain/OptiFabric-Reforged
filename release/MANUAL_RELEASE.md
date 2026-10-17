@@ -65,7 +65,7 @@
 
 > 本页下方"### 1.1.3 那一次"是更早一次发行的记录,保留原样。
 
-| 元数据草稿 | [`release\tmp\modrinth-1.20.6.json`](tmp/modrinth-1.20.6.json)、[`release\tmp\curseforge-1.20.6.json`](tmp/curseforge-1.20.6.json) |
+| 元数据草稿 | `release\tmp\modrinth-1.20.6.json`、`release\tmp\curseforge-1.20.6.json`(草稿,不随仓库) |
 | 标签 | `v1.1.3+mc1.20.6` |
 | Release 正文 | `CHANGELOG.md` 的 **1.1.3 节**(整节粘贴) |
 | Latest | **不勾** `make_latest`(Latest 归 26.x 线) |
