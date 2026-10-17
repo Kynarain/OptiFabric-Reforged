@@ -284,7 +284,8 @@ public class InjectionCallPointFix implements ClassFixer {
 	}
 
 	/** The type a load of the given slot would carry in this method, or null when no parameter lives there. */
-	private static Type slotType(MethodNode method, String owner, int slot) {
+	// Package-private so that the argument slot walk can be tested without the remapping the constructor needs.
+	static Type slotType(MethodNode method, String owner, int slot) {
 		boolean instance = (method.access & Opcodes.ACC_STATIC) == 0;
 
 		if (instance && slot == 0) return Type.getObjectType(owner);
@@ -301,7 +302,7 @@ public class InjectionCallPointFix implements ClassFixer {
 	}
 
 	/** How many stack values the instruction pushes, or -1 when it pushes something other than one value. */
-	private static int producedSize(AbstractInsnNode insn) {
+	static int producedSize(AbstractInsnNode insn) {
 		if (insn instanceof VarInsnNode) {
 			return switch (insn.getOpcode()) {
 				case Opcodes.ILOAD, Opcodes.FLOAD, Opcodes.ALOAD -> 1;
