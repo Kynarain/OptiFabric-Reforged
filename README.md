@@ -17,7 +17,7 @@ Load **OptiFine** under **Fabric Loader**: put OptiFine's jar next to this mod a
 
 This is the **26.x line** and covers **Minecraft 26.2** (current) and **Minecraft 26.1.2**. The 1.21.x line (Minecraft 1.21 – 1.21.11) lives on the [`1.21.x` branch](../../tree/1.21.x) and is developed separately; jars from different lines are **not interchangeable**.
 
-**Author:** kynarain · upstream: Modmuss50, Chocohead · **License:** MPL-2.0 · **Current version:** `2.2.7`
+**Author:** kynarain · upstream: Modmuss50, Chocohead · **License:** MPL-2.0 · **Current version:** `2.2.10`
 
 ## 📦 Installation
 

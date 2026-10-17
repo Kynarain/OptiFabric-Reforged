@@ -2,6 +2,9 @@
 
 Nothing: everything listed here before was released as 2.2.9 on 2026-10-07.
 
+The timeout fix below was released on this line as **2.2.10** on 2026-10-17 (the -full jar of 2.2.10 carries it). It is
+still pending for the 1.21.x line, which has not shipped it yet.
+
 ## The OptiFine download can no longer hang forever (all twelve branches with a downloader)
 
 Found on a machine whose network throttles optifine.net: the -full build fetched the download page, got its
