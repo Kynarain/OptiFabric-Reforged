@@ -489,7 +489,7 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | Zombie Awareness | zombie-awareness | 27.7 |
 | Zume | zume | 29.0 |
 
-## 与 OptiFine 不兼容（33）
+## 与 OptiFine 不兼容（31）
 
 不装本模组（纯 Fabric + OptiFine）能过标题界面，装了过不去 —— 是 OptiFine 与这些模组的冲突。
 
@@ -499,7 +499,6 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | [EMF] Entity Model Features | entity-model-features |  |
 | Bobby | bobby |  |
 | Carry On | carry-on |  |
-| Concurrent Chunk Management Engine (Fabric) | c2me-fabric |  |
 | Cut Through | cut-through |  |
 | Deeper and Darker | deeperdarker |  |
 | Enhanced Block Entities | ebe |  |
@@ -520,7 +519,6 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | ReplayMod | replaymod |  |
 | sample--mr-bedrockify | sample--mr-bedrockify |  |
 | sample--mr-betternether | sample--mr-betternether |  |
-| sample--mr-c2me-fabric | sample--mr-c2me-fabric |  |
 | sample--mr-immediatelyfast | sample--mr-immediatelyfast |  |
 | sample--mr-spectrumjei | sample--mr-spectrumjei |  |
 | ShatterLib / OctoLib | shatterbyte-lib |  |
@@ -528,6 +526,15 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | Sodium Shadowy Path Blocks (SSPB) | sodium-shadowy-path-blocks |  |
 | Supplementaries | supplementaries |  |
 | ToolTipFix | tooltipfix |  |
+
+## 本线未测（2）
+
+这两条是**继承下来的旧结论**：它们原本记在「与 OptiFine 不兼容」里,但依据是 **1.21.1** 那次扫描,而且那条结论在 1.21.x 线上**已经被推翻**（2.2.3 起 C2ME 能进世界,wiki 记录为在世界里连跑 113 秒、零条 `[ERROR]`）。**本线没有实测过 C2ME**,所以这里既不写"兼容"也不写"不兼容"。
+
+| 模组 | slug | 进世界(秒) |
+|---|---|---:|
+| Concurrent Chunk Management Engine (Fabric) | c2me-fabric | 1.21.x 自 2.2.3 起可进世界（113 秒、零 [ERROR]）；本线未测 |
+| sample--mr-c2me-fabric | sample--mr-c2me-fabric | 与 c2me-fabric 是同一个 jar；本线未测 |
 
 ## 纯 Fabric 即坏（与本模组无关）（8）
 
