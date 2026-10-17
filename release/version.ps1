@@ -1,4 +1,4 @@
-﻿# 版本号自动化(SemVer 2.0.0,见 docs/VERSIONING.md)
+# 版本号自动化(SemVer 2.0.0,见 docs/VERSIONING.md)
 #
 # 一次版本号改动要同时落在 9 个地方:项目的 gradle.properties、release\publish.ps1 的映射,以及
 # README / CHANGELOG / docs\ / release\notes\ / release\MANUAL_RELEASE.md / dist\README.txt 里所有
@@ -320,7 +320,7 @@ if ($CheckSupport) {
 		$maps[$file] = $map
 	}
 
-	# 模组自带的那张:new Build("26.2", "HD_U_K2", "pre1", "preview_OptiFine_26.2_HD_U_K2_pre1.jar", ...)
+	# 模组自带的那张:new Build("26.2", "HD_U_K2", "pre4", "preview_OptiFine_26.2_HD_U_K2_pre4.jar", ...)
 	$support = @{}
 	foreach ($entry in [regex]::Matches((Read-ReleaseFile $supportPath),
 			'new Build\(\s*"([\d.]+)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]+\.jar)"')) {

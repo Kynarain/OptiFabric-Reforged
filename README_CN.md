@@ -35,7 +35,7 @@
 
 | Minecraft | jar | OptiFine 构建 | Java | 状态 |
 |---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.2.9+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | 25 | ✅ 已实机验证(**不能用光影**,见下) |
+| 26.2 | `OptiFabric-Reforged-2.2.9+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | 25 | ✅ 已在 **K2_pre1** 上实机验证(**不能用光影**,见下);**K2_pre4 尚未复测** |
 | 26.1.2 | `OptiFabric-Reforged-2.2.9+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ 已实机验证 |
 
 两个 OptiFine 构建**都是预览版** —— OptiFine 对这两个 Minecraft 版本都还没有正式构建。
@@ -46,7 +46,7 @@
 
 | OptiFabric version | Minecraft version | Recommended OptiFine build | Build kind | SHA-256 | Bytes |
 |---|---|---|---|---|---|
-| `2.2.9+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre1.jar` | preview (no final exists) | `DB05B25F` | 7783636 |
+| `2.2.9+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | preview (no final exists) | `31553237` | 7849149 |
 | `2.2.9+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) | `F8EB9026` | 7797229 |
 
 **SHA-256** 列是文件哈希的前 8 位,**字节** 列是它的精确大小 —— 放进 `mods/` 之前先拿你下载的那份对一下。有两行写了**两个**用 `/` 分开的哈希:那是 OptiFine **用同一个文件名重传过、内容不同**的构建,本模组**两个都接受**。
@@ -146,7 +146,7 @@ mods/<OptiFine jar>
 | Fabric Loader | ≥ 0.19.5 |
 | Java | **25**(游戏自身的硬要求;Java 21 连窗口都出不来) |
 | 侧 | 客户端 |
-| OptiFine | 26.2 用 `preview_OptiFine_26.2_HD_U_K2_pre1.jar`,26.1.2 用 `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`(两个都只有预览版) |
+| OptiFine | 26.2 用 `preview_OptiFine_26.2_HD_U_K2_pre4.jar`,26.1.2 用 `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar`(两个都只有预览版) |
 | Fabric API | 可选 —— 26.2 上用 `0.161.0+26.2` 测过,26.1.2 上用 `0.155.3+26.1.2` 测过 |
 
 ## 📝 项目结构
