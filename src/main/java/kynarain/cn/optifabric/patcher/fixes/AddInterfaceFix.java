@@ -149,7 +149,7 @@ public class AddInterfaceFix implements ClassFixer {
 					found.add(new Candidate(className, methods));
 				}
 			} catch (IOException | RuntimeException e) {
-				//not a zip, or one this JVM will not read: nothing to find there
+				// silent by design: not a zip, or one this JVM will not read: nothing to find there
 			}
 		}
 
@@ -185,7 +185,7 @@ public class AddInterfaceFix implements ClassFixer {
 						if (isInPackages(name, packages)) out.add(name);
 					});
 		} catch (IOException e) {
-			//an unreadable tree contributes nothing
+			// silent by design: an unreadable tree contributes nothing
 		}
 
 		return out;
@@ -201,7 +201,7 @@ public class AddInterfaceFix implements ClassFixer {
 
 				if (!out.contains(root)) out.add(root);
 			} catch (Throwable t) {
-				//a mod that cannot name its root cannot be searched; not fatal here
+				// silent by design: a mod that cannot name its root cannot be searched; not fatal here
 			}
 		}
 
@@ -221,11 +221,11 @@ public class AddInterfaceFix implements ClassFixer {
 						temp.toFile().deleteOnExit();
 						nested.add(temp);
 					} catch (IOException e) {
-						//a nested jar that cannot be spilled simply is not searched
+						// silent by design: a nested jar that cannot be spilled simply is not searched
 					}
 				}
 			} catch (IOException | RuntimeException e) {
-				//not a zip
+				// silent by design: not a zip
 			}
 		}
 

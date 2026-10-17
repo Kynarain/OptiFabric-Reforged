@@ -279,7 +279,7 @@ public final class OptifineFrapiBridge {
 			try {
 				return Class.forName(candidate, false, loader);
 			} catch (ClassNotFoundException ignored) {
-				//try the next location
+				// silent by design: try the next location
 			}
 		}
 

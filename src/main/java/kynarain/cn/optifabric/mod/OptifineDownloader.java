@@ -449,6 +449,7 @@ public final class OptifineDownloader {
 							}
 						}
 					} catch (InterruptedException e) {
+						// silent by design: the watchdog is being told to stop; restoring the interrupt flag is the whole handling
 						Thread.currentThread().interrupt();
 					}
 				}
@@ -500,7 +501,7 @@ public final class OptifineDownloader {
 			try {
 				this.in.close();
 			} catch (IOException ignored) {
-				// The read that is blocked on this stream is the one that reports the problem.
+				// silent by design: The read that is blocked on this stream is the one that reports the problem.
 			}
 		}
 	}
@@ -611,6 +612,7 @@ public final class OptifineDownloader {
 
 			return text.toString();
 		} catch (NoSuchAlgorithmException e) {
+			// silent by design: nothing to do here; the caller decides what the failure means
 			return "(no SHA-256: " + e.getMessage() + ")";
 		}
 	}
@@ -885,7 +887,7 @@ public final class OptifineDownloader {
 		try {
 			if (!OptifineSearch.find(gameDir.toPath(), minecraftVersion).isEmpty()) return true;
 		} catch (Throwable t) {
-			// A jar that cannot be chosen (two copies, or two places offering the same build) is the normal
+			// silent by design: A jar that cannot be chosen (two copies, or two places offering the same build) is the normal
 			// path's to report; downloading a second jar next to it is exactly what must not happen.
 			return true;
 		}
@@ -912,6 +914,7 @@ public final class OptifineDownloader {
 			try {
 				type = OptifineVersion.parseJarType(file).type;
 			} catch (IOException e) {
+				// silent by design: unreadable: leave it to the normal path rather than adding a jar beside it
 				return true; // unreadable: leave it to the normal path rather than adding a jar beside it
 			}
 

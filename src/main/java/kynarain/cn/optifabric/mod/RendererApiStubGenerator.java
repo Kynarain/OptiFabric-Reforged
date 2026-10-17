@@ -108,7 +108,7 @@ public final class RendererApiStubGenerator {
 					collectFamily(Class.forName(internal.replace('/', '.'), false, loader), needed, depth + 1);
 				}
 			} catch (ClassNotFoundException | LinkageError e) {
-				//not a type we can build a stub for; the method returns null then
+				// silent by design: not a type we can build a stub for; the method returns null then
 			}
 		}
 	}
@@ -129,7 +129,7 @@ public final class RendererApiStubGenerator {
 				out.add(method.desc);
 			}
 		} catch (IOException e) {
-			//treated as "no return types to worry about"
+			// silent by design: treated as "no return types to worry about"
 		}
 
 		return out;
@@ -214,6 +214,7 @@ public final class RendererApiStubGenerator {
 		try {
 			return Class.forName(wanted.replace('/', '.'), false, loader).isAssignableFrom(iface);
 		} catch (ClassNotFoundException | LinkageError e) {
+			// silent by design: nothing to do here; the caller decides what the failure means
 			return false;
 		}
 	}
