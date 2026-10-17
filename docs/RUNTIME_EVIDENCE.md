@@ -90,3 +90,34 @@ above says the patcher handles that OptiFine build, which is what it was measuri
 A test instance was prepared for that run: `.minecraft\versions\26.2-Fabric-pretest` (Minecraft 26.2, Fabric Loader
 0.19.5, `2.2.9+mc26.2` + `preview_OptiFine_26.2_HD_U_K2_pre4.jar`, with the `OptiTest` world copied in so the run can
 reach a world rather than only the title screen).
+
+## How a run is recorded from here on
+
+Every run that is meant to back a claim gets one block like this, filled only after it happened. A run passes when
+all four hold: the title screen appears, a world loads and is played, no new file appears in `crash-reports/`, and
+`logs/latest.log` shows no exception from `[OptiFabric]`. Anything short of that is written as what it was.
+
+```
+### <date> <MC> + OptiFabric <version> + OptiFine <build> [ + <other mods count> ]
+
+- Combined from: <jar names with sizes>
+- Launched by: <who> (hand, or the launcher's console)
+- Title screen: yes / no
+- World entered: yes / no - <how long, what was done>
+- crash-reports: <none / file name>
+- [OptiFabric] exceptions in latest.log: <none / first line>
+- mismatch prompt: <shown once / not shown / acknowledged in config/optifabric-mismatch-ack.txt>
+- Logs used: <paths>
+- Verdict: <what this run does and does not prove>
+```
+
+### Pending: 26.2 + OptiFabric 2.2.9 + OptiFine `K2_pre4` + 9 optimisation mods
+
+Prepared, not yet run. Combined from `OptiFabric-Reforged-2.2.9+mc26.2.jar` (186,547 bytes, sha256 `49c48235...`),
+`preview_OptiFine_26.2_HD_U_K2_pre4.jar` (7,849,149 bytes, sha256 `31553237...`), `fabric-api-0.161.0+26.2.jar`, and
+lithium 0.25.3, ferritecore 9.0.0, krypton 0.3.1, entityculling 1.11.3, Clumps 26.2.1, BadOptimizations 2.4.1,
+debugify 26.2.0.1, dynamic-fps 3.11.9 and c2me 0.4.2-alpha.0.60 (all from Modrinth, sha512 checked on download).
+The mismatch prompt is expected once, because the 2.2.9 jar records `K2_pre1` and not `K2_pre4`.
+
+What this run would settle: whether 26.2 starts and loads a world with `K2_pre4`, and - if it fails - whether the
+cause is this mod or one of the optimisation mods, by disabling `c2me` first and then the rest.
