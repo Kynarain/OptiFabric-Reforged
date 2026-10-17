@@ -85,6 +85,6 @@ a build that has the order wrong shows write() before require().
 
 The downloader fix above was found on a user machine rather than by any check here, so the sweep table above is
 still incomplete: it has no column for "the body of a download is read under a timeout". For the record it was
-checked by reading the built jars instead: every branch with a downloader references BodyHandlers.ofByteArray
+checked by reading the built jars instead: every branch with a downloader reads the body as it arrives (BodyHandlers.ofInputStream) behind a stall watchdog
 and none references ofInputStream (commits listed in docs/UNRELEASED.md). Add it as a column the next time this
 table is regenerated.
