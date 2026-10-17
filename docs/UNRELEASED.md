@@ -27,3 +27,9 @@ transfer that is merely slow, and dropped the progress lines. The body is read a
 oversized response at once and progress is reported while it downloads; a response whose `Content-Length` is already too
 large is refused before a byte is read; and a watchdog closes the stream after sixty seconds without a byte, which makes
 the read throw instead of hang. A slow but steady transfer is never cut off that way, only one that has stopped.
+
+## A stalled download now says so (after the released builds)
+
+Closing the stream from the watchdog made the blocked read throw, but the exception carried the transport's own word for
+it - `Stream closed` - which tells the user nothing. The read now reports `the download stopped sending data for 60 s,
+giving up; check the connection and try again`. The response stream is also closed exactly once: the guard owns it.
