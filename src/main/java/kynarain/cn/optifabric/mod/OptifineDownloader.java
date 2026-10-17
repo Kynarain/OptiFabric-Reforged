@@ -389,7 +389,7 @@ public final class OptifineDownloader {
 		// while it downloads. A read that stops returning is not covered by the request timeout - that one ends when
 		// the response is received - so the stream is watched separately: STALL_TIMEOUT without a byte closes it and
 		// the read throws. A slow but steady transfer is never cut off this way, only one that has stopped.
-		try (InputStream raw = response.body(); InputStream in = new StallGuard(raw, STALL_TIMEOUT)) {
+		try (InputStream in = new StallGuard(response.body(), STALL_TIMEOUT)) {
 			long total = declared;
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			byte[] buffer = new byte[16384];
@@ -428,9 +428,10 @@ public final class OptifineDownloader {
 	 */
 	private static final class StallGuard extends FilterInputStream {
 		private volatile long lastActivity = System.nanoTime();
+		private volatile boolean stalled;
 		private final long timeoutNanos;
 		private final Thread watchdog;
-	
+
 		StallGuard(InputStream in, Duration timeout) {
 			super(in);
 			this.timeoutNanos = timeout.toNanos();
@@ -440,9 +441,10 @@ public final class OptifineDownloader {
 					try {
 						while (true) {
 							Thread.sleep(200L);
-	
+
 							if (System.nanoTime() - lastActivity >= timeoutNanos) {
 								shut();
+
 								return;
 							}
 						}
@@ -454,30 +456,47 @@ public final class OptifineDownloader {
 			this.watchdog.setDaemon(true);
 			this.watchdog.start();
 		}
-	
+
 		@Override
 		public int read() throws IOException {
-			int value = super.read();
-			lastActivity = System.nanoTime();
-	
-			return value;
+			try {
+				int value = super.read();
+				lastActivity = System.nanoTime();
+
+				return value;
+			} catch (IOException e) {
+				throw stallOr(e);
+			}
 		}
-	
+
 		@Override
 		public int read(byte[] buffer, int offset, int length) throws IOException {
-			int value = super.read(buffer, offset, length);
-			lastActivity = System.nanoTime();
-	
-			return value;
+			try {
+				int value = super.read(buffer, offset, length);
+				lastActivity = System.nanoTime();
+
+				return value;
+			} catch (IOException e) {
+				throw stallOr(e);
+			}
 		}
-	
+
+		private IOException stallOr(IOException failure) {
+			if (!stalled) return failure;
+
+			return new IOException("the download stopped sending data for " + (timeoutNanos / 1000000000L)
+					+ " s, giving up; check the connection and try again", failure);
+		}
+
 		@Override
 		public void close() throws IOException {
 			watchdog.interrupt();
 			super.close();
 		}
-	
+
 		private void shut() {
+			stalled = true;
+
 			try {
 				this.in.close();
 			} catch (IOException ignored) {
