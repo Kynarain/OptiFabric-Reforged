@@ -80,6 +80,7 @@ $encodingProblems = 0
 $strict = New-Object Text.UTF8Encoding($false, $true)
 $gbk = [Text.Encoding]::GetEncoding(936)
 $residue = @([char]0x947A)
+$mojibakeWords = @('中文', '说明', '更新', '版本', '链接', '文档', '项目', '支持', '兼容', '问题', '修复', '测试', '加载', '启动', '世界', '模组', '发布', '构建', '标签', '目录')
 foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 	$bytes = [IO.File]::ReadAllBytes($f.FullName)
 	$text = ''
@@ -112,6 +113,18 @@ foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 	foreach ($ch in $residue) {
 		if ($text.Contains([string]$ch)) {
 			$problems.Add('a known mojibake residue (' + $ch + ') in ' + (Rel $f.FullName))
+			$encodingProblems++
+			break
+		}
+	}
+	# A word that shows up in its GBK reinterpretation. This is how a script without a BOM wrote '涓枃鐗?' instead of
+	# '中文版' into a generated page: the string was read as the local code page and every character came out wrong.
+	# Words are used instead of single characters because a single mangled character is indistinguishable from a rare
+	# but legitimate one, while a whole mangled word is not.
+	foreach ($word in $mojibakeWords) {
+		$form = $gbk.GetString([Text.Encoding]::UTF8.GetBytes($word))
+		if ($form -ne $word -and $text.Contains($form)) {
+			$problems.Add('GBK mojibake of "' + $word + '" (wrote "' + $form + '") in ' + (Rel $f.FullName))
 			$encodingProblems++
 			break
 		}
