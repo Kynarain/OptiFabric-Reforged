@@ -14,7 +14,7 @@ response is received, not when its body is finished, and the body was being read
 BodyHandlers.ofInputStream. The body is now buffered inside send(), so the three minute request timeout covers
 the whole exchange; a timeout explains itself and says that putting OptiFine into mods is the way around it.
 
-Verified by reading the built jar: OptifineDownloader.class references BodyHandlers.ofByteArray, no longer
+Verified by reading the built jar: OptifineDownloader.class reads the body as it arrives (BodyHandlers.ofInputStream) behind a stall watchdog, no longer
 references ofInputStream, and carries both HttpTimeoutException and the message.
 
 Commits: 1.21.x-2.2.11 eb8031c, -2.2.12 bf32a5f, -2.2.13 7653105, -2.2.14 0627135, 26.x-2.2.7 d17b6a8,
