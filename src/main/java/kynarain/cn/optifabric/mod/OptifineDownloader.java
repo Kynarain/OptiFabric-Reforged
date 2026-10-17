@@ -360,7 +360,7 @@ public final class OptifineDownloader {
 			// while it downloads. A read that stops returning is not covered by the request timeout - that one ends when
 			// the response is received - so the stream is watched separately: STALL_TIMEOUT without a byte closes it and
 			// the read throws. A slow but steady transfer is never cut off this way, only one that has stopped.
-			try (InputStream raw = response.body(); InputStream in = new StallGuard(raw, STALL_TIMEOUT)) {
+			try (InputStream in = new StallGuard(response.body(), STALL_TIMEOUT)) {
 				long total = declared;
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
 				byte[] buffer = new byte[16384];
@@ -392,70 +392,89 @@ public final class OptifineDownloader {
 			}
 		}
 		
-		/**
-		 * Wraps the response stream and closes it when no byte has arrived for {@code timeout}. Closing it is what makes a
-		 * blocked read throw: a server that accepts the connection and then stops sending would otherwise keep the game in
-		 * preLaunch for as long as it liked, which is exactly what happened on a network that throttles optifine.net.
-		 */
-		private static final class StallGuard extends FilterInputStream {
-			private volatile long lastActivity = System.nanoTime();
-			private final long timeoutNanos;
-			private final Thread watchdog;
-		
-			StallGuard(InputStream in, Duration timeout) {
-				super(in);
-				this.timeoutNanos = timeout.toNanos();
-				this.watchdog = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							while (true) {
-								Thread.sleep(200L);
-		
-								if (System.nanoTime() - lastActivity >= timeoutNanos) {
-									shut();
-									return;
-								}
+	/**
+	 * Wraps the response stream and closes it when no byte has arrived for {@code timeout}. Closing it is what makes a
+	 * blocked read throw: a server that accepts the connection and then stops sending would otherwise keep the game in
+	 * preLaunch for as long as it liked, which is exactly what happened on a network that throttles optifine.net.
+	 */
+	private static final class StallGuard extends FilterInputStream {
+		private volatile long lastActivity = System.nanoTime();
+		private volatile boolean stalled;
+		private final long timeoutNanos;
+		private final Thread watchdog;
+
+		StallGuard(InputStream in, Duration timeout) {
+			super(in);
+			this.timeoutNanos = timeout.toNanos();
+			this.watchdog = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						while (true) {
+							Thread.sleep(200L);
+
+							if (System.nanoTime() - lastActivity >= timeoutNanos) {
+								shut();
+
+								return;
 							}
-						} catch (InterruptedException e) {
-							Thread.currentThread().interrupt();
 						}
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
 					}
-				}, "OptiFabric download watchdog");
-				this.watchdog.setDaemon(true);
-				this.watchdog.start();
-			}
-		
-			@Override
-			public int read() throws IOException {
+				}
+			}, "OptiFabric download watchdog");
+			this.watchdog.setDaemon(true);
+			this.watchdog.start();
+		}
+
+		@Override
+		public int read() throws IOException {
+			try {
 				int value = super.read();
 				lastActivity = System.nanoTime();
-		
+
 				return value;
-			}
-		
-			@Override
-			public int read(byte[] buffer, int offset, int length) throws IOException {
-				int value = super.read(buffer, offset, length);
-				lastActivity = System.nanoTime();
-		
-				return value;
-			}
-		
-			@Override
-			public void close() throws IOException {
-				watchdog.interrupt();
-				super.close();
-			}
-		
-			private void shut() {
-				try {
-					this.in.close();
-				} catch (IOException ignored) {
-					// The read that is blocked on this stream is the one that reports the problem.
-				}
+			} catch (IOException e) {
+				throw stallOr(e);
 			}
 		}
+
+		@Override
+		public int read(byte[] buffer, int offset, int length) throws IOException {
+			try {
+				int value = super.read(buffer, offset, length);
+				lastActivity = System.nanoTime();
+
+				return value;
+			} catch (IOException e) {
+				throw stallOr(e);
+			}
+		}
+
+		private IOException stallOr(IOException failure) {
+			if (!stalled) return failure;
+
+			return new IOException("the download stopped sending data for " + (timeoutNanos / 1000000000L)
+					+ " s, giving up; check the connection and try again", failure);
+		}
+
+		@Override
+		public void close() throws IOException {
+			watchdog.interrupt();
+			super.close();
+		}
+
+		private void shut() {
+			stalled = true;
+
+			try {
+				this.in.close();
+			} catch (IOException ignored) {
+				// The read that is blocked on this stream is the one that reports the problem.
+			}
+		}
+	}
 
 	/**
 	 * Rejects everything that is not an OptiFine jar: a response that is not a zip at all, a corrupt zip, and a
