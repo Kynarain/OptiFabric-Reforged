@@ -90,6 +90,21 @@ foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 		$problems.Add('U+FFFD (mojibake): ' + (Rel $f.FullName))
 		$encodingProblems++
 	}
+	# A lossy accident leaves the same shape in the middle of otherwise fine text: several characters that did not
+	# survive, next to the ones that did. Two or more of them on one CJK-bearing line is not something this repository
+	# writes on purpose; one on its own is ordinary punctuation and is left to the residue list above.
+	$lossyLine = -1
+	$lossyNo = 0
+	foreach ($line in ($text -split "`r?`n")) {
+		$lossyNo++
+		if ($line -notmatch '[\u4e00-\u9fff]') { continue }
+		$lost = ([regex]::Matches($line, '\?')).Count + ([regex]::Matches($line, [string][char]0xFFFD)).Count
+		if ($lost -ge 2) { $lossyLine = $lossyNo; break }
+	}
+	if ($lossyLine -gt 0) {
+		$problems.Add('line ' + $lossyLine + ' lost two or more characters (looks like a lossy encoding round trip): ' + (Rel $f.FullName))
+		$encodingProblems++
+	}
 	# a) the round trip, line by line
 	$mangledLine = -1
 	$lineNo = 0
