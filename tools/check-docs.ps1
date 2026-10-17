@@ -1,4 +1,4 @@
-﻿# ASCII only. Documentation gate: relative links, version numbers, encoding.
+﻿# Documentation gate: relative links, version numbers, encoding.
 # Run from the repository root: powershell -NoProfile -ExecutionPolicy Bypass -File tools\check-docs.ps1
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -46,22 +46,32 @@ foreach ($pair in $pairs) {
 	foreach ($readme in $pair.Readmes) {
 		$p = Join-Path $root $readme
 		if (-not (Test-Path -LiteralPath $p)) { continue }
-		$text = [IO.File]::ReadAllText($p, [Text.Encoding]::UTF8)
-		# any "<x.y.z>" written right after a "current version" style label
-		foreach ($c in [regex]::Matches($text, '(?i)(current version|当前版本|mod_version)[^\r\n]{0,80}?`([0-9][0-9A-Za-z.\-]*)`')) {
-			$claimed = $c.Groups[2].Value
-			if ($claimed -ne $version) {
-				$problems.Add('stale version: ' + $readme + ' says ' + $claimed + ' but ' + $pair.Key + ' is ' + $version)
-				$versionProblems++
+		# the label, then any of the quoting styles a version may be written in
+		foreach ($line in [IO.File]::ReadAllLines($p, [Text.Encoding]::UTF8)) {
+			if ($line -notmatch '(?i)(current version|当前版本|本分支版本|mod_version)') { continue }
+			foreach ($c in [regex]::Matches($line, '`([0-9][0-9A-Za-z.\-]*)`|\*\*([0-9][0-9A-Za-z.\-]*)\*\*')) {
+				$claimed = $c.Groups[1].Value
+				if ([string]::IsNullOrWhiteSpace($claimed)) { $claimed = $c.Groups[2].Value }
+				if ($claimed -match '^\d+\.\d+') {
+					if ($claimed -ne $version) {
+						$problems.Add('stale version: ' + $readme + ' says ' + $claimed + ' but ' + $pair.Key + ' is ' + $version)
+						$versionProblems++
+					}
+					break
+				}
 			}
 		}
 	}
 }
 Write-Host ("  version numbers     : " + $versionProblems + " stale")
 
-# 3. encoding: markdown and java as strict UTF-8 without the replacement character, scripts with a BOM unless pure ASCII
+# 3. encoding: strict UTF-8, no replacement character, no GBK read as UTF-8, scripts with a BOM unless pure ASCII
 $encodingProblems = 0
 $strict = New-Object Text.UTF8Encoding($false, $true)
+# A file written as GBK and read as UTF-8 can leave characters that are themselves legal CJK, so a UTF-8 validity
+# check does not see them: "CHANGELOG.md 1.1.6 <U+947A>?" is what that looked like here. Only the signatures actually
+# observed are listed - a broad "CJK then ?" rule catches ordinary prose and was dropped.
+$mojibakeChars = @([char]0x947A)
 foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 	$bytes = [IO.File]::ReadAllBytes($f.FullName)
 	$text = ''
@@ -73,6 +83,13 @@ foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 	if ($text.Contains([string][char]0xFFFD)) {
 		$problems.Add('U+FFFD (mojibake): ' + (Rel $f.FullName))
 		$encodingProblems++
+	}
+	foreach ($ch in $mojibakeChars) {
+		if ($text.Contains([string]$ch)) {
+			$problems.Add('a GBK-mojibake character (' + $ch + ') in ' + (Rel $f.FullName))
+			$encodingProblems++
+			break
+		}
 	}
 	if ($f.Extension -eq '.ps1') {
 		$hasBom = ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
