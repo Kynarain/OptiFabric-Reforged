@@ -333,7 +333,7 @@ public class OptifineInjector {
 			byte[] bytes = FabricLauncherBase.getLauncher().getClassByteArray(internalName.replace('/', '.'), false);
 			if (bytes != null) node = readClass(bytes);
 		} catch (Throwable t) {
-			//Not fatal, callers fall back to something conservative
+			// silent by design: Not fatal, callers fall back to something conservative
 		}
 
 		GAME_CLASSES.put(internalName, node);

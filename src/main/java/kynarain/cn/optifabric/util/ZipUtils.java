@@ -52,6 +52,7 @@ public class ZipUtils {
 
 			return true;
 		} catch (ZipException | ZipError e) {
+			// silent by design: nothing to do here; the caller decides what the failure means
 			return false;
 		}
 	}
@@ -216,6 +217,7 @@ public class ZipUtils {
 		try {
 			Files.move(from.toPath(), to.toPath());
 		} catch (IOException e) {
+			// silent by design: nothing to do here; the caller decides what the failure means
 			Files.copy(from.toPath(), to.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			Files.delete(from.toPath());
 		}
@@ -230,7 +232,7 @@ public class ZipUtils {
 		try {
 			Files.deleteIfExists(file.toPath());
 		} catch (IOException e) {
-			//Quietly make like it was never there
+			// silent by design: Quietly make like it was never there
 		}
 	}
 }

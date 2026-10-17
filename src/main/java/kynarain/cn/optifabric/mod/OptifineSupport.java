@@ -265,7 +265,7 @@ public final class OptifineSupport {
 		try {
 			return new Stage(matcher.group(1), Integer.parseInt(matcher.group(2)), matcher.group(3));
 		} catch (NumberFormatException e) {
-			// A build number too long for an int is not an OptiFine build this line can place.
+			// silent by design: A build number too long for an int is not an OptiFine build this line can place.
 			return null;
 		}
 	}
