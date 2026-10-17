@@ -40,6 +40,15 @@ jobs:
         shell: pwsh
         run: ./release/version.ps1 -CheckSupport
 
+  docs-gate:
+    name: documentation gate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Links, version numbers, encoding
+        shell: pwsh
+        run: ./tools/check-docs.ps1
   build:
     name: build (1.21.10)
     runs-on: windows-latest
