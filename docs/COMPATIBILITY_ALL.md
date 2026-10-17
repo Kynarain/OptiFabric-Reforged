@@ -4,7 +4,7 @@ Every mod this project has run with OptiFabric, and the result on each of the fo
 column, then read the column of the line you use.
 
 
-> 涓枃鐗?[docs/COMPATIBILITY_ALL_CN.md](COMPATIBILITY_ALL_CN.md)
+> 中文版:[docs/COMPATIBILITY_ALL_CN.md](COMPATIBILITY_ALL_CN.md)
 
 **This is one sweep, not four.** The lists the lines carry come from the same run (Minecraft **1.21.1**, the **2.2.x**
 line): the `26.x`, `1.20.6 (reforged)` and `1.20.6` lists are the same one byte for byte, and `1.21.x` differs in
