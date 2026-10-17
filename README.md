@@ -59,10 +59,12 @@
 
 | Minecraft | 产物 | OptiFine 构建 | Java |
 |---|---|---|---|
-| 1.20.6 | `OptiFabric-1.1.7+mc1.20.6.jar`(最近一次已发布的主线产物) | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
+| 1.20.6 | `OptiFabric-1.1.8+mc1.20.6.jar`(最近一次已发布的主线产物)
+ | `preview_OptiFine_1.20.6_HD_U_J1_pre18.jar` | 21 |
 | 1.20.6 | `OptiFabric-Reforged-1.1.7-reforged+mc1.20.6.jar`(`wip/1.20.6-reforged` 分支的替代产物) | 同上 | 21 |
 
-- 本分支产物 mod id 是 `optifabric`,仅客户端,要求 **Fabric Loader ≥ 0.19.3**。当前分支的 `mod_version` 是 **`1.1.7`**;上表第一行列的是**用户能下到的那一个**。
+- 本分支产物 mod id 是 `optifabric`,仅客户端,要求 **Fabric Loader ≥ 0.19.3**。当前分支的 `mod_version` 是 **`1.1.8`**
+;上表第一行列的是**用户能下到的那一个**。
 - 表里第二行是**替代产物**:mod id 是 `optifabric_reforged`,给「别的模组的元数据里拒绝 `optifabric`、因而拒绝本模组」的组合用 ——
   1.20.6 上就是 **c2me**。它和上面那一个**只能装一个**(两者对加载器来说是两个模组,加载器不会替你拦住);
   适用人群、代价与实测见 [`docs/REFORGED_BUILD.md`](https://github.com/Kynarain/OptiFabric-Reforged/blob/wip/1.20.6-reforged/docs/REFORGED_BUILD.md)。
