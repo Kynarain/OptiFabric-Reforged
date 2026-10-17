@@ -17,7 +17,7 @@
 
 本分支是 **1.21.x 线**,覆盖 Minecraft **1.21 – 1.21.11**(OptiFine 出过构建的全部十个版本)。26.x 线(Minecraft 26.2 / 26.1.2)与 1.20.6 线各自在自己的分支上;不同线的 jar **不能互相替代**。
 
-**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `2.2.15`
+**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `2.2.16`
 
 ## 📦 安装
 
@@ -37,16 +37,16 @@
 
 | Minecraft | jar | OptiFine 构建 | 状态 |
 |---|---|---|---|
-| 1.21 | `OptiFabric-2.2.15+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已验证 |
-| 1.21.1 | `OptiFabric-2.2.15+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已验证 |
-| 1.21.3 | `OptiFabric-2.2.15+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已验证 |
-| 1.21.4 | `OptiFabric-2.2.15+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已验证 |
-| 1.21.6 | `OptiFabric-2.2.15+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能玩,**不能用光影**(见下) |
-| 1.21.7 | `OptiFabric-2.2.15+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
-| 1.21.8 | `OptiFabric-2.2.15+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已验证 |
-| 1.21.9 | `OptiFabric-2.2.15+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已验证 |
-| 1.21.10 | `OptiFabric-2.2.15+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已验证 |
-| 1.21.11 | `OptiFabric-2.2.15+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已验证 |
+| 1.21 | `OptiFabric-2.2.16+mc1.21.jar` | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | ✅ 已验证 |
+| 1.21.1 | `OptiFabric-2.2.16+mc1.21.1.jar` | `OptiFine_1.21.1_HD_U_J1.jar` | ✅ 已验证 |
+| 1.21.3 | `OptiFabric-2.2.16+mc1.21.3.jar` | `OptiFine_1.21.3_HD_U_J2.jar` | ✅ 已验证 |
+| 1.21.4 | `OptiFabric-2.2.16+mc1.21.4.jar` | `OptiFine_1.21.4_HD_U_J3.jar` | ✅ 已验证 |
+| 1.21.6 | `OptiFabric-2.2.16+mc1.21.6.jar` | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | ⚠️ 能玩,**不能用光影**(见下) |
+| 1.21.7 | `OptiFabric-2.2.16+mc1.21.7.jar` | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | ⚠️ 同上 |
+| 1.21.8 | `OptiFabric-2.2.16+mc1.21.8.jar` | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | ✅ 已验证 |
+| 1.21.9 | `OptiFabric-2.2.16+mc1.21.9.jar` | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | ✅ 已验证 |
+| 1.21.10 | `OptiFabric-2.2.16+mc1.21.10.jar` | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | ✅ 已验证 |
+| 1.21.11 | `OptiFabric-2.2.16+mc1.21.11.jar` | `OptiFine_1.21.11_HD_U_J9.jar` | ✅ 已验证 |
 
 OptiFine **从未**为 **1.21.2 / 1.21.5** 出过构建,所以这两版没有 jar。表里那个构建是该 Minecraft 版本最新的**正式版**;某版还没有正式版时,用最新的**预览版**(所以 1.21.4 列的是 J3 而不是更新的 J4_pre2)。同一 Minecraft 版本的**其它**构建也照常可用:游戏内提示只在你 `mods/` 里放的是**比表里更旧的预览版**时出现 —— 你手上已经是正式版时不会被提醒,哪怕之后出了更新的正式版。
 
@@ -56,16 +56,16 @@ OptiFine **从未**为 **1.21.2 / 1.21.5** 出过构建,所以这两版没有 ja
 
 | OptiFabric version | Minecraft version | Required OptiFine build | SHA-256 | Bytes |
 |---|---|---|---|---|
-| `2.2.15+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | `B26B2247` | 812264 |
-| `2.2.15+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` | `DB6D2D14` | 812341 |
-| `2.2.15+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` | `3916AADF` | 844124 |
-| `2.2.15+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` | `DB8A1C50` | 851908 |
-| `2.2.15+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | `F73E5B90` | 891675 |
-| `2.2.15+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | `4E7340EB` | 891725 |
-| `2.2.15+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | `FFE496B3` | 891797 |
-| `2.2.15+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | `DC7D1182` | 919829 |
-| `2.2.15+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | `BF845CFC` | 919847 |
-| `2.2.15+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` | `63A60C48` / `F97B5D06` | 8045116 / 8045105 |
+| `2.2.16+mc1.21` | 1.21 | `preview_OptiFine_1.21_HD_U_J1_pre9.jar` | `B26B2247` | 812264 |
+| `2.2.16+mc1.21.1` | 1.21.1 | `OptiFine_1.21.1_HD_U_J1.jar` | `DB6D2D14` | 812341 |
+| `2.2.16+mc1.21.3` | 1.21.3 | `OptiFine_1.21.3_HD_U_J2.jar` | `3916AADF` | 844124 |
+| `2.2.16+mc1.21.4` | 1.21.4 | `OptiFine_1.21.4_HD_U_J3.jar` | `DB8A1C50` | 851908 |
+| `2.2.16+mc1.21.6` | 1.21.6 | `preview_OptiFine_1.21.6_HD_U_J6_pre3.jar` | `F73E5B90` | 891675 |
+| `2.2.16+mc1.21.7` | 1.21.7 | `preview_OptiFine_1.21.7_HD_U_J6_pre7.jar` | `4E7340EB` | 891725 |
+| `2.2.16+mc1.21.8` | 1.21.8 | `preview_OptiFine_1.21.8_HD_U_J6_pre16.jar` | `FFE496B3` | 891797 |
+| `2.2.16+mc1.21.9` | 1.21.9 | `preview_OptiFine_1.21.9_HD_U_J7_pre2.jar` | `DC7D1182` | 919829 |
+| `2.2.16+mc1.21.10` | 1.21.10 | `preview_OptiFine_1.21.10_HD_U_J7_pre11.jar` | `BF845CFC` | 919847 |
+| `2.2.16+mc1.21.11` | 1.21.11 | `OptiFine_1.21.11_HD_U_J9.jar` | `63A60C48` / `F97B5D06` | 8045116 / 8045105 |
 
 **SHA-256** 列是文件哈希的前 8 位,**字节** 列是它的精确大小 —— 放进 `mods/` 之前先拿你下载的那份对一下。有两行写了**两个**用 `/` 分开的哈希:那是 OptiFine **用同一个文件名重传过、内容不同**的构建,本模组**两个都接受**。
 
