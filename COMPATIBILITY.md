@@ -1,5 +1,3 @@
-| Concurrent Chunk Management Engine (Fabric) | c2me-fabric | 26.2 实测进世界（2026-10-17，c2me 0.4.2-alpha.0.60）；1.21.x 自 2.2.3 起亦可 |
-| sample--mr-c2me-fabric | sample--mr-c2me-fabric | 与 c2me-fabric 是同一个 jar；同上 |
 # OptiFabric 兼容性清单（完整版）
 
 MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 debug 开关），每行一次启动。兼容与不兼容**分开列出**，每块内按首字母排序；**本文件收录全部 651 行，不做任何剔除**。
@@ -490,6 +488,8 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | YUNG's Menu Tweaks | yungs-menu-tweaks | 25.2 |
 | Zombie Awareness | zombie-awareness | 27.7 |
 | Zume | zume | 29.0 |
+| Concurrent Chunk Management Engine (Fabric) | c2me-fabric | 26.2 实测进世界（2026-10-17，c2me 0.4.2-alpha.0.60）；1.21.x 自 2.2.3 起亦可 |
+| sample--mr-c2me-fabric | sample--mr-c2me-fabric | 与 c2me-fabric 是同一个 jar；同一条实测 |
 
 ## 与 OptiFine 不兼容（31）
 
