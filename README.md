@@ -6,7 +6,8 @@
 
 本分支是 **1.20.6 线**的 `wip/1.20.6-reforged`,发布的是**替代产物** `OptiFabric-Reforged-<版本>-reforged+mc1.20.6.jar`(mod id `optifabric_reforged`)。同一仓库里 1.20.6 的**已发布主线产物**(mod id `optifabric`,`main` 分支)、以及更新的 1.21.x / 26.x 线都在各自的分支上;各线的 jar **不能互相替代**。
 
-**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `1.1.7-reforged`
+**作者:** kynarain · 上游:Modmuss50、Chocohead · **许可:** MPL-2.0 · **当前版本:** `1.1.8-reforged`
+
 
 ## 支持的版本
 

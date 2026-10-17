@@ -57,6 +57,7 @@
 | `-full` 变体 | 由 `convenience/1.20.6-reforged-1.1.6` 构建(749,718 B,`AA80CE1D…0B482107`),与默认产物共用同一个 Release(仅 GitHub) |
 | **1.1.7** | `1.1.7-reforged+mc1.20.6` / `v1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6.jar` | 732365 | `B21C47F758C4B381F68E120BD1F1A7878EAE696AB5B8C570DB3AAB3CBE9D9D26` | CHANGELOG 1.1.7 |
 | 1.1.7(GitHub only: `-full`) | `1.1.7-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.7-reforged+mc1.20.6-full.jar` | 753969 | `704F0EFA6BBE1E327DA42ED6FB570A0DE0A2D9025FF412A479CAA7010FCB31C2` | CHANGELOG 1.1.7 |
+| 1.1.8-reforged+mc1.20.6 | `1.1.8-reforged+mc1.20.6` / `v1.1.8-reforged+mc1.20.6` | `dist\OptiFabric-Reforged-1.1.8-reforged+mc1.20.6.jar` | 732383 | `CE9C3046C16842FAC84BF7A8EE9FDBE43DE1A83D4246209D220E67FBF2896CB0` | `CHANGELOG.md` 1.1.8 节|
 
 ## 三、核对命令(每次升版都跑一遍)
 
