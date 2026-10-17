@@ -318,4 +318,4 @@ final → 从不提示)与已知限制全部原样保留。
 
 - 离线字节码校验:与游戏一致的单一加载器下 **425 / 425 通过**,ASM 数据流验证器 **0 问题**。
 - 真机:带 Fabric API 进主界面、开单人存档、进多人服务器、模型与区块渲染、光影生效。
-- 过程与可复现工具见 [`docs/DEVELOPMENT.md`](../docs/DEVELOPMENT.md)。
+- 过程与可复现工具见 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
