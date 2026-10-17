@@ -3,10 +3,13 @@
 Every mod this project has run with OptiFabric, and the result on each of the four lines. Find your mod in the first
 column, then read the column of the line you use.
 
+
+> 涓枃鐗?[docs/COMPATIBILITY_ALL_CN.md](COMPATIBILITY_ALL_CN.md)
+
 **This is one sweep, not four.** The lists the lines carry come from the same run (Minecraft **1.21.1**, the **2.2.x**
 line): the `26.x`, `1.20.6 (reforged)` and `1.20.6` lists are the same one byte for byte, and `1.21.x` differs in
 exactly seven rows - `the-shooting-star-demo`, which only its list carries, and six mods that were re-tested and now
-reach the world (which is why its incompatible count is 28 where the other three say 33). It says the combination was
+reach the world (which is why its incompatible count is 28 where the other three say 31). It says the combination was
 tested, not that each line was tested on its own Minecraft version.
 
 ## What the marks mean
@@ -522,11 +525,11 @@ tested, not that each line was tested on its own Minecraft version.
 | The Shooting Star (Demo) | `the-shooting-star-demo` | ❌ | - | - | - |
 | ToolTipFix | `tooltipfix` | ❌ | ❌ | ❌ | ❌ |
 | Bobby | `bobby` | ✅ (retested) | ❌ | ❌ | ❌ |
-| Concurrent Chunk Management Engine (Fabric) | `c2me-fabric` | ✅ (retested) | ❔ | ❔ | ❔ |
+| Concurrent Chunk Management Engine (Fabric) | `c2me-fabric` | ✅ (retested) | ✅ | ❔ | ❔ |
 | Falling Leaves | `fallingleaves` | ✅ (retested) | ❌ | ❌ | ❌ |
 | Freecam | `freecam` | ✅ (retested) | ❌ | ❌ | ❌ |
 | sample--mr-bedrockify | `sample--mr-bedrockify` | ✅ (retested) | ❌ | ❌ | ❌ |
-| sample--mr-c2me-fabric | `sample--mr-c2me-fabric` | ✅ (retested) | ❔ | ❔ | ❔ |
+| sample--mr-c2me-fabric | `sample--mr-c2me-fabric` | ✅ (retested) | ✅ | ❔ | ❔ |
 | cf--aether | `cf--aether` | 🚫 | 🚫 | 🚫 | 🚫 |
 | cf--better-compatibility-checker | `cf--better-compatibility-checker` | 🚫 | 🚫 | 🚫 | 🚫 |
 | cf--the-twilight-forest | `cf--the-twilight-forest` | 🚫 | 🚫 | 🚫 | 🚫 |
@@ -685,7 +688,7 @@ tested, not that each line was tested on its own Minecraft version.
 
 | Mark | 1.21.x | 26.x | 1.20.6 (reforged) | 1.20.6 |
 |---|---|---|---|---|
-| ✅ | 471 | 465 | 465 | 465 |
+| ✅ | 471 | 467 | 465 | 465 |
 | ❌ | 28 | 31 | 31 | 31 |
 | 🚫 | 8 | 8 | 8 | 8 |
 | ⛔ | 1 | 1 | 1 | 1 |
@@ -693,7 +696,7 @@ tested, not that each line was tested on its own Minecraft version.
 | 🧩 | 8 | 8 | 8 | 8 |
 | ➖ | 112 | 112 | 112 | 112 |
 | ▫️ | 14 | 14 | 14 | 14 |
-| ❔ | 0 | 2 | 2 | 2 |
+| ❔ | 0 | 0 | 2 | 2 |
 | - | 0 | 1 | 1 | 1 |
 
 ## What this does not say
