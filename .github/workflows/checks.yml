@@ -30,6 +30,15 @@ jobs:
         shell: pwsh
         run: ./tools/check-silent-catches.ps1
 
+  docs-gate:
+    name: documentation gate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Links, version numbers, encoding
+        shell: pwsh
+        run: ./tools/check-docs.ps1
   support-table:
     name: support table
     runs-on: windows-latest
