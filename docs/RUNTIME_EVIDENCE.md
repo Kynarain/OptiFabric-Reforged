@@ -65,3 +65,28 @@ SHA-256 就在本线 `OptifineHashes` 的记录里。装载组合含 `c2me`、`l
 2. 实例目录或游戏目录下的 `hs_err_pid*.log`(如果存在)—— 有它就是 JVM 级崩溃,里面会直接写明 `SIGSEGV`/`EXCEPTION_ACCESS_VIOLATION` 与出错的**本地库**。
 
 若确实是驱动层,可做的对照:**关掉 c2me/lithium/entityculling 只留 OptiFabric + OptiFine** 跑同一个世界;以及查 Windows 事件查看器里有没有 `Display driver amdkmdap stopped responding`(TDR)。
+
+## 2026-10-17 - OptiFine 26.2 `K2_pre4`: offline verification only
+
+OptiFine published `preview_OptiFine_26.2_HD_U_K2_pre2`, `pre3` and `pre4` for 26.2 after this line was written. `pre4`
+(7,849,149 bytes, sha256 `3155323734f5268837f78e3251e0dd33d77880dac1441a94c6c3aad6c25bb033`) was put through this
+repository's own offline verification - `test-downloads/verify-26.ps1 -Version 26.2`, which builds the project, runs the
+real patch pipeline against that OptiFine jar in a single loader, and then checks the result with the JVM verifier and
+the ASM data-flow verifier, followed by the scanners:
+
+| Stage | pre4 | pre1 (2026-09-24, for comparison) |
+|---|---|---|
+| patched classes | **571** (0 skipped, 0 failed) | 562 (0 skipped, 0 failed) |
+| `verified OK` | **571** | 562 |
+| `FAILED` / ASM verifier problems | **0 / 0** | 0 / 0 |
+| OptiFine's own classes (`--verify-jar`) | **879 OK, 0 failed, 0 ASM** | 879 OK, 0 failed |
+| `AtTargetScan` | **PROBLEMS: 0** | (not in that log) |
+
+**What this does not say:** nobody has started 26.2 in game with `pre4` yet. The in-game evidence this line carries is
+for `pre1`, and reading the log of that run (2026-09-24) shows the mod was `optifabric_reforged 2.0.0+mc26.2` at the
+time, not a 2.2.x build. So `pre1` stays the recommended build until an in-game run on `pre4` exists; the offline result
+above says the patcher handles that OptiFine build, which is what it was measuring.
+
+A test instance was prepared for that run: `.minecraft\versions\26.2-Fabric-pretest` (Minecraft 26.2, Fabric Loader
+0.19.5, `2.2.9+mc26.2` + `preview_OptiFine_26.2_HD_U_K2_pre4.jar`, with the `OptiTest` world copied in so the run can
+reach a world rather than only the title screen).
