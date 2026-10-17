@@ -65,13 +65,16 @@ foreach ($pair in $pairs) {
 }
 Write-Host ("  version numbers     : " + $versionProblems + " stale")
 
-# 3. encoding: strict UTF-8, no replacement character, no GBK read as UTF-8, scripts with a BOM unless pure ASCII
+# 3. encoding.
+#    * the bytes must be valid UTF-8, with no replacement character;
+#    * a PowerShell script with non-ASCII must carry a BOM (5.1 reads it as ANSI otherwise);
+#    * the file must not be UTF-8 that was once read as GBK and saved again. That accident leaves characters which are
+#      themselves legal CJK, so a validity check cannot see it. The test is the inverse of the accident: real Chinese
+#      encoded as GBK is not valid UTF-8, while a mangled file encoded as GBK reproduces exactly the UTF-8 bytes it was
+#      corrupted from - so if the GBK bytes of a CJK-bearing text decode as UTF-8, the text is the mangled kind.
 $encodingProblems = 0
 $strict = New-Object Text.UTF8Encoding($false, $true)
-# A file written as GBK and read as UTF-8 can leave characters that are themselves legal CJK, so a UTF-8 validity
-# check does not see them: "CHANGELOG.md 1.1.6 <U+947A>?" is what that looked like here. Only the signatures actually
-# observed are listed - a broad "CJK then ?" rule catches ordinary prose and was dropped.
-$mojibakeChars = @([char]0x947A)
+$gbk = [Text.Encoding]::GetEncoding(936)
 foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 	$bytes = [IO.File]::ReadAllBytes($f.FullName)
 	$text = ''
@@ -84,11 +87,18 @@ foreach ($f in (@(Files '*.md') + @(Files '*.java') + @(Files '*.ps1'))) {
 		$problems.Add('U+FFFD (mojibake): ' + (Rel $f.FullName))
 		$encodingProblems++
 	}
-	foreach ($ch in $mojibakeChars) {
-		if ($text.Contains([string]$ch)) {
-			$problems.Add('a GBK-mojibake character (' + $ch + ') in ' + (Rel $f.FullName))
+	if ($text -match '[\u4e00-\u9fff]') {
+		$mangled = $false
+		try {
+			$recovered = $strict.GetString($gbk.GetBytes($text))
+			if ($recovered -ne $text -and $recovered -match '[\u4e00-\u9fff]') { $mangled = $true }
+		}
+		catch {
+			# GBK bytes that are not valid UTF-8: this is what genuine Chinese looks like, so it is fine.
+		}
+		if ($mangled) {
+			$problems.Add('UTF-8 read as GBK then saved again (the GBK bytes decode as UTF-8): ' + (Rel $f.FullName))
 			$encodingProblems++
-			break
 		}
 	}
 	if ($f.Extension -eq '.ps1') {
