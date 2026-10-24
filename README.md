@@ -17,7 +17,7 @@ Load **OptiFine** under **Fabric Loader**: put OptiFine's jar next to this mod a
 
 This is the **26.x line** and covers **Minecraft 26.2** (current) and **Minecraft 26.1.2**. The 1.21.x line (Minecraft 1.21 – 1.21.11) lives on the [`1.21.x` branch](../../tree/1.21.x) and is developed separately; jars from different lines are **not interchangeable**.
 
-**Author:** kynarain · upstream: Modmuss50, Chocohead · **License:** MPL-2.0 · **Current version:** `2.2.11`
+**Author:** kynarain · upstream: Modmuss50, Chocohead · **License:** MPL-2.0 · **Current version:** `2.2.12`
 
 ## 📦 Installation
 
@@ -35,8 +35,8 @@ This line is called **Reforged** because it carries **its own mod id** (`optifab
 
 | Minecraft | jar | OptiFine build | Java | State |
 |---|---|---|---|---|
-| 26.2 | `OptiFabric-Reforged-2.2.11+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | 25 | ✅ verified in game on **K2_pre4** (2026-10-17, one world, about 17 s; **no shaders** — see below) |
-| 26.1.2 | `OptiFabric-Reforged-2.2.11+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
+| 26.2 | `OptiFabric-Reforged-2.2.12+mc26.2.jar` | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | 25 | ✅ verified in game on **K2_pre4** (2026-10-17, one world, about 17 s; **no shaders** — see below) |
+| 26.1.2 | `OptiFabric-Reforged-2.2.12+mc26.1.2.jar` | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | 25 | ✅ verified in game |
 
 Both OptiFine builds are **previews** — OptiFine has no final release for either Minecraft version yet.
 
@@ -46,8 +46,8 @@ This is the same list the mod itself carries and `release\notes\mc<MC>.md` state
 
 | OptiFabric version | Minecraft version | Recommended OptiFine build | Build kind | SHA-256 | Bytes |
 |---|---|---|---|---|---|
-| `2.2.11+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | preview (no final exists) | `31553237` | 186817 |
-| `2.2.11+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) | `F8EB9026` | 186817 |
+| `2.2.12+mc26.2` | 26.2 | `preview_OptiFine_26.2_HD_U_K2_pre4.jar` | preview (no final exists) | `31553237` | 186817 |
+| `2.2.12+mc26.1.2` | 26.1.2 | `preview_OptiFine_26.1.2_HD_U_K1_pre2.jar` | preview (no final exists) | `F8EB9026` | 186817 |
 
 The **SHA-256** column carries the first eight hex digits of the file, and **Bytes** its exact size — check the jar you downloaded against them before putting it into `mods/`. Two rows list **two** hashes separated by `/`: those are builds OptiFine re-uploaded under the same file name with different contents, and this mod accepts either of them.
 
