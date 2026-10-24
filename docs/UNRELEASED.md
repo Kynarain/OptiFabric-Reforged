@@ -44,5 +44,11 @@ Offline, with pre5 as the installed build: `Prepared 571 patched classes (0 skip
 `RefmapScan MISSING members: 0`; `RuntimeContractScan` broken contracts 0, lost overrides 0; `LambdaScan DANGLING
 handles: 0` - the same shape as pre4.
 
+It is also worth knowing what pre5 actually is. Compared entry by entry, its 7,382 entries have the same content as
+pre4's - every uncompressed entry hashes the same, and the two files differ only in the zip local header's timestamp
+field. The publisher's changelog lists one more line for pre5 (`fixed crash in Options and BlockUtils #2`), but that
+change is not in the uploaded jar. So installing pre5 gains nothing over pre4 beyond accepting the newer file name,
+and there is no reason to prefer it as the recommended build.
+
 Not done, on purpose: the support table still names pre4 for 26.2, and no released jar carries this entry. Making pre5
 the recommended build needs one thing the offline run cannot give - a hand-started game that reaches a world on it.
