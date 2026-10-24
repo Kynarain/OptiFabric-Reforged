@@ -33,7 +33,7 @@ The stall message and the single close were published on 2026-10-17: 2.2.16 (1.2
 targets) and 1.1.9 (both 1.20.6 lines). Their -full jars carry the message; the default jars differ only in the version
 string, because they do not contain the downloader.
 
-## OptiFine 26.2 `K2_pre5` is recorded, not yet recommended
+## OptiFine 26.2 `K2_pre5` is recorded and recommended
 
 OptiFine published `preview_OptiFine_26.2_HD_U_K2_pre5.jar` on 2026-10-20 (7,849,368 bytes, sha256
 `db8ddfdc045742c53fcda95fee21ca5a4ca9fcbc370238a1f78c5e92a1cee5d2`). It is in the `-full` hash table on the 26.x
