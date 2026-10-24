@@ -30,7 +30,8 @@ public final class OptifineHashes {
 	private static final Map<String, List<String>> ACCEPTED = Map.ofEntries(
 			Map.entry("preview_OptiFine_26.1.2_HD_U_K1_pre2.jar", List.of("f8eb9026e4da2444e18d5601d3dede2bd19cf514d02095ffcdb0e101687c2172")),
 			Map.entry("preview_OptiFine_26.2_HD_U_K2_pre1.jar", List.of("db05b25f8aa5ac688a77354680ef939d4f3135350e64e7ccfe5996cfaf925927")),
-			Map.entry("preview_OptiFine_26.2_HD_U_K2_pre4.jar", List.of("3155323734f5268837f78e3251e0dd33d77880dac1441a94c6c3aad6c25bb033")));
+			Map.entry("preview_OptiFine_26.2_HD_U_K2_pre4.jar", List.of("3155323734f5268837f78e3251e0dd33d77880dac1441a94c6c3aad6c25bb033")),
+			Map.entry("preview_OptiFine_26.2_HD_U_K2_pre5.jar", List.of("db8ddfdc045742c53fcda95fee21ca5a4ca9fcbc370238a1f78c5e92a1cee5d2")));
 
 	/** The recorded contents of the given build, or an empty list when nothing is recorded for it. */
 	private static List<String> accepted(String file) {
