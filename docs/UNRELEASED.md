@@ -50,5 +50,5 @@ field. The publisher's changelog lists one more line for pre5 (`fixed crash in O
 change is not in the uploaded jar. So installing pre5 gains nothing over pre4 beyond accepting the newer file name,
 and there is no reason to prefer it as the recommended build.
 
-Not done, on purpose: the support table still names pre4 for 26.2, and no released jar carries this entry. Making pre5
+Shipped in 2.2.12, which is the 26.2 release only - the 26.1.2 build stays at 2.2.11. Still not done, on purpose: the support table names pre4 for 26.2. Making pre5
 the recommended build needs one thing the offline run cannot give - a hand-started game that reaches a world on it.
