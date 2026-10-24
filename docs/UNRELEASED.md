@@ -32,3 +32,17 @@ giving up; check the connection and try again`. The response stream is also clos
 The stall message and the single close were published on 2026-10-17: 2.2.16 (1.21.x, ten targets), 2.2.11 (26.x, both
 targets) and 1.1.9 (both 1.20.6 lines). Their -full jars carry the message; the default jars differ only in the version
 string, because they do not contain the downloader.
+
+## OptiFine 26.2 `K2_pre5` is recorded, not yet recommended
+
+OptiFine published `preview_OptiFine_26.2_HD_U_K2_pre5.jar` on 2026-10-20 (7,849,368 bytes, sha256
+`db8ddfdc045742c53fcda95fee21ca5a4ca9fcbc370238a1f78c5e92a1cee5d2`). It is in the `-full` hash table on the 26.x
+build branches, so the downloader accepts it.
+
+Offline, with pre5 as the installed build: `Prepared 571 patched classes (0 skipped, 0 failed)`, `verified OK: 571`,
+`FAILED: 0`, `ASM verifier problems: 0`; OptiFine's own classes `879 OK, 0 failed, 0 ASM`; `AtTargetScan PROBLEMS: 0`;
+`RefmapScan MISSING members: 0`; `RuntimeContractScan` broken contracts 0, lost overrides 0; `LambdaScan DANGLING
+handles: 0` - the same shape as pre4.
+
+Not done, on purpose: the support table still names pre4 for 26.2, and no released jar carries this entry. Making pre5
+the recommended build needs one thing the offline run cannot give - a hand-started game that reaches a world on it.
