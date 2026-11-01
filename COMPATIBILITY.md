@@ -23,7 +23,7 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 
 逐行证据与装置缺陷记录见 `compatibility-all.csv`、`WORLD-REPORT.md`、`MATRIX-WORLD.md`（compat-matrix 目录）。
 
-## 兼容（已进世界）（465）
+## 兼容（已进世界）（464）
 
 普通启动下出现整合服务器启动行与登录行，且预置存档 level.dat 修改时间前移。
 
@@ -268,7 +268,6 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | libIPN | libipn | 38.2 |
 | LibJF | libjf | 24.4 |
 | Library Ferret | library-ferret | 30.7 |
-| Litematica | litematica | 22.2 |
 | Lithium | lithium | 18.4 |
 | Load My F***ing Tags | lmft | 21.6 |
 | Log Begone | log-begone | 24.5 |
@@ -495,7 +494,7 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | Zombie Awareness | zombie-awareness | 27.7 |
 | Zume | zume | 29.0 |
 
-## 与 OptiFine 不兼容（28）
+## 与 OptiFine 不兼容（29）
 
 不装本模组（纯 Fabric + OptiFine）能过标题界面，装了过不去。**但这 28 行要修的是我们这边，不是模组作者那边**：逐行复测的对照臂是「原版 Fabric + 该模组 + 扫描当时暂存的那套依赖」，**不带 OptiFabric、也不带 OptiFine**；同一批模组在对照里全部到得了标题界面，而失败发生在**本模组交给加载器的那些类**上 —— 也就是说这是「我们还没修好」，不是「这个模组有毛病」。原「33」行里另有 6 行两臂都通过、根本不属于不兼容，已移到下面的「复测：两臂都通过」一块。
 机理上：25 行各对应一处具体的字节码缺口（OptiFine 重新编译时改掉或内联掉的调用点，或者删掉、改名的辅助方法），另 3 行（`ebe`、`sample--mr-betternether`、`the-shooting-star-demo`）是 OptiFine `Config` 在 Fabric 客户端入口点阶段还没初始化的生命周期问题，没有任何 fixer 覆盖它。**2.2.10 关掉了下面十行「已记录的那处失败」**：`cut-through`、`deeperdarker`、`modernfix`、`no-chat-reports`、`particle-core`、`moreculling`、`shatterbyte-lib`（这一行还进到了世界）、`supplementaries` 的 `class_836` 那处，以及两个 `immediatelyfast` 行的**第一处**失败；下表的 iris 与 immediatelyfast 两行就是反例——它们只是走到了同一个模组里的下一处，并**没有**修好。
@@ -511,6 +510,7 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | ImmediatelyFast | immediatelyfast | 未进世界（2.2.10：前两处已修，第三个 mixin 仍失败；与下面 sample--mr-immediatelyfast 同一个 jar） |
 | Indium | indium |  |
 | Iris Shaders | iris | 未进世界（2.2.10：`class_761` 那处已修，仍在更后面的 iris mixin 上失败） |
+| Litematica | litematica |  |
 | Modern UI | modern-ui |  |
 | ModernFix | modernfix |  |
 | More Culling | moreculling |  |
