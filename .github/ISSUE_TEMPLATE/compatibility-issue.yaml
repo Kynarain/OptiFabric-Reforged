@@ -16,7 +16,7 @@ body:
       options:
         - label: I have read the text above
           required: true
-        - label: I have read the [FAQ](https://github.com/Kynarain/OptiFabric-Reforged/blob/main/docs/FAQ.md) before submitting a new issue
+        - label: I have read the [FAQ](https://github.com/Kynarain/OptiFabric-Reforged/blob/main/FAQ.md) before submitting a new issue
           required: true
         - label: I have read the [compatibility](https://github.com/Kynarain/OptiFabric-Reforged/blob/main/COMPATIBILITY.md) section before submitting a new issue
           required: true
