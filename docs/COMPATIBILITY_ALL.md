@@ -9,7 +9,7 @@ column, then read the column of the line you use.
 **This is one sweep, not four.** The lists the lines carry come from the same run (Minecraft **1.21.1**, the **2.2.x**
 line): the `26.x`, `1.20.6 (reforged)` and `1.20.6` lists are the same one byte for byte, and `1.21.x` differs in
 exactly seven rows - `the-shooting-star-demo`, which only its list carries, and six mods that were re-tested and now
-reach the world (which is why its incompatible count is 28 where the other three say 31). It says the combination was
+reach the world (which is why its incompatible count is 29 where the other three say 32). It says the combination was
 tested, not that each line was tested on its own Minecraft version.
 
 ## What the marks mean
@@ -270,7 +270,6 @@ tested, not that each line was tested on its own Minecraft version.
 | libIPN | `libipn` | ✅ 38.2 | ✅ 38.2 | ✅ 38.2 | ✅ 38.2 |
 | LibJF | `libjf` | ✅ 24.4 | ✅ 24.4 | ✅ 24.4 | ✅ 24.4 |
 | Library Ferret | `library-ferret` | ✅ 30.7 | ✅ 30.7 | ✅ 30.7 | ✅ 30.7 |
-| Litematica | `litematica` | ✅ 22.2 | ✅ 22.2 | ✅ 22.2 | ✅ 22.2 |
 | Lithium | `lithium` | ✅ 18.4 | ✅ 18.4 | ✅ 18.4 | ✅ 18.4 |
 | Load My F***ing Tags | `lmft` | ✅ 21.6 | ✅ 21.6 | ✅ 21.6 | ✅ 21.6 |
 | Log Begone | `log-begone` | ✅ 24.5 | ✅ 24.5 | ✅ 24.5 | ✅ 24.5 |
@@ -505,6 +504,7 @@ tested, not that each line was tested on its own Minecraft version.
 | ImmediatelyFast | `immediatelyfast` | ❌ | ❌ | ❌ | ❌ |
 | Indium | `indium` | ❌ | ❌ | ❌ | ❌ |
 | Iris Shaders | `iris` | ❌ | ❌ | ❌ | ❌ |
+| Litematica | `litematica` | ❌ | ❌ | ❌ | ❌ |
 | Modern UI | `modern-ui` | ❌ | ❌ | ❌ | ❌ |
 | ModernFix | `modernfix` | ❌ | ❌ | ❌ | ❌ |
 | More Culling | `moreculling` | ❌ | ❌ | ❌ | ❌ |
@@ -688,8 +688,8 @@ tested, not that each line was tested on its own Minecraft version.
 
 | Mark | 1.21.x | 26.x | 1.20.6 (reforged) | 1.20.6 |
 |---|---|---|---|---|
-| ✅ | 471 | 467 | 465 | 465 |
-| ❌ | 28 | 31 | 31 | 31 |
+| ✅ | 470 | 466 | 464 | 464 |
+| ❌ | 29 | 32 | 32 | 32 |
 | 🚫 | 8 | 8 | 8 | 8 |
 | ⛔ | 1 | 1 | 1 | 1 |
 | ⚠️ | 10 | 10 | 10 | 10 |
@@ -708,7 +708,7 @@ line and in `docs/COMPATIBILITY.md` / `docs/COMPATIBILITY_CN.md` on the 1.21.x l
 
 ## 中文说明
 
-**这张表是什么**:**一次**模组扫描的结果(跑在 **Minecraft 1.21.1**、OptiFabric **2.2.x** 线上),逐条记录每个模组与 OptiFine 一起启动时**走到哪一步**。四条线的清单来自同一批数据 —— 其中 `26.x`、`1.20.6 (reforged)`、`1.20.6` 三份**逐字节相同**;`1.21.x` 恰好差 **7 行**:`the-shooting-star-demo`(只有它有)以及 **6 个复测后判为 ✅ 的模组**(`bobby`、`c2me-fabric`、`fallingleaves`、`freecam`、`sample--mr-bedrockify`、`sample--mr-c2me-fabric`),所以它的「不兼容」是 **28**,其余三条是 **33**。**请把它读成"这套组合被测过",而不是"每条线各测了一次"。**
+**这张表是什么**:**一次**模组扫描的结果(跑在 **Minecraft 1.21.1**、OptiFabric **2.2.x** 线上),逐条记录每个模组与 OptiFine 一起启动时**走到哪一步**。四条线的清单来自同一批数据 —— 其中 `26.x`、`1.20.6 (reforged)`、`1.20.6` 三份**逐字节相同**;`1.21.x` 恰好差 **7 行**:`the-shooting-star-demo`(只有它有)以及 **6 个复测后判为 ✅ 的模组**(`bobby`、`c2me-fabric`、`fallingleaves`、`freecam`、`sample--mr-bedrockify`、`sample--mr-c2me-fabric`),所以它的「不兼容」是 **29**,其余三条是 **32**。**请把它读成"这套组合被测过",而不是"每条线各测了一次"。**
 
 **表的读法**:每一行是一个模组,四列分别是四条线里该模组的结果;某条线的清单里**没有这个模组**时写 `-`。
 
