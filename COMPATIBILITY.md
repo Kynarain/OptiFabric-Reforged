@@ -17,7 +17,7 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 
 逐行证据与装置缺陷记录见 `compatibility-all.csv`、`WORLD-REPORT.md`、`MATRIX-WORLD.md`（compat-matrix 目录）。
 
-## 兼容（已进世界）（465）
+## 兼容（已进世界）（464）
 
 普通启动下出现整合服务器启动行与登录行，且预置存档 level.dat 修改时间前移。
 
@@ -262,7 +262,6 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | libIPN | libipn | 38.2 |
 | LibJF | libjf | 24.4 |
 | Library Ferret | library-ferret | 30.7 |
-| Litematica | litematica | 22.2 |
 | Lithium | lithium | 18.4 |
 | Load My F***ing Tags | lmft | 21.6 |
 | Log Begone | log-begone | 24.5 |
@@ -489,7 +488,7 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | Zombie Awareness | zombie-awareness | 27.7 |
 | Zume | zume | 29.0 |
 
-## 与 OptiFine 不兼容（31）
+## 与 OptiFine 不兼容（32）
 
 不装本模组（纯 Fabric + OptiFine）能过标题界面，装了过不去 —— 是 OptiFine 与这些模组的冲突。
 
@@ -507,6 +506,7 @@ MC 1.21.1 + Fabric + OptiFabric + OptiFine；全部为**普通启动**（无 deb
 | ImmediatelyFast | immediatelyfast |  |
 | Indium | indium |  |
 | Iris Shaders | iris |  |
+| Litematica | litematica |  |
 | Modern UI | modern-ui |  |
 | ModernFix | modernfix |  |
 | More Culling | moreculling |  |

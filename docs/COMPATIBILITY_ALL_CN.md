@@ -265,7 +265,6 @@
 | libIPN | `libipn` | ✅ 38.2 | ✅ 38.2 | ✅ 38.2 | ✅ 38.2 |
 | LibJF | `libjf` | ✅ 24.4 | ✅ 24.4 | ✅ 24.4 | ✅ 24.4 |
 | Library Ferret | `library-ferret` | ✅ 30.7 | ✅ 30.7 | ✅ 30.7 | ✅ 30.7 |
-| Litematica | `litematica` | ✅ 22.2 | ✅ 22.2 | ✅ 22.2 | ✅ 22.2 |
 | Lithium | `lithium` | ✅ 18.4 | ✅ 18.4 | ✅ 18.4 | ✅ 18.4 |
 | Load My F***ing Tags | `lmft` | ✅ 21.6 | ✅ 21.6 | ✅ 21.6 | ✅ 21.6 |
 | Log Begone | `log-begone` | ✅ 24.5 | ✅ 24.5 | ✅ 24.5 | ✅ 24.5 |
@@ -500,6 +499,7 @@
 | ImmediatelyFast | `immediatelyfast` | ❌ | ❌ | ❌ | ❌ |
 | Indium | `indium` | ❌ | ❌ | ❌ | ❌ |
 | Iris Shaders | `iris` | ❌ | ❌ | ❌ | ❌ |
+| Litematica | `litematica` | ❌ | ❌ | ❌ | ❌ |
 | Modern UI | `modern-ui` | ❌ | ❌ | ❌ | ❌ |
 | ModernFix | `modernfix` | ❌ | ❌ | ❌ | ❌ |
 | More Culling | `moreculling` | ❌ | ❌ | ❌ | ❌ |
@@ -683,8 +683,8 @@
 
 | 标记 | 1.21.x | 26.x | 1.20.6 (reforged) | 1.20.6 |
 |---|---|---|---|---|
-| ✅ | 471 | 467 | 465 | 465 |
-| ❌ | 28 | 31 | 31 | 31 |
+| ✅ | 470 | 466 | 464 | 464 |
+| ❌ | 29 | 32 | 32 | 32 |
 | 🚫 | 8 | 8 | 8 | 8 |
 | ⛔ | 1 | 1 | 1 | 1 |
 | ⚠️ | 10 | 10 | 10 | 10 |
