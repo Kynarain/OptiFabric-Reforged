@@ -1,0 +1,110 @@
+name: Bug report
+description: Create a bug report to help improve OptiFabric Reforged
+title: "Short description of the bug here"
+labels: ["bug"]
+body:
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: |
+        Please take the following steps seriously before reporting a bug.
+        They ensure that your issue can be resolved quickly and reduce overhead for maintainers.
+        If your issue is caused by another mod, please open a compatibility issue instead.
+      options:
+        - label: I have read the text above
+          required: true
+        - label: I have read the [FAQ](https://github.com/Kynarain/OptiFabric-Reforged/blob/main/README.md) section before submitting a new issue
+          required: true
+        - label: I have searched the [issue tracker](https://github.com/Kynarain/OptiFabric-Reforged/issues?q=is%3Aissue) for identical issues before submitting a new issue
+          required: true
+        - label: The issue occurs when **only** OptiFabric Reforged, the OptiFine build it needs and Fabric API are installed, and my game logs and screenshots will reflect that
+          required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        A clear and concise description of what the bug is.
+
+        OptiFabric Reforged applies OptiFine's class patches before Mixin runs, so say whether OptiFabric started at all:
+        if it did, the log contains a line starting with `[OptiFabric]`; if OptiFine was rejected, it says why.
+        If applicable, add screenshots to help explain your problem.
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: |
+        You have a new Minecraft installation with just your mod loader, Fabric API, OptiFabric Reforged and the matching OptiFine build installed.
+        What steps are required to reproduce the issue?
+      placeholder: |
+        1. Start the game
+        2. Open '...'
+        3. See error
+    validations:
+      required: true
+  - type: dropdown
+    id: minecraft-version
+    attributes:
+      label: Minecraft version
+      multiple: true
+      options:
+        - '26.2'
+        - '26.1.2'
+        - '1.21.11'
+        - '1.21.10'
+        - '1.21.9'
+        - '1.21.8'
+        - '1.21.7'
+        - '1.21.6'
+        - '1.21.4'
+        - '1.21.3'
+        - '1.21.1'
+        - '1.21'
+        - '1.20.6'
+    validations:
+      required: true
+  - type: input
+    id: optifabric-version
+    attributes:
+      label: OptiFabric Reforged version
+      description: The version string shown in the mod list, e.g. 2.2.13+mc26.2.
+      placeholder: 2.2.13+mc26.2
+    validations:
+      required: true
+  - type: input
+    id: optifine-build
+    attributes:
+      label: OptiFine build
+      description: The exact file name of the OptiFine jar you used, e.g. preview_OptiFine_26.2_HD_U_K2_pre5.jar.
+      placeholder: preview_OptiFine_26.2_HD_U_K2_pre5.jar
+    validations:
+      required: true
+  - type: input
+    id: loader-version
+    attributes:
+      label: Fabric Loader version
+      placeholder: '0.19.5'
+    validations:
+      required: true
+  - type: input
+    id: logs
+    attributes:
+      label: Game logs
+      description: |
+        Navigate to `.minecraft/logs/`, upload the file named `latest.log` to https://mclo.gs/ and paste the link here.
+        The location of the logs might be different if you are using a custom launcher.
+
+        If the game also wrote `crash-reports/crash-<date>-client.txt`, mention it - for startup failures the crash report carries the stack that `latest.log` stops short of.
+        mclo.gs masks your user name and absolute paths automatically; check the result before you submit.
+    validations:
+      required: true
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information
+      description: Add any other information about the problem.
+    validations:
+      required: false
