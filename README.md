@@ -1,6 +1,6 @@
 # OptiFabric
 
-#!!!此模组由deepseek编写并验证请小心用于生产环境!!!#
+# !!!此模组由deepseek编写并验证请小心用于生产环境!!!#
 
 在 Fabric Loader 下加载 **OptiFine** 的客户端模组。把 OptiFine 的 jar 和本模组一起放进 `mods/`,启动时 OptiFabric 会用 OptiFine 自带的补丁器给原版客户端打补丁、重建被搬走的 lambda、把 OptiFine 从官方混淆名重映射到 intermediary,并把打过补丁的 Minecraft 类交给 Fabric Loader 的类转换器接管,从而让两者共存。**不包含、也不分发 OptiFine 本体。**
 
